@@ -1,8 +1,10 @@
 import React from 'react'
-
+import Button from '../components/UI/Button'
 const Doctors = () => {
   return (
-    <div>Doctors</div>
+    <div>
+      <Button >hey guys</Button>
+    </div>
   )
 }
 
