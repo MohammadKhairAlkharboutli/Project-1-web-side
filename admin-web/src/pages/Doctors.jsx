@@ -1,19 +1,29 @@
-import React from 'react'
-import Button from '../components/UI/Button'
-import Dropdown from '../components/UI/Dropdown'
-import DropdownItem from '../components/UI/DropdownItem'
+import RowsPerPageSelect from "../components/Table/RowsPerPageSelect"
+import { useState } from "react"
 
 const Doctors = () => {
+
+  const [currentPage,setCurrentPage] = useState(1)
+  const [rowsPerPage,setRowsPerPage]=useState(10)
+
+  function handleRowsPerPageChange(value) {
+  setRowsPerPage(value);
+  setCurrentPage(1);
+  }  
+
+  // const totalPages = Math.ceil(filteredDoctors.length / rowsPerPage);
+
+  // const startIndex = (currentPage - 1) * rowsPerPage;
+  // const endIndex = startIndex + rowsPerPage;
+
+  // const paginatedDoctors = filteredDoctors.slice(startIndex, endIndex);
+  
   return (
-    <div>
-      <Dropdown align='left' width='w-30' trigger={<Button >hey guys</Button>}>
-        <DropdownItem onClick={()=>alert("hi")}>hi</DropdownItem>
-        <DropdownItem disabled="true">hello</DropdownItem>
-        <DropdownItem danger="true">how ya doing</DropdownItem>
-        
-      </Dropdown>
+    <div className="flex justify-between gap-4">
+
+      <RowsPerPageSelect value={rowsPerPage} onChange={handleRowsPerPageChange}></RowsPerPageSelect>
     </div>
-  )
+  ) 
 }
 
 export default Doctors
