@@ -1,8 +1,10 @@
 import React from 'react'
 
+
 const Patients = () => {
   return (
-    <div>Patients</div>
+    <div>
+    </div>
   )
 }
 
