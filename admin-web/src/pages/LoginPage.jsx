@@ -2,7 +2,6 @@ import { useState } from "react";
 import Button from "../components/UI/Button";
 import { boxShadow, inputBase, labelBase } from "../components/UI/SurfaceStyles";
 import { authApi } from "../api/authApi";
-import { data, Navigate } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 
 
@@ -88,7 +87,7 @@ async  function handleSubmit(event) {
             return;
         }
 
-        navigate("/")
+        navigate("/",{replace:true})
 
 
         console.log(response);
