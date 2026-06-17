@@ -1,6 +1,6 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
-import { BarChart3,ChevronRight,ChevronLeft,LayoutDashboard,Stethoscope,Users,UserRoundCog } from 'lucide-react'
+import { Hospital,BarChart3,ChevronRight,ChevronLeft,LayoutDashboard,Stethoscope,Users,UserRoundCog } from 'lucide-react'
 import { useState } from 'react'
 
 const sidebarItems=[          
@@ -9,6 +9,7 @@ const sidebarItems=[
     {label:"Doctors" , path:"/doctors" , icon:Stethoscope},
     {label:"Patients" , path:"/patients" , icon: Users},
     {label:"Secretaries" , path:"/secretaries" , icon:UserRoundCog },
+    {label:"Clinics" , path:"/clinics" , icon:Hospital },
     {label:"Statistics" , path:"/statistics" , icon:BarChart3 }
 ]
 

@@ -7,7 +7,7 @@ import Statistics from "./pages/Statistics"
 import PageLayout from "./pages/PageLayout"
 import LoginPage from "./pages/LoginPage"
 import ProtectedRoute from "./components/ProtectedRoute"
-
+import Clinics from "./pages/Clinics"
 
 
 function App() {
@@ -24,6 +24,7 @@ function App() {
           <Route path="patients" element={<Patients/>}/>
           <Route path="secretaries" element={<Secretaries/>}/>
           <Route path="statistics" element={<Statistics/>}/>
+          <Route path="clinics" element={<Clinics/>}/>
         </Route>
       </Route>    
     </Routes>
