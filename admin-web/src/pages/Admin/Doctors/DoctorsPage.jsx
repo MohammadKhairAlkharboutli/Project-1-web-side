@@ -1,16 +1,16 @@
-import RowsPerPageSelect from "../components/Table/RowsPerPageSelect"
+import RowsPerPageSelect from "../../../components/old-UI/Table/RowsPerPageSelect"
 import { useState } from "react"
-import SearchInput from "../components/UI/SearchInput"
-import FilterDropdown from "../components/UI/FilterDropdown"
-import Button from "../components/UI/Button"
+import SearchInput from "../../../components/old-UI/SearchInput"
+import FilterDropdown from "../../../components/old-UI/FilterDropdown"
+import Button from "../../../components/old-UI/Button"
 import { Plus } from "lucide-react"
-import DropdownItem from "../components/UI/DropdownItem"
-import { doctors } from "./DoctorData"
-import DataTable from "../components/Table/DataTable"
-import Pagination from "../components/Table/Pagination"
-import { boxBase, boxShadow } from "../components/UI/SurfaceStyles"
+import DropdownItem from "../../../components/old-UI/DropdownItem"
+import { doctors } from "../DoctorData"
+import DataTable from "../../../components/old-UI/Table/DataTable"
+import Pagination from "../../../components/old-UI/Table/Pagination"
+import { boxBase, boxShadow } from "../../../components/old-UI/SurfaceStyles"
 
-const Doctors = () => {
+const DoctorsPage = () => {
   //search and filter logic for changing what is in the search and the filter dropdown
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Doctors");
@@ -162,4 +162,4 @@ const Doctors = () => {
   ) 
 }
 
-export default Doctors
+export default DoctorsPage

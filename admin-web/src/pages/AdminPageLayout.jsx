@@ -3,7 +3,7 @@ import { Outlet } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import Topbar from '../components/Topbar'
 import Foot from '../components/Foot'
-const PageLayout = () => {
+const AdminPageLayout = () => {
   return (
     <div className='flex min-h-screen bg-gray-200' >
         <Sidebar></Sidebar>
@@ -23,4 +23,4 @@ const PageLayout = () => {
   )
 }
 
-export default PageLayout
+export default AdminPageLayout

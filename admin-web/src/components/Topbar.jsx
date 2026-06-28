@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import {Bell,ChevronDown,Moon,User,Settings,LogOut} from "lucide-react"
-import Dropdown from './UI/Dropdown';
-import DropdownItem from './UI/DropdownItem';
+import Dropdown from './old-UI/Dropdown';
+import DropdownItem from './old-UI/DropdownItem';
 import { authApi } from '../api/authApi';
 
 

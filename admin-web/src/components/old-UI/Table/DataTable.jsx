@@ -1,4 +1,4 @@
-import { boxBase } from "../UI/SurfaceStyles";
+import { boxBase } from "../SurfaceStyles";
 
 const DataTable = ({
   columns,

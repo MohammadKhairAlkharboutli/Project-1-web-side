@@ -5,12 +5,12 @@ import { useState } from 'react'
 
 const sidebarItems=[          
     //just for the icons I can just switch them out for real icons later
-    {label:"Dashboard" , path:"/" , icon:LayoutDashboard },
-    {label:"Doctors" , path:"/doctors" , icon:Stethoscope},
-    {label:"Patients" , path:"/patients" , icon: Users},
-    {label:"Secretaries" , path:"/secretaries" , icon:UserRoundCog },
-    {label:"Clinics" , path:"/clinics" , icon:Hospital },
-    {label:"Statistics" , path:"/statistics" , icon:BarChart3 }
+    {label:"Dashboard" , path:"/admin" , icon:LayoutDashboard },
+    {label:"Doctors" , path:"/admin/doctors" , icon:Stethoscope},
+    {label:"Patients" , path:"/admin/patients" , icon: Users},
+    {label:"Secretaries" , path:"/admin/secretaries" , icon:UserRoundCog },
+    {label:"Clinics" , path:"/admin/clinics" , icon:Hospital },
+    {label:"Statistics" , path:"/admin/statistics" , icon:BarChart3 }
 ]
 
 const SidebarItem = ({item, isCollapsed}) => {
@@ -18,7 +18,7 @@ const SidebarItem = ({item, isCollapsed}) => {
     return(
 
         <NavLink to={item.path}
-                end={item.path==="/"} 
+                end={item.path==="/admin"} 
                 title={isCollapsed ? item.label : ""}
                 className={({ isActive }) =>
                             `flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition ${

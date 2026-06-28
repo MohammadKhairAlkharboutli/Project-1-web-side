@@ -1,6 +1,6 @@
 import { useState } from "react";
-import Button from "../components/UI/Button";
-import { boxShadow, inputBase, labelBase } from "../components/UI/SurfaceStyles";
+import Button from "../components/old-UI/Button";
+import { boxShadow, inputBase, labelBase } from "../components/old-UI/SurfaceStyles";
 import { authApi } from "../api/authApi";
 import { useNavigate } from "react-router-dom";
 
