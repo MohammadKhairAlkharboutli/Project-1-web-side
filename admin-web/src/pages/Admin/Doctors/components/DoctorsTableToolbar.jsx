@@ -8,6 +8,7 @@ export default function DoctorsTableToolbar({
   table,
   globalFilter,
   setGlobalFilter,
+  specializationOptions,
 }) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -30,24 +31,29 @@ export default function DoctorsTableToolbar({
           }}
         >
           <NativeSelectOption value="all">All statuses</NativeSelectOption>
-          <NativeSelectOption value="Active">Active</NativeSelectOption>
-          <NativeSelectOption value="Inactive">Inactive</NativeSelectOption>
+          <NativeSelectOption value="ACTIVE">Active</NativeSelectOption>
+          <NativeSelectOption value="INACTIVE">Inactive</NativeSelectOption>
+          <NativeSelectOption value="ON_LEAVE">On Leave</NativeSelectOption>
         </NativeSelect>
 
         <NativeSelect
           className="w-[180px]"
-          value={table.getColumn("specialty")?.getFilterValue() ?? "all"}
+          value={table.getColumn("specialization")?.getFilterValue() ?? "all"}
           onChange={(event) => {
             const value = event.target.value;
             table
-              .getColumn("specialty")
+              .getColumn("specialization")
               ?.setFilterValue(value === "all" ? undefined : value);
           }}
         >
-          <NativeSelectOption value="all">All specialties</NativeSelectOption>
-          <NativeSelectOption value="Cardiology">Cardiology</NativeSelectOption>
-          <NativeSelectOption value="Dermatology">Dermatology</NativeSelectOption>
-          <NativeSelectOption value="Pediatrics">Pediatrics</NativeSelectOption>
+          <NativeSelectOption value="all">
+            All specializations
+          </NativeSelectOption>
+          {specializationOptions.map((specialization) => (
+            <NativeSelectOption key={specialization} value={specialization}>
+              {specialization}
+            </NativeSelectOption>
+          ))}
         </NativeSelect>
       </div>
     </div>

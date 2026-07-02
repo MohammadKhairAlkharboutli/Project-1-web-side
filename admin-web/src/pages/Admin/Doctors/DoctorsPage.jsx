@@ -8,6 +8,9 @@ import DoctorsTableToolbar from "./components/DoctorsTableToolbar";
 
 export default function DoctorsPage() {
   const navigate = useNavigate();
+  const specializationOptions = Array.from(
+    new Set(doctors.map((doctor) => doctor.specialization).filter(Boolean))
+  ).sort((left, right) => left.localeCompare(right));
   const columns = getDoctorColumns((doctor) =>
     navigate(`/admin/doctors/${doctor.id}`)
   );
@@ -17,7 +20,7 @@ export default function DoctorsPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Doctors</h1>
         <p className="text-muted-foreground">
-          Manage doctors, specialties, and clinic assignments.
+          Review doctor profiles and the backend-aligned details shown in the admin UI.
         </p>
       </div>
 
@@ -30,6 +33,7 @@ export default function DoctorsPage() {
             table={table}
             globalFilter={globalFilter}
             setGlobalFilter={setGlobalFilter}
+            specializationOptions={specializationOptions}
           />
         )}
       />

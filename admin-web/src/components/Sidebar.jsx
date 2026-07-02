@@ -1,6 +1,5 @@
-import React from 'react'
 import { NavLink } from 'react-router-dom'
-import { Hospital,BarChart3,ChevronRight,ChevronLeft,LayoutDashboard,Stethoscope,Users,UserRoundCog } from 'lucide-react'
+import { CalendarClock, CalendarDays, Database, Flag, Hospital, Scale, Star, BarChart3, ChevronRight, ChevronLeft, LayoutDashboard, Stethoscope, Users, UserRoundCog } from 'lucide-react'
 import { useState } from 'react'
 
 const sidebarItems=[          
@@ -8,6 +7,12 @@ const sidebarItems=[
     {label:"Dashboard" , path:"/admin" , icon:LayoutDashboard },
     {label:"Doctors" , path:"/admin/doctors" , icon:Stethoscope},
     {label:"Patients" , path:"/admin/patients" , icon: Users},
+    {label:"Appointments" , path:"/admin/appointments" , icon:CalendarDays },
+    {label:"Ratings" , path:"/admin/ratings" , icon:Star },
+    {label:"Rating Reports" , path:"/admin/rating-reports" , icon:Flag },
+    {label:"Schedule Requests" , path:"/admin/schedule-change-requests" , icon:CalendarClock },
+    {label:"Data Lookups" , path:"/admin/data-lookups" , icon:Database },
+    {label:"System Policies" , path:"/admin/system-policies" , icon:Scale },
     {label:"Secretaries" , path:"/admin/secretaries" , icon:UserRoundCog },
     {label:"Clinics" , path:"/admin/clinics" , icon:Hospital },
     {label:"Statistics" , path:"/admin/statistics" , icon:BarChart3 }

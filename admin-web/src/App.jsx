@@ -3,13 +3,35 @@ import Dashboard from "./pages/Admin/Dashboard";
 import DoctorsPage from "./pages/Admin/Doctors/DoctorsPage";
 import DoctorProfile from "./pages/Admin/Doctors/DoctorProfile";
 import DoctorOverview from "./pages/Admin/Doctors/DoctorOverview";
-import Patients from "./pages/Admin/Patients";
-import Secretaries from "./pages/Admin/Secretaries";
-import Statistics from "./pages/Admin/Statistics";
+import DoctorSchedule from "./pages/Admin/Doctors/DoctorSchedule";
+import DoctorClinics from "./pages/Admin/Doctors/DoctorClinics";
+import DoctorAppointments from "./pages/Admin/Doctors/DoctorAppointments";
+import AdminAppointmentsPage from "./pages/Admin/Appointments/AdminAppointmentsPage";
+import AppointmentDetails from "./pages/Admin/Appointments/AppointmentDetails";
+import PatientsPage from "./pages/Admin/Patients/PatientsPage";
+import PatientProfile from "./pages/Admin/Patients/PatientProfile";
+import PatientOverview from "./pages/Admin/Patients/PatientOverview";
+import PatientMedicalInfo from "./pages/Admin/Patients/PatientMedicalInfo";
+import PatientAppointments from "./pages/Admin/Patients/PatientAppointments";
+import SecretariesPage from "./pages/Admin/Secretaries/SecretariesPage";
+import SecretaryProfile from "./pages/Admin/Secretaries/SecretaryProfile";
+import SecretaryOverview from "./pages/Admin/Secretaries/SecretaryOverview";
+import StatisticsPage from "./pages/Admin/Statistics/StatisticsPage";
+import ScheduleChangeRequestsPage from "./pages/Admin/ScheduleChangeRequests/ScheduleChangeRequestsPage";
+import DataLookupsPage from "./pages/Admin/DataLookups/DataLookupsPage";
+import SystemPoliciesPage from "./pages/Admin/SystemPolicies/SystemPoliciesPage";
 import AdminPageLayout from "./pages/AdminPageLayout";
 import LoginPage from "./pages/LoginPage";
 import ProtectedRoute from "./components/ProtectedRoute";
-import Clinics from "./pages/Admin/Clinics";
+import ClinicsPage from "./pages/Admin/Clinics/ClinicsPage";
+import ClinicProfile from "./pages/Admin/Clinics/ClinicProfile";
+import ClinicOverview from "./pages/Admin/Clinics/ClinicOverview";
+import ClinicAppointments from "./pages/Admin/Clinics/ClinicAppointments";
+import ClinicDoctors from "./pages/Admin/Clinics/ClinicDoctors";
+import RatingsPage from "./pages/Admin/Ratings/RatingsPage";
+import RatingDetails from "./pages/Admin/Ratings/RatingDetails";
+import RatingReportsPage from "./pages/Admin/Ratings/RatingReportsPage";
+import RatingReportDetails from "./pages/Admin/Ratings/RatingReportDetails";
 
 function App() {
   return (
@@ -23,12 +45,43 @@ function App() {
             <Route index element={<DoctorsPage />} />
             <Route path=":doctorId" element={<DoctorProfile />}>
               <Route index element={<DoctorOverview />} />
+              <Route path="schedules" element={<DoctorSchedule />} />
+              <Route path="clinics" element={<DoctorClinics />} />
+              <Route path="appointments" element={<DoctorAppointments />} />
             </Route>
           </Route>
-          <Route path="patients" element={<Patients />} />
-          <Route path="secretaries" element={<Secretaries />} />
-          <Route path="statistics" element={<Statistics />} />
-          <Route path="clinics" element={<Clinics />} />
+          <Route path="appointments" element={<AdminAppointmentsPage />} />
+          <Route path="appointments/:appointmentId" element={<AppointmentDetails />} />
+          <Route path="ratings" element={<RatingsPage />} />
+          <Route path="ratings/:ratingId" element={<RatingDetails />} />
+          <Route path="rating-reports" element={<RatingReportsPage />} />
+          <Route path="rating-reports/:reportId" element={<RatingReportDetails />} />
+          <Route path="patients">
+            <Route index element={<PatientsPage />} />
+            <Route path=":patientId" element={<PatientProfile />}>
+              <Route index element={<PatientOverview />} />
+              <Route path="medical-info" element={<PatientMedicalInfo />} />
+              <Route path="appointments" element={<PatientAppointments />} />
+            </Route>
+          </Route>
+          <Route path="clinics">
+            <Route index element={<ClinicsPage />} />
+            <Route path=":clinicId" element={<ClinicProfile />}>
+              <Route index element={<ClinicOverview />} />
+              <Route path="appointments" element={<ClinicAppointments />} />
+              <Route path="doctors" element={<ClinicDoctors />} />
+            </Route>
+          </Route>
+          <Route path="secretaries">
+            <Route index element={<SecretariesPage />} />
+            <Route path=":secretaryId" element={<SecretaryProfile />}>
+              <Route index element={<SecretaryOverview />} />
+            </Route>
+          </Route>
+          <Route path="statistics" element={<StatisticsPage />} />
+          <Route path="schedule-change-requests" element={<ScheduleChangeRequestsPage />} />
+          <Route path="data-lookups" element={<DataLookupsPage />} />
+          <Route path="system-policies" element={<SystemPoliciesPage />} />
         </Route>
       </Route>
     </Routes>
