@@ -85,9 +85,11 @@ export default function DoctorClinics() {
                     </Link>
                   </Button>
 
-                  <Button variant="outline" size="sm" disabled>
-                    <Rows3 className="h-4 w-4" />
-                    View queue
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to={`/admin/queue?clinicId=${clinic.id}&doctorId=${doctorId}`}>
+                      <Rows3 className="h-4 w-4" />
+                      View queue
+                    </Link>
                   </Button>
 
                   <Button variant="destructive" size="sm" disabled>

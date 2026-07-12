@@ -32,6 +32,7 @@ import RatingsPage from "./pages/Admin/Ratings/RatingsPage";
 import RatingDetails from "./pages/Admin/Ratings/RatingDetails";
 import RatingReportsPage from "./pages/Admin/Ratings/RatingReportsPage";
 import RatingReportDetails from "./pages/Admin/Ratings/RatingReportDetails";
+import AdminQueuePage from "./pages/Admin/Queue/AdminQueuePage";
 
 function App() {
   return (
@@ -52,6 +53,7 @@ function App() {
           </Route>
           <Route path="appointments" element={<AdminAppointmentsPage />} />
           <Route path="appointments/:appointmentId" element={<AppointmentDetails />} />
+          <Route path="queue" element={<AdminQueuePage />} />
           <Route path="ratings" element={<RatingsPage />} />
           <Route path="ratings/:ratingId" element={<RatingDetails />} />
           <Route path="rating-reports" element={<RatingReportsPage />} />

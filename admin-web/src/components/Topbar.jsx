@@ -1,6 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import { Bell, ChevronDown, Moon, User, Settings, LogOut } from "lucide-react";
+import { ChevronDown, Moon, User, Settings, LogOut } from "lucide-react";
 import Dropdown from "./old-UI/Dropdown";
 import DropdownItem from "./old-UI/DropdownItem";
 import { authApi } from "../api/authApi";
@@ -55,13 +55,6 @@ const Topbar = () => {
       </div>
 
       <div className="flex items-center gap-3">
-        <button
-          type="button"
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
-        >
-          <Bell size={19} />
-        </button>
-
         <button
           type="button"
           className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"

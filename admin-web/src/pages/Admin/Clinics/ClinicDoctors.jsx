@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router-dom";
-import { CalendarDays, ClipboardList, Eye, Unlink } from "lucide-react";
+import { CalendarDays, ClipboardList, Eye, Rows3, Unlink } from "lucide-react";
 
 import DoctorCard from "@/components/shared/DoctorCard";
 import { getDoctorIdsForClinic } from "@/components/shared/doctorClinicAssignments";
@@ -68,6 +68,13 @@ export default function ClinicDoctors() {
                     >
                       <CalendarDays className="h-4 w-4" />
                       View schedule
+                    </Link>
+                  </Button>
+
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to={`/admin/queue?clinicId=${clinicId}&doctorId=${doctor.id}`}>
+                      <Rows3 className="h-4 w-4" />
+                      View queue
                     </Link>
                   </Button>
 
