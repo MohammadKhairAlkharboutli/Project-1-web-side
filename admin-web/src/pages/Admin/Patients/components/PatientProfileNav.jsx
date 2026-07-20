@@ -13,8 +13,18 @@ export default function PatientProfileNav({ patientId }) {
       end: false,
     },
     {
+      label: "Medical History",
+      to: `/admin/patients/${patientId}/medical-history`,
+      end: false,
+    },
+    {
       label: "Appointments",
       to: `/admin/patients/${patientId}/appointments`,
+      end: false,
+    },
+    {
+      label: "Profile Logs",
+      to: `/admin/patients/${patientId}/profile-logs`,
       end: false,
     },
   ];

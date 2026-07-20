@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Mail, Phone, Star } from "lucide-react";
+import { Mail, Phone, PowerOff, Star } from "lucide-react";
 
 import {
   profileHeaderDetailsLabel,
@@ -16,7 +16,7 @@ import {
   getDoctorInitials,
 } from "../doctorUtils";
 
-export default function DoctorProfileHeader({ doctor }) {
+export default function DoctorProfileHeader({ doctor, onDeactivateDoctor }) {
   return (
     <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
       <div className="flex items-start gap-4">
@@ -63,43 +63,52 @@ export default function DoctorProfileHeader({ doctor }) {
         </div>
       </div>
 
-      <div
-        className={`${profileHeaderDetailsShell} sm:grid-cols-2 md:min-w-72 md:grid-cols-2`}
-      >
-        <div>
-          <p className={profileHeaderDetailsLabel}>
-            Approval
-          </p>
-          <p className={profileHeaderDetailsValue}>
-            {formatApprovalStatus(doctor.isApproved)}
-          </p>
-        </div>
+      <div className="flex flex-col gap-3 md:items-end">
+        {doctor.status !== "INACTIVE" && (
+          <Button variant="destructive" onClick={onDeactivateDoctor}>
+            <PowerOff className="h-4 w-4" />
+            Deactivate doctor
+          </Button>
+        )}
 
-        <div>
-          <p className={profileHeaderDetailsLabel}>
-            Rating
-          </p>
-          <p className={profileHeaderDetailsValue}>
-            {doctor.averageRating ? doctor.averageRating.toFixed(1) : "N/A"}
-          </p>
-        </div>
+        <div
+          className={`${profileHeaderDetailsShell} sm:grid-cols-2 md:min-w-72 md:grid-cols-2`}
+        >
+          <div>
+            <p className={profileHeaderDetailsLabel}>
+              Approval
+            </p>
+            <p className={profileHeaderDetailsValue}>
+              {formatApprovalStatus(doctor.isApproved)}
+            </p>
+          </div>
 
-        <div>
-          <p className={profileHeaderDetailsLabel}>
-            Clinics Count
-          </p>
-          <p className={profileHeaderDetailsValue}>
-            {doctor.clinics_count}
-          </p>
-        </div>
+          <div>
+            <p className={profileHeaderDetailsLabel}>
+              Rating
+            </p>
+            <p className={profileHeaderDetailsValue}>
+              {doctor.averageRating ? doctor.averageRating.toFixed(1) : "N/A"}
+            </p>
+          </div>
 
-        <div>
-          <p className={profileHeaderDetailsLabel}>
-            Initial Fee
-          </p>
-          <p className={profileHeaderDetailsValue}>
-            {formatCurrency(doctor.initialVisitFee)}
-          </p>
+          <div>
+            <p className={profileHeaderDetailsLabel}>
+              Clinics Count
+            </p>
+            <p className={profileHeaderDetailsValue}>
+              {doctor.clinics_count}
+            </p>
+          </div>
+
+          <div>
+            <p className={profileHeaderDetailsLabel}>
+              Initial Fee
+            </p>
+            <p className={profileHeaderDetailsValue}>
+              {formatCurrency(doctor.initialVisitFee)}
+            </p>
+          </div>
         </div>
       </div>
     </div>

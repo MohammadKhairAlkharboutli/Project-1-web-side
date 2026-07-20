@@ -1,13 +1,26 @@
+import { useState } from "react";
 import { Outlet, useParams } from "react-router-dom";
 
 import ProfileLayout from "@/components/shared/ProfileLayout";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import { doctors } from "../DoctorData";
 import DoctorProfileHeader from "./components/DoctorProfileHeader";
 import DoctorProfileNav from "./components/DoctorProfileNav";
+import { getDoctorDisplayName } from "./doctorUtils";
 
 export default function DoctorProfile() {
   const { doctorId } = useParams();
+  const [deactivateDoctorOpen, setDeactivateDoctorOpen] = useState(false);
   const doctor = doctors.find((item) => String(item.id) === doctorId);
 
   if (!doctor) {
@@ -23,12 +36,49 @@ export default function DoctorProfile() {
     );
   }
 
+  function closeDeactivateDoctorDialog() {
+    setDeactivateDoctorOpen(false);
+  }
+
   return (
-    <ProfileLayout
-      header={<DoctorProfileHeader doctor={doctor} />}
-      nav={<DoctorProfileNav doctorId={doctor.id} />}
-    >
-      <Outlet />
-    </ProfileLayout>
+    <>
+      <ProfileLayout
+        header={
+          <DoctorProfileHeader
+            doctor={doctor}
+            onDeactivateDoctor={() => setDeactivateDoctorOpen(true)}
+          />
+        }
+        nav={<DoctorProfileNav doctorId={doctor.id} />}
+      >
+        <Outlet />
+      </ProfileLayout>
+
+      <AlertDialog
+        open={deactivateDoctorOpen}
+        onOpenChange={setDeactivateDoctorOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deactivate doctor?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will prepare {getDoctorDisplayName(doctor)} to be marked as
+              inactive instead of deleting their account and related records.
+              Backend deactivation is not connected yet, so confirming only
+              closes this modal for now.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={closeDeactivateDoctorDialog}
+            >
+              Deactivate doctor
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

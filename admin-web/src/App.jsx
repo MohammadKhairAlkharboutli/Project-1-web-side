@@ -12,7 +12,9 @@ import PatientsPage from "./pages/Admin/Patients/PatientsPage";
 import PatientProfile from "./pages/Admin/Patients/PatientProfile";
 import PatientOverview from "./pages/Admin/Patients/PatientOverview";
 import PatientMedicalInfo from "./pages/Admin/Patients/PatientMedicalInfo";
+import PatientMedicalHistory from "./pages/Admin/Patients/PatientMedicalHistory";
 import PatientAppointments from "./pages/Admin/Patients/PatientAppointments";
+import PatientProfileLogs from "./pages/Admin/Patients/PatientProfileLogs";
 import SecretariesPage from "./pages/Admin/Secretaries/SecretariesPage";
 import SecretaryProfile from "./pages/Admin/Secretaries/SecretaryProfile";
 import SecretaryOverview from "./pages/Admin/Secretaries/SecretaryOverview";
@@ -63,7 +65,9 @@ function App() {
             <Route path=":patientId" element={<PatientProfile />}>
               <Route index element={<PatientOverview />} />
               <Route path="medical-info" element={<PatientMedicalInfo />} />
+              <Route path="medical-history" element={<PatientMedicalHistory />} />
               <Route path="appointments" element={<PatientAppointments />} />
+              <Route path="profile-logs" element={<PatientProfileLogs />} />
             </Route>
           </Route>
           <Route path="clinics">

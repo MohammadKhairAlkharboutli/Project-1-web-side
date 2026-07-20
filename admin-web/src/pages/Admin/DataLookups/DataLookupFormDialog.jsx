@@ -1,4 +1,7 @@
-import { useMemo, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMemo } from "react";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -31,6 +34,19 @@ const EMPTY_FORM = {
   parentId: "",
   isActive: true,
 };
+
+const lookupCategoryValues = LOOKUP_CATEGORIES.map((category) => category.value);
+
+const dataLookupFormSchema = z.object({
+  category: z.enum(lookupCategoryValues, {
+    error: "Category is required.",
+  }),
+  value: z.string().trim().min(1, "Value is required."),
+  labelEn: z.string().trim().min(1, "English label is required."),
+  labelAr: z.string().trim().min(1, "Arabic label is required."),
+  parentId: z.string(),
+  isActive: z.boolean(),
+});
 
 export default function DataLookupFormDialog({
   open,
@@ -71,6 +87,14 @@ function getInitialForm(lookup) {
   };
 }
 
+function FieldError({ message }) {
+  if (!message) {
+    return null;
+  }
+
+  return <span className="text-xs font-normal text-red-600">{message}</span>;
+}
+
 function DataLookupFormContent({
   mode,
   lookup,
@@ -78,45 +102,37 @@ function DataLookupFormContent({
   onOpenChange,
   onSubmit,
 }) {
-  const [form, setForm] = useState(() => getInitialForm(lookup));
+  const {
+    control,
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(dataLookupFormSchema),
+    defaultValues: getInitialForm(lookup),
+  });
+
+  const category = useWatch({ control, name: "category" });
+  const categoryField = register("category");
 
   const parentOptions = useMemo(
-    () => getEligibleParentLookups(form.category, lookups, lookup?.id),
-    [form.category, lookup?.id, lookups],
+    () => getEligibleParentLookups(category, lookups, lookup?.id),
+    [category, lookup?.id, lookups],
   );
 
   const hasParentOptions = parentOptions.length > 0;
 
-  function updateField(field, value) {
-    setForm((current) => ({
-      ...current,
-      [field]: value,
-    }));
-  }
-
-  function handleCategoryChange(category) {
-    setForm((current) => ({
-      ...current,
-      category,
-      parentId: "",
-    }));
-  }
-
-  function handleSubmit(event) {
-    event.preventDefault();
-
+  function submitLookup(formData) {
     onSubmit({
-      ...form,
-      value: form.value.trim(),
-      labelEn: form.labelEn.trim(),
-      labelAr: form.labelAr.trim(),
-      parentId: form.parentId ? Number(form.parentId) : null,
+      ...formData,
+      parentId: formData.parentId ? Number(formData.parentId) : null,
     });
   }
 
   return (
     <DialogContent className="sm:max-w-2xl">
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit(submitLookup)} noValidate>
         <DialogHeader>
           <DialogTitle>
             {mode === "edit" ? "Edit data lookup" : "Add data lookup"}
@@ -130,19 +146,23 @@ function DataLookupFormContent({
           <label className="grid gap-1.5 text-sm font-medium text-slate-700">
             Value
             <Input
-              value={form.value}
-              onChange={(event) => updateField("value", event.target.value)}
+              {...register("value")}
+              aria-invalid={Boolean(errors.value)}
               placeholder="ASTHMA"
-              required
             />
+            <FieldError message={errors.value?.message} />
           </label>
 
           <label className="grid gap-1.5 text-sm font-medium text-slate-700">
             Category
             <NativeSelect
               className="w-full"
-              value={form.category}
-              onChange={(event) => handleCategoryChange(event.target.value)}
+              aria-invalid={Boolean(errors.category)}
+              {...categoryField}
+              onChange={(event) => {
+                categoryField.onChange(event);
+                setValue("parentId", "");
+              }}
             >
               {LOOKUP_CATEGORIES.map((category) => (
                 <NativeSelectOption key={category.value} value={category.value}>
@@ -150,35 +170,35 @@ function DataLookupFormContent({
                 </NativeSelectOption>
               ))}
             </NativeSelect>
+            <FieldError message={errors.category?.message} />
           </label>
 
           <label className="grid gap-1.5 text-sm font-medium text-slate-700">
             English label
             <Input
-              value={form.labelEn}
-              onChange={(event) => updateField("labelEn", event.target.value)}
+              {...register("labelEn")}
+              aria-invalid={Boolean(errors.labelEn)}
               placeholder="Asthma"
-              required
             />
+            <FieldError message={errors.labelEn?.message} />
           </label>
 
           <label className="grid gap-1.5 text-sm font-medium text-slate-700">
             Arabic label
             <Input
-              value={form.labelAr}
-              onChange={(event) => updateField("labelAr", event.target.value)}
+              {...register("labelAr")}
+              aria-invalid={Boolean(errors.labelAr)}
               placeholder="Arabic display label"
-              required
             />
+            <FieldError message={errors.labelAr?.message} />
           </label>
 
           <label className="grid gap-1.5 text-sm font-medium text-slate-700">
             Parent
             <NativeSelect
               className="w-full"
-              value={form.parentId}
+              {...register("parentId")}
               disabled={!hasParentOptions}
-              onChange={(event) => updateField("parentId", event.target.value)}
             >
               <NativeSelectOption value="">
                 {hasParentOptions ? "No parent" : "No parent needed"}
@@ -204,9 +224,15 @@ function DataLookupFormContent({
                 Active options appear in normal forms.
               </p>
             </div>
-            <Switch
-              checked={form.isActive}
-              onCheckedChange={(checked) => updateField("isActive", checked)}
+            <Controller
+              control={control}
+              name="isActive"
+              render={({ field }) => (
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              )}
             />
           </div>
         </div>

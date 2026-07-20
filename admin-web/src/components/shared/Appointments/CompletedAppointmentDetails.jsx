@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import { Button } from "@/components/ui/button";
 
 import {
@@ -36,6 +38,10 @@ function formatRating(rating) {
 }
 
 export default function CompletedAppointmentDetails({ appointment }) {
+  const medicalHistoryPath = appointment?.patientId
+    ? `/admin/patients/${appointment.patientId}/medical-history?appointmentId=${appointment.id}`
+    : null;
+
   return (
     <div className="space-y-4">
       <AppointmentInfoGrid>
@@ -57,9 +63,15 @@ export default function CompletedAppointmentDetails({ appointment }) {
         <AppointmentTextItem label="Rating Comment" value={appointment.rating?.comment} />
       </AppointmentInfoGrid>
 
-      <Button variant="outline" disabled>
-        View medical history record
-      </Button>
+      {medicalHistoryPath ? (
+        <Button variant="outline" asChild>
+          <Link to={medicalHistoryPath}>View medical history record</Link>
+        </Button>
+      ) : (
+        <Button variant="outline" disabled>
+          View medical history record
+        </Button>
+      )}
     </div>
   );
 }

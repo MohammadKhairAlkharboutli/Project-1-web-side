@@ -1,4 +1,4 @@
-import { MapPin, Star } from "lucide-react";
+import { MapPin, Pencil, PowerOff, Star } from "lucide-react";
 
 import {
   profileHeaderDetailsLabel,
@@ -6,13 +6,18 @@ import {
   profileHeaderDetailsValue,
 } from "@/components/shared/styles";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   formatClinicRating,
   formatClinicStatus,
   getClinicStatusVariant,
 } from "../clinicUtils";
 
-export default function ClinicProfileHeader({ clinic }) {
+export default function ClinicProfileHeader({
+  clinic,
+  onEditClinic,
+  onDeactivateClinic,
+}) {
   return (
     <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
       <div className="space-y-4">
@@ -44,25 +49,41 @@ export default function ClinicProfileHeader({ clinic }) {
         </div>
       </div>
 
-      <div
-        className={`${profileHeaderDetailsShell} sm:grid-cols-2 md:min-w-72 md:grid-cols-2`}
-      >
-        <div>
-          <p className={profileHeaderDetailsLabel}>
-            Clinic ID
-          </p>
-          <p className={profileHeaderDetailsValue}>
-            {clinic.id}
-          </p>
+      <div className="flex flex-col gap-3 md:items-end">
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button variant="outline" onClick={onEditClinic}>
+            <Pencil className="h-4 w-4" />
+            Edit clinic info
+          </Button>
+
+          {clinic.status !== "closed" && (
+            <Button variant="destructive" onClick={onDeactivateClinic}>
+              <PowerOff className="h-4 w-4" />
+              Deactivate clinic
+            </Button>
+          )}
         </div>
 
-        <div>
-          <p className={profileHeaderDetailsLabel}>
-            Status
-          </p>
-          <p className={profileHeaderDetailsValue}>
-            {formatClinicStatus(clinic.status)}
-          </p>
+        <div
+          className={`${profileHeaderDetailsShell} sm:grid-cols-2 md:min-w-72 md:grid-cols-2`}
+        >
+          <div>
+            <p className={profileHeaderDetailsLabel}>
+              Clinic ID
+            </p>
+            <p className={profileHeaderDetailsValue}>
+              {clinic.id}
+            </p>
+          </div>
+
+          <div>
+            <p className={profileHeaderDetailsLabel}>
+              Status
+            </p>
+            <p className={profileHeaderDetailsValue}>
+              {formatClinicStatus(clinic.status)}
+            </p>
+          </div>
         </div>
       </div>
     </div>

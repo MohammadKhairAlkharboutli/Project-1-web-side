@@ -1,9 +1,11 @@
 import { useParams } from "react-router-dom";
 
+import PrescriptionCard from "@/components/shared/Prescriptions/PrescriptionCard";
 import {
   profileCardLabel,
   profileCardShell,
   profileCardValue,
+  sharedEmptyStateShell,
 } from "@/components/shared/styles";
 
 import { patients } from "../PatientData";
@@ -16,6 +18,8 @@ export default function PatientMedicalInfo() {
   if (!patient) {
     return null;
   }
+
+  const profileMedicines = patient.prescribedMedicines?.profileMedicines || [];
 
   return (
     <div className="space-y-6">
@@ -106,6 +110,31 @@ export default function PatientMedicalInfo() {
           </p>
         </div>
       </div>
+
+      <section className="space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold tracking-tight text-slate-900">
+            Current Medications
+          </h3>
+          <p className="mt-1 text-sm text-slate-600">
+            Profile-level medicines currently associated with this patient.
+          </p>
+        </div>
+
+        {profileMedicines.length > 0 ? (
+          <div className="grid gap-4 xl:grid-cols-2">
+            {profileMedicines.map((medicine) => (
+              <PrescriptionCard key={medicine.id} medicine={medicine} />
+            ))}
+          </div>
+        ) : (
+          <div className={`${sharedEmptyStateShell} p-5`}>
+            <p className="text-sm font-medium text-slate-700">
+              No current medications.
+            </p>
+          </div>
+        )}
+      </section>
     </div>
   );
 }

@@ -32,6 +32,7 @@ export default function DataTable({
   emptyMessage = "No results found.",
   toolbar,
   initialPageSize = 10,
+  initialColumnFilters = [],
   pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
   rowClassName,
 }) {
@@ -48,6 +49,9 @@ export default function DataTable({
   const table = useReactTable({
     data,
     columns,
+    initialState: {
+      columnFilters: initialColumnFilters,
+    },
 
     state: {
       sorting,
