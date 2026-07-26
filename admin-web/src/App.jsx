@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Navigate, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Admin/Dashboard";
 import DoctorsPage from "./pages/Admin/Doctors/DoctorsPage";
 import DoctorProfile from "./pages/Admin/Doctors/DoctorProfile";
@@ -22,6 +22,7 @@ import StatisticsPage from "./pages/Admin/Statistics/StatisticsPage";
 import ScheduleChangeRequestsPage from "./pages/Admin/ScheduleChangeRequests/ScheduleChangeRequestsPage";
 import DataLookupsPage from "./pages/Admin/DataLookups/DataLookupsPage";
 import SystemPoliciesPage from "./pages/Admin/SystemPolicies/SystemPoliciesPage";
+import AdminProfilePage from "./pages/Admin/AdminProfilePage";
 import AdminPageLayout from "./pages/AdminPageLayout";
 import LoginPage from "./pages/LoginPage";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -93,6 +94,8 @@ function App() {
           <Route path="schedule-change-requests" element={<ScheduleChangeRequestsPage />} />
           <Route path="data-lookups" element={<DataLookupsPage />} />
           <Route path="system-policies" element={<SystemPoliciesPage />} />
+          <Route path="profile" element={<AdminProfilePage />} />
+          <Route path="settings" element={<Navigate to="/admin/profile" replace />} />
         </Route>
 
         <Route path="/doctor" element={<DoctorPageLayout />}>

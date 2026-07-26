@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { format } from "date-fns";
 import { useSearchParams } from "react-router-dom";
 
 import { AlertCircle } from "lucide-react";
 
+import { appointmentsApi } from "@/api/appointmentsApi";
 import { clinicsApi } from "@/api/clinicsApi";
 import { doctorsApi } from "@/api/doctorsApi";
 import { queueApi } from "@/api/queueApi";
@@ -13,20 +15,20 @@ import {
   getHistoryQueueColumns,
 } from "./AdminQueueColumns";
 import AdminQueueToolbar from "./AdminQueueToolbar";
+import CheckInCandidates from "./CheckInCandidates";
 import MoveQueueDialog from "./MoveQueueDialog";
 import SkipQueueDialog from "./SkipQueueDialog";
 import {
+  QUEUE_STATUS,
+  getPatientNameFromAppointment,
   isActiveQueueItem,
   isHistoryQueueItem,
   sortQueueByPosition,
 } from "./queueUtils";
 
 function getErrorMessage(error, fallback) {
-  return (
-    error?.response?.data?.message ||
-    error?.message ||
-    fallback
-  );
+  const message = error?.response?.data?.message || error?.message || fallback;
+  return Array.isArray(message) ? message.join(" ") : message;
 }
 
 export default function AdminQueuePage() {
@@ -34,6 +36,7 @@ export default function AdminQueuePage() {
   const [clinics, setClinics] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [queueItems, setQueueItems] = useState([]);
+  const [appointments, setAppointments] = useState([]);
 
   const [selectedClinicId, setSelectedClinicId] = useState(
     searchParams.get("clinicId") ?? "",
@@ -42,40 +45,58 @@ export default function AdminQueuePage() {
     searchParams.get("doctorId") ?? "",
   );
   const [selectedView, setSelectedView] = useState("active");
+  const [candidateSearch, setCandidateSearch] = useState("");
 
   const [loadingLookups, setLoadingLookups] = useState(false);
   const [loadingDoctors, setLoadingDoctors] = useState(false);
   const [loadingQueue, setLoadingQueue] = useState(false);
+  const [loadingAppointments, setLoadingAppointments] = useState(false);
   const [lookupError, setLookupError] = useState("");
   const [queueError, setQueueError] = useState("");
 
   const [moveItem, setMoveItem] = useState(null);
   const [skipItem, setSkipItem] = useState(null);
+  const [checkingInId, setCheckingInId] = useState(null);
   const [actionError, setActionError] = useState("");
   const [submittingAction, setSubmittingAction] = useState(false);
 
-  const loadQueueForSelection = useCallback(async (clinicId, doctorId) => {
-    if (!clinicId || !doctorId) {
+  const today = useMemo(() => format(new Date(), "yyyy-MM-dd"), []);
+
+  const loadDeskData = useCallback(async () => {
+    if (!selectedClinicId || !selectedDoctorId) {
       setQueueItems([]);
+      setAppointments([]);
       return;
     }
 
     setLoadingQueue(true);
+    setLoadingAppointments(true);
     setQueueError("");
 
     try {
-      const data = await queueApi.getAdminLiveQueue({
-        clinicId,
-        doctorId,
-      });
+      const [queueData, appointmentData] = await Promise.all([
+        queueApi.getAdminLiveQueue({
+          clinicId: selectedClinicId,
+          doctorId: selectedDoctorId,
+        }),
+        appointmentsApi.getAdminAppointments({
+          clinicId: selectedClinicId,
+          doctorId: selectedDoctorId,
+          status: "confirmed",
+          from: today,
+          to: today,
+        }),
+      ]);
 
-      setQueueItems(Array.isArray(data) ? data : []);
+      setQueueItems(Array.isArray(queueData) ? queueData : []);
+      setAppointments(Array.isArray(appointmentData) ? appointmentData : []);
     } catch (error) {
-      setQueueError(getErrorMessage(error, "Could not load queue."));
+      setQueueError(getErrorMessage(error, "Could not load the queue desk."));
     } finally {
       setLoadingQueue(false);
+      setLoadingAppointments(false);
     }
-  }, []);
+  }, [selectedClinicId, selectedDoctorId, today]);
 
   useEffect(() => {
     let isMounted = true;
@@ -126,10 +147,6 @@ export default function AdminQueuePage() {
         if (isMounted) {
           setDoctors(Array.isArray(data) ? data : []);
         }
-
-        if (selectedDoctorId) {
-          await loadQueueForSelection(selectedClinicId, selectedDoctorId);
-        }
       } catch (error) {
         if (isMounted) {
           setLookupError(getErrorMessage(error, "Could not load doctors."));
@@ -147,23 +164,38 @@ export default function AdminQueuePage() {
     return () => {
       isMounted = false;
     };
-  }, [loadQueueForSelection, selectedClinicId, selectedDoctorId]);
+  }, [selectedClinicId]);
 
-  const loadQueue = useCallback(async () => {
-    await loadQueueForSelection(selectedClinicId, selectedDoctorId);
-  }, [loadQueueForSelection, selectedClinicId, selectedDoctorId]);
+  useEffect(() => {
+    const timeoutId = window.setTimeout(loadDeskData, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [loadDeskData]);
 
   useEffect(() => {
     if (!selectedClinicId || !selectedDoctorId) {
       return undefined;
     }
 
-    const intervalId = window.setInterval(() => {
-      loadQueue();
-    }, 10000);
-
+    const intervalId = window.setInterval(loadDeskData, 10000);
     return () => window.clearInterval(intervalId);
-  }, [loadQueue, selectedClinicId, selectedDoctorId]);
+  }, [loadDeskData, selectedClinicId, selectedDoctorId]);
+
+  const checkInCandidates = useMemo(() => {
+    const normalizedSearch = candidateSearch.trim().toLowerCase();
+
+    return appointments
+      .filter((appointment) => !appointment.checkinTime && !appointment.queue)
+      .filter((appointment) => {
+        if (!normalizedSearch) {
+          return true;
+        }
+
+        return getPatientNameFromAppointment(appointment)
+          .toLowerCase()
+          .includes(normalizedSearch);
+      })
+      .sort((left, right) => String(left.startTime).localeCompare(String(right.startTime)));
+  }, [appointments, candidateSearch]);
 
   const displayedQueueItems = useMemo(() => {
     const filteredItems =
@@ -173,6 +205,15 @@ export default function AdminQueuePage() {
 
     return sortQueueByPosition(filteredItems);
   }, [queueItems, selectedView]);
+
+  const waitingPositions = useMemo(
+    () =>
+      queueItems
+        .filter((queueItem) => queueItem.status === QUEUE_STATUS.WAITING)
+        .map((queueItem) => Number(queueItem.position))
+        .sort((left, right) => left - right),
+    [queueItems],
+  );
 
   const activeColumns = useMemo(
     () =>
@@ -195,15 +236,32 @@ export default function AdminQueuePage() {
   function handleClinicChange(clinicId) {
     setSelectedClinicId(clinicId);
     setSelectedDoctorId("");
+    setCandidateSearch("");
     setQueueItems([]);
+    setAppointments([]);
     setQueueError("");
   }
 
   function handleDoctorChange(doctorId) {
     setSelectedDoctorId(doctorId);
+    setCandidateSearch("");
     setQueueItems([]);
+    setAppointments([]);
     setQueueError("");
-    loadQueueForSelection(selectedClinicId, doctorId);
+  }
+
+  async function handleCheckIn(appointment) {
+    setCheckingInId(appointment.id);
+    setActionError("");
+
+    try {
+      await queueApi.checkInPatient(appointment.id);
+      await loadDeskData();
+    } catch (error) {
+      setActionError(getErrorMessage(error, "Could not check in this patient."));
+    } finally {
+      setCheckingInId(null);
+    }
   }
 
   async function handleMoveQueue(newPosition) {
@@ -217,7 +275,7 @@ export default function AdminQueuePage() {
     try {
       await queueApi.reorderQueue(moveItem.id, newPosition);
       setMoveItem(null);
-      await loadQueue();
+      await loadDeskData();
     } catch (error) {
       setActionError(getErrorMessage(error, "Could not move queue item."));
     } finally {
@@ -236,7 +294,7 @@ export default function AdminQueuePage() {
     try {
       await queueApi.skipQueue(skipItem.id);
       setSkipItem(null);
-      await loadQueue();
+      await loadDeskData();
     } catch (error) {
       setActionError(getErrorMessage(error, "Could not skip patient."));
     } finally {
@@ -244,7 +302,7 @@ export default function AdminQueuePage() {
     }
   }
 
-  const emptyMessage = !selectedClinicId
+  const queueEmptyMessage = !selectedClinicId
     ? "Select a clinic to view the queue."
     : !selectedDoctorId
       ? "Select a doctor to view the queue."
@@ -258,10 +316,10 @@ export default function AdminQueuePage() {
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-          Queue
+          Queue desk
         </h1>
         <p className="mt-1 text-sm text-slate-600">
-          View today&apos;s queue for one clinic and doctor at a time.
+          Check in today&apos;s patients and manage the live queue for one doctor at a time.
         </p>
       </div>
 
@@ -271,32 +329,52 @@ export default function AdminQueuePage() {
         selectedClinicId={selectedClinicId}
         selectedDoctorId={selectedDoctorId}
         selectedView={selectedView}
-        loading={loadingQueue}
+        loading={loadingQueue || loadingAppointments}
         loadingLookups={loadingLookups || loadingDoctors}
         onClinicChange={handleClinicChange}
         onDoctorChange={handleDoctorChange}
         onViewChange={setSelectedView}
-        onRefresh={loadQueue}
+        onRefresh={loadDeskData}
       />
 
-      {(lookupError || queueError) && (
+      {(lookupError || queueError || actionError) && (
         <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>{lookupError || queueError}</span>
+          <span>{lookupError || queueError || actionError}</span>
         </div>
       )}
 
-      <DataTable
-        columns={columns}
-        data={displayedQueueItems}
-        emptyMessage={emptyMessage}
-        initialPageSize={10}
-        rowClassName="h-16"
+      <CheckInCandidates
+        appointments={checkInCandidates}
+        searchTerm={candidateSearch}
+        loading={loadingAppointments}
+        checkingInId={checkingInId}
+        selectedClinicId={selectedClinicId}
+        selectedDoctorId={selectedDoctorId}
+        onSearchChange={setCandidateSearch}
+        onCheckIn={handleCheckIn}
       />
+
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">Live queue</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Queue positions are shown together—there are no pages to click through.
+          </p>
+        </div>
+        <DataTable
+          columns={columns}
+          data={displayedQueueItems}
+          emptyMessage={queueEmptyMessage}
+          pagination={false}
+          rowClassName="h-16"
+        />
+      </section>
 
       {moveItem && (
         <MoveQueueDialog
           queueItem={moveItem}
+          availablePositions={waitingPositions}
           open={Boolean(moveItem)}
           submitting={submittingAction}
           error={actionError}

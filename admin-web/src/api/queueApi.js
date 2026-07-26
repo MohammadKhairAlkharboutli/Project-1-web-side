@@ -1,57 +1,33 @@
-import { mockQueueItems } from "@/pages/Admin/Queue/mockQueueData";
-
-let queueItems = [...mockQueueItems];
+import axiosClient from "./axiosClient";
 
 export const queueApi = {
   async getAdminLiveQueue(filters = {}) {
-    return queueItems.filter((queueItem) => {
-      const matchesClinic =
-        !filters.clinicId || Number(queueItem.clinicId) === Number(filters.clinicId);
-      const matchesDoctor =
-        !filters.doctorId || Number(queueItem.doctorId) === Number(filters.doctorId);
-
-      return matchesClinic && matchesDoctor;
+    const { data } = await axiosClient.get("/queues/admin/live", {
+      params: filters,
     });
+
+    return data;
+  },
+
+  async checkInPatient(appointmentId) {
+    const { data } = await axiosClient.patch(
+      `/queues/check-in/${appointmentId}`,
+    );
+
+    return data;
   },
 
   async skipQueue(queueId) {
-    const now = new Date().toISOString();
-    let updatedQueueItem = null;
+    const { data } = await axiosClient.patch(`/queues/${queueId}/skip`);
 
-    queueItems = queueItems.map((queueItem) => {
-      if (Number(queueItem.id) !== Number(queueId)) {
-        return queueItem;
-      }
-
-      updatedQueueItem = {
-        ...queueItem,
-        status: "skipped",
-        updated_at: now,
-      };
-
-      return updatedQueueItem;
-    });
-
-    return updatedQueueItem;
+    return data;
   },
 
   async reorderQueue(queueId, newPosition) {
-    let updatedQueueItem = null;
-
-    queueItems = queueItems.map((queueItem) => {
-      if (Number(queueItem.id) !== Number(queueId)) {
-        return queueItem;
-      }
-
-      updatedQueueItem = {
-        ...queueItem,
-        position: newPosition,
-        updated_at: new Date().toISOString(),
-      };
-
-      return updatedQueueItem;
+    const { data } = await axiosClient.patch(`/queues/${queueId}/re-order`, {
+      newPosition,
     });
 
-    return updatedQueueItem;
+    return data;
   },
 };

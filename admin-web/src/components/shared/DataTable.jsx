@@ -35,6 +35,7 @@ export default function DataTable({
   initialColumnFilters = [],
   pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
   rowClassName,
+  pagination: paginationEnabled = true,
 }) {
   const [sorting, setSorting] = useState([]);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -66,7 +67,9 @@ export default function DataTable({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    getPaginationRowModel: paginationEnabled
+      ? getPaginationRowModel()
+      : undefined,
   });
 
   return (
@@ -132,40 +135,42 @@ export default function DataTable({
         </Table>
       </div>
 
-      <div className="flex items-center justify-end gap-3">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>Rows per page</span>
-          <NativeSelect
-            className="w-20"
-            value={String(table.getState().pagination.pageSize)}
-            onChange={(event) => table.setPageSize(Number(event.target.value))}
+      {paginationEnabled && (
+        <div className="flex items-center justify-end gap-3">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>Rows per page</span>
+            <NativeSelect
+              className="w-20"
+              value={String(table.getState().pagination.pageSize)}
+              onChange={(event) => table.setPageSize(Number(event.target.value))}
+            >
+              {normalizedPageSizeOptions.map((option) => (
+                <NativeSelectOption key={option} value={String(option)}>
+                  {option}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
           >
-            {normalizedPageSizeOptions.map((option) => (
-              <NativeSelectOption key={option} value={String(option)}>
-                {option}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
+            Previous
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            Next
+          </Button>
         </div>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          Previous
-        </Button>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          Next
-        </Button>
-      </div>
+      )}
     </div>
   );
 }

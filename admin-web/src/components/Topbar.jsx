@@ -1,9 +1,10 @@
 import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, Moon, User, Settings, LogOut } from "lucide-react";
+import { ChevronDown, User, LogOut } from "lucide-react";
 import Dropdown from "./old-UI/Dropdown";
 import DropdownItem from "./old-UI/DropdownItem";
 import { authApi } from "../api/authApi";
+import { useAdminAccount } from "@/context/AdminAccountContext";
 
 function getPageTitle(pathname) {
   if (pathname === "/admin") {
@@ -30,13 +31,26 @@ function getPageTitle(pathname) {
     return "Clinics";
   }
 
+  if (pathname.startsWith("/admin/profile")) {
+    return "My Profile";
+  }
+
   return "";
 }
 
 const Topbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { account, avatarUrl } = useAdminAccount();
   const title = getPageTitle(location.pathname);
+  const adminName = [account?.firstName, account?.lastName]
+    .filter(Boolean)
+    .join(" ") || "Administrator";
+  const initials = [account?.firstName, account?.lastName]
+    .filter(Boolean)
+    .map((name) => name.trim()[0])
+    .join("")
+    .toUpperCase() || "A";
 
   async function handleLogout() {
     try {
@@ -55,13 +69,6 @@ const Topbar = () => {
       </div>
 
       <div className="flex items-center gap-3">
-        <button
-          type="button"
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
-        >
-          <Moon size={19} />
-        </button>
-
         <Dropdown
           align="right"
           width="w-44"
@@ -70,29 +77,26 @@ const Topbar = () => {
               type="button"
               className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition hover:bg-slate-100"
             >
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-primary)] text-sm font-semibold text-white">
-                A
-              </div>
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="h-9 w-9 rounded-full object-cover ring-1 ring-slate-200" />
+              ) : (
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-primary)] text-sm font-semibold text-white">
+                  {initials}
+                </div>
+              )}
 
               <span className="hidden text-sm font-medium text-slate-700 sm:inline">
-                Admin User
+                {adminName}
               </span>
 
               <ChevronDown size={16} className="text-slate-400" />
             </button>
           }
         >
-          <DropdownItem onClick={() => navigate("/profile")}>
+          <DropdownItem onClick={() => navigate("/admin/profile")}>
             <span className="flex items-center gap-2">
               <User size={16} />
               Profile
-            </span>
-          </DropdownItem>
-
-          <DropdownItem onClick={() => navigate("/settings")}>
-            <span className="flex items-center gap-2">
-              <Settings size={16} />
-              Settings
             </span>
           </DropdownItem>
 

@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,7 +7,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
 
 import { getPatientNameFromQueueItem } from "./queueUtils";
 
@@ -18,26 +19,16 @@ export default function MoveQueueDialog({
   open,
   submitting,
   error,
+  availablePositions,
   onOpenChange,
   onSubmit,
 }) {
-  const [newPosition, setNewPosition] = useState(String(queueItem?.position ?? 1));
+  const newPosition = String(queueItem?.position ?? "");
 
   function handleSubmit(event) {
     event.preventDefault();
-
-    const parsedPosition = Number(newPosition);
-
-    if (!Number.isInteger(parsedPosition) || parsedPosition < 1) {
-      return;
-    }
-
-    onSubmit(parsedPosition);
+    onSubmit(Number(event.currentTarget.newPosition.value));
   }
-
-  const isInvalid =
-    newPosition !== "" &&
-    (!Number.isInteger(Number(newPosition)) || Number(newPosition) < 1);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -53,20 +44,17 @@ export default function MoveQueueDialog({
           <div className="space-y-2 px-5 py-4">
             <label className="space-y-1.5 text-sm font-medium text-slate-700">
               <span>New position</span>
-              <Input
-                type="number"
-                min="1"
-                step="1"
-                value={newPosition}
-                onChange={(event) => setNewPosition(event.target.value)}
-                aria-invalid={isInvalid}
-              />
+              <NativeSelect name="newPosition" defaultValue={newPosition}>
+                {availablePositions.map((position) => (
+                  <NativeSelectOption key={position} value={String(position)}>
+                    Position #{position}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
             </label>
-            {isInvalid && (
-              <p className="text-sm text-red-600">
-                Position must be a whole number greater than zero.
-              </p>
-            )}
+            <p className="text-sm text-slate-500">
+              Only waiting patients can be reordered. Called and in-consultation patients stay locked.
+            </p>
             {error && <p className="text-sm text-red-600">{error}</p>}
           </div>
 
@@ -79,7 +67,7 @@ export default function MoveQueueDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={submitting || isInvalid || !newPosition}>
+            <Button type="submit" disabled={submitting || !newPosition}>
               {submitting ? "Moving..." : "Move"}
             </Button>
           </DialogFooter>

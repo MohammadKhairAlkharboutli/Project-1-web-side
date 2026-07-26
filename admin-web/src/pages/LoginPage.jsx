@@ -2,7 +2,7 @@ import { useState } from "react";
 import Button from "../components/old-UI/Button";
 import { boxShadow, inputBase, labelBase } from "../components/old-UI/SurfaceStyles";
 import { authApi } from "../api/authApi";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 
    //checking if the email is an email same for phone number
@@ -28,6 +28,7 @@ const LoginPage = () => {
     const [error,setError]=useState("")               //the error stop execution and is shown in condition renedering
 
     const navigate=useNavigate();
+    const location = useLocation();
 
  
 
@@ -87,7 +88,7 @@ async  function handleSubmit(event) {
             return;
         }
 
-        navigate("/",{replace:true})
+        navigate("/admin",{replace:true})
 
 
         console.log(response);
@@ -138,9 +139,15 @@ async  function handleSubmit(event) {
               />
             </div>
 
-             {error && (
+            {error && (
               <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
                 {error}
+              </p>
+            )}
+
+            {location.state?.passwordChanged && !error && (
+              <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                Password changed successfully. Please sign in again.
               </p>
             )}
 

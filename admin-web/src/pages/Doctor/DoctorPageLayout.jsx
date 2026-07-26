@@ -4,7 +4,6 @@ import {
   ChevronDown,
   LayoutDashboard,
   LogOut,
-  Moon,
   Settings,
   Stethoscope,
   User,
@@ -93,15 +92,6 @@ export default function DoctorPageLayout() {
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-lg"
-              aria-label="Toggle theme"
-            >
-              <Moon size={19} />
-            </Button>
-
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button

@@ -1,10 +1,11 @@
-import React from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import Topbar from '../components/Topbar'
 import Foot from '../components/Foot'
+import { AdminAccountProvider } from '../context/AdminAccountContext'
 const AdminPageLayout = () => {
   return (
+    <AdminAccountProvider>
     <div className='flex min-h-screen bg-gray-200' >
         <Sidebar></Sidebar>
 
@@ -20,6 +21,7 @@ const AdminPageLayout = () => {
 
 
     </div>
+    </AdminAccountProvider>
   )
 }
 
