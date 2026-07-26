@@ -1,0 +1,202 @@
+import { useParams } from "react-router-dom";
+
+import {
+  profileCardBody,
+  profileCardLabel,
+  profileCardShell,
+  profileCardValue,
+} from "@/components/shared/styles";
+
+import { doctors } from "../DoctorData";
+import {
+  formatCurrency,
+  formatDoctorStatus,
+  formatEnumLabel,
+  formatLanguagesSpoken,
+} from "./doctorUtils";
+
+export default function DoctorOverview() {
+  const { doctorId } = useParams();
+  const doctor = doctors.find((item) => String(item.id) === doctorId);
+
+  if (!doctor) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-semibold tracking-tight text-slate-900">
+          Overview
+        </h2>
+        <p className="mt-1 text-sm text-slate-600">
+          Backend-aligned doctor information for the profile view.
+        </p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className={profileCardShell}>
+          <p className={profileCardLabel}>
+            Specialization
+          </p>
+          <p className={profileCardValue}>
+            {doctor.specialization}
+          </p>
+        </div>
+
+        <div className={profileCardShell}>
+          <p className={profileCardLabel}>
+            Sub-specialization
+          </p>
+          <p className={profileCardValue}>
+            {doctor.subSpecialization || "N/A"}
+          </p>
+        </div>
+
+        <div className={profileCardShell}>
+          <p className={profileCardLabel}>
+            Experience
+          </p>
+          <p className={profileCardValue}>
+            {doctor.experienceYears} years
+          </p>
+        </div>
+
+        <div className={profileCardShell}>
+          <p className={profileCardLabel}>
+            License Number
+          </p>
+          <p className={profileCardValue}>
+            {doctor.licenseNumber}
+          </p>
+        </div>
+
+        <div className={profileCardShell}>
+          <p className={profileCardLabel}>
+            Status
+          </p>
+          <p className={profileCardValue}>
+            {formatDoctorStatus(doctor.status)}
+          </p>
+        </div>
+
+        <div className={profileCardShell}>
+          <p className={profileCardLabel}>
+            Approval
+          </p>
+          <p className={profileCardValue}>
+            {doctor.isApproved ? "Approved" : "Pending Approval"}
+          </p>
+        </div>
+
+        <div className={profileCardShell}>
+          <p className={profileCardLabel}>
+            Rating
+          </p>
+          <p className={profileCardValue}>
+            {doctor.averageRating ? doctor.averageRating.toFixed(1) : "N/A"}
+          </p>
+        </div>
+
+        <div className={profileCardShell}>
+          <p className={profileCardLabel}>
+            Languages Spoken
+          </p>
+          <p className={profileCardValue}>
+            {formatLanguagesSpoken(doctor.languagesSpoken)}
+          </p>
+        </div>
+
+        <div className={profileCardShell}>
+          <p className={profileCardLabel}>
+            Clinics Count
+          </p>
+          <p className={profileCardValue}>
+            {doctor.clinics_count}
+          </p>
+        </div>
+
+        <div className={profileCardShell}>
+          <p className={profileCardLabel}>
+            Initial Visit Fee
+          </p>
+          <p className={profileCardValue}>
+            {formatCurrency(doctor.initialVisitFee)}
+          </p>
+        </div>
+
+        <div className={profileCardShell}>
+          <p className={profileCardLabel}>
+            Return Visit Fee
+          </p>
+          <p className={profileCardValue}>
+            {formatCurrency(doctor.returnVisitFee)}
+          </p>
+        </div>
+
+        <div className={profileCardShell}>
+          <p className={profileCardLabel}>
+            Gender
+          </p>
+          <p className={profileCardValue}>
+            {formatEnumLabel(doctor.user.gender)}
+          </p>
+        </div>
+
+        <div className={profileCardShell}>
+          <p className={profileCardLabel}>
+            Age
+          </p>
+          <p className={profileCardValue}>
+            {doctor.user.age}
+          </p>
+        </div>
+
+        <div className={profileCardShell}>
+          <p className={profileCardLabel}>
+            Preferred Language
+          </p>
+          <p className={profileCardValue}>
+            {doctor.user.preferredLanguage}
+          </p>
+        </div>
+
+        <div className={profileCardShell}>
+          <p className={profileCardLabel}>
+            Email
+          </p>
+          <p className={profileCardValue}>
+            {doctor.user.email}
+          </p>
+        </div>
+
+        <div className={profileCardShell}>
+          <p className={profileCardLabel}>
+            Phone
+          </p>
+          <p className={profileCardValue}>
+            {doctor.user.phone}
+          </p>
+        </div>
+
+        <div className={`${profileCardShell} md:col-span-2 xl:col-span-3`}>
+          <p className={profileCardLabel}>
+            Address
+          </p>
+          <p className={profileCardValue}>
+            {doctor.user.address}
+          </p>
+        </div>
+
+        <div className={`${profileCardShell} md:col-span-2 xl:col-span-3`}>
+          <p className={profileCardLabel}>
+            Bio
+          </p>
+          <p className={profileCardBody}>
+            {doctor.bio}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
