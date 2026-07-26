@@ -1,183 +1,234 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Cell,
+  Label,
+  Pie,
+  PieChart,
+  XAxis,
+  YAxis,
+} from "recharts";
 import {
   ArrowRight,
   CalendarClock,
   CalendarDays,
-  Database,
-  Flag,
+  CircleDollarSign,
+  ClipboardList,
   Hospital,
   ListOrdered,
-  Scale,
   Star,
   Stethoscope,
   Users,
+  UserPlus,
 } from "lucide-react";
 
+import axiosClient from "@/api/axiosClient";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  formatRatingDate,
-  getCommentPreview,
-  getRatingDoctorName,
-  getReportReasonLabel,
-} from "@/components/shared/Ratings/ratingUtils";
-import { mockRatingReports } from "@/components/shared/Ratings/mockRatingData";
-import { mockAppointments } from "@/components/shared/Appointments/mockAppointmentData";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
-import { clinics } from "./ClinicData";
-import { doctors } from "./DoctorData";
-import {
-  formatClinicStatus,
-  getClinicStatusVariant,
-} from "./Clinics/clinicUtils";
-import {
-  formatDoctorStatus,
-  getDoctorDisplayName,
-} from "./Doctors/doctorUtils";
-import { mockScheduleChangeRequests } from "./ScheduleChangeRequests/mockScheduleChangeRequests";
-
-const DAY_NAMES = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
+const RANGE_OPTIONS = [
+  { value: "7d", label: "7 days" },
+  { value: "30d", label: "30 days" },
+  { value: "12m", label: "12 months" },
 ];
 
-function getScheduleGroupKey(request) {
-  return [
-    request.doctorProfileId,
-    request.clinicId,
-    request.dayOfWeek,
-  ].join("-");
-}
-
-function getDoctorById(doctorId) {
-  return doctors.find((doctor) => Number(doctor.id) === Number(doctorId));
-}
-
-function getClinicById(clinicId) {
-  return clinics.find((clinic) => Number(clinic.id) === Number(clinicId));
-}
-
-function getAppointmentDayOfWeek(appointment) {
-  return new Date(`${appointment.requestedDate}T00:00:00`).getDay();
-}
-
-function countAffectedAppointments(group) {
-  return mockAppointments.filter((appointment) => {
-    const sameDoctor = Number(appointment.doctorId) === Number(group.doctor.id);
-    const sameClinic = Number(appointment.clinicId) === Number(group.clinic.id);
-    const sameDay = getAppointmentDayOfWeek(appointment) === group.dayOfWeek;
-
-    return appointment.status === "confirmed" && sameDoctor && sameClinic && sameDay;
-  }).length;
-}
-
-function buildPendingScheduleGroups() {
-  const groupsByKey = new Map();
-
-  mockScheduleChangeRequests
-    .filter((request) => request.status === "PENDING")
-    .forEach((request) => {
-      const key = getScheduleGroupKey(request);
-      const currentGroup = groupsByKey.get(key);
-
-      if (currentGroup) {
-        currentGroup.slots.push(request);
-        return;
-      }
-
-      const doctor = getDoctorById(request.doctorProfileId) || {
-        id: request.doctorProfileId,
-        user: { full_name: "Unknown doctor" },
-      };
-      const clinic = getClinicById(request.clinicId) || {
-        id: request.clinicId,
-        name: "Unknown clinic",
-      };
-
-      groupsByKey.set(key, {
-        key,
-        doctor,
-        clinic,
-        dayOfWeek: request.dayOfWeek,
-        slots: [request],
-      });
-    });
-
-  return Array.from(groupsByKey.values()).map((group) => ({
-    ...group,
-    affectedAppointmentsCount: countAffectedAppointments(group),
-  }));
-}
-
-function formatSlotTime(value) {
-  return String(value || "").slice(0, 5) || "N/A";
-}
-
-function pluralize(count, singular, plural = `${singular}s`) {
-  return `${count} ${count === 1 ? singular : plural}`;
-}
-
-const pendingScheduleGroups = buildPendingScheduleGroups();
-const pendingRatingReports = mockRatingReports.filter(
-  (report) => report.status === "pending",
-);
-const clinicStatusIssues = clinics.filter((clinic) => clinic.status !== "active");
-const doctorStatusIssues = doctors.filter(
-  (doctor) => doctor.status !== "ACTIVE" || !doctor.isApproved,
-);
-
-const summaryCards = [
-  {
-    label: "Schedule change groups",
-    value: pendingScheduleGroups.length,
-    helper: `${pluralize(
-      mockScheduleChangeRequests.filter((request) => request.status === "PENDING").length,
-      "pending slot",
-    )} waiting for a decision`,
-    to: "/admin/schedule-change-requests",
-    icon: CalendarClock,
-  },
-  {
-    label: "Rating reports",
-    value: pendingRatingReports.length,
-    helper: "Pending patient reports about public ratings",
-    to: "/admin/rating-reports",
-    icon: Flag,
-  },
-  {
-    label: "Clinic records",
-    value: clinicStatusIssues.length,
-    helper: "Clinics marked maintenance or closed",
-    to: "/admin/clinics",
-    icon: Hospital,
-  },
-  {
-    label: "Doctor records",
-    value: doctorStatusIssues.length,
-    helper: "Doctors not active or not approved",
-    to: "/admin/doctors",
-    icon: Stethoscope,
-  },
+const CHART_VIEWS = [
+  { value: "appointments", label: "Appointments" },
+  { value: "revenue", label: "Revenue" },
 ];
+
+const STATUS_COLORS = {
+  confirmed: "#2563eb",
+  completed: "#16a34a",
+  cancelled: "#dc2626",
+  no_show: "#f59e0b",
+  in_progress: "#7c3aed",
+};
+
+const statusLabels = {
+  confirmed: "Confirmed",
+  completed: "Completed",
+  cancelled: "Cancelled",
+  no_show: "No-show",
+  in_progress: "In progress",
+};
+
+const fallbackDashboardData = {
+  summary: {
+    totalPatients: 1248,
+    newPatientsThisMonth: 86,
+    activeDoctors: 42,
+    pendingScheduleRequests: 9,
+    todaysAppointments: 64,
+    liveQueueNow: 18,
+    clinicsNeedingAttention: 2,
+    monthlyRevenue: 48650,
+    heldPayments: 7420,
+  },
+  trendsByRange: {
+    "7d": [
+      { period: "Jul 20", totalAppointments: 38, completedAppointments: 31, missedOrCancelledAppointments: 4, completedRevenue: 3750 },
+      { period: "Jul 21", totalAppointments: 44, completedAppointments: 36, missedOrCancelledAppointments: 5, completedRevenue: 4320 },
+      { period: "Jul 22", totalAppointments: 41, completedAppointments: 33, missedOrCancelledAppointments: 4, completedRevenue: 3980 },
+      { period: "Jul 23", totalAppointments: 49, completedAppointments: 42, missedOrCancelledAppointments: 3, completedRevenue: 5220 },
+      { period: "Jul 24", totalAppointments: 57, completedAppointments: 46, missedOrCancelledAppointments: 7, completedRevenue: 5840 },
+      { period: "Jul 25", totalAppointments: 35, completedAppointments: 29, missedOrCancelledAppointments: 3, completedRevenue: 3410 },
+      { period: "Jul 26", totalAppointments: 64, completedAppointments: 39, missedOrCancelledAppointments: 4, completedRevenue: 4680 },
+    ],
+    "30d": [
+      { period: "Jun 27", totalAppointments: 31, completedAppointments: 26, missedOrCancelledAppointments: 3, completedRevenue: 2860 },
+      { period: "Jun 30", totalAppointments: 36, completedAppointments: 29, missedOrCancelledAppointments: 4, completedRevenue: 3190 },
+      { period: "Jul 03", totalAppointments: 42, completedAppointments: 34, missedOrCancelledAppointments: 5, completedRevenue: 4070 },
+      { period: "Jul 06", totalAppointments: 47, completedAppointments: 39, missedOrCancelledAppointments: 4, completedRevenue: 4610 },
+      { period: "Jul 09", totalAppointments: 52, completedAppointments: 43, missedOrCancelledAppointments: 6, completedRevenue: 5380 },
+      { period: "Jul 12", totalAppointments: 45, completedAppointments: 38, missedOrCancelledAppointments: 4, completedRevenue: 4820 },
+      { period: "Jul 15", totalAppointments: 56, completedAppointments: 48, missedOrCancelledAppointments: 5, completedRevenue: 6210 },
+      { period: "Jul 18", totalAppointments: 50, completedAppointments: 41, missedOrCancelledAppointments: 6, completedRevenue: 5170 },
+      { period: "Jul 21", totalAppointments: 44, completedAppointments: 36, missedOrCancelledAppointments: 5, completedRevenue: 4320 },
+      { period: "Jul 24", totalAppointments: 57, completedAppointments: 46, missedOrCancelledAppointments: 7, completedRevenue: 5840 },
+      { period: "Jul 26", totalAppointments: 64, completedAppointments: 39, missedOrCancelledAppointments: 4, completedRevenue: 4680 },
+    ],
+    "12m": [
+      { period: "Aug", totalAppointments: 690, completedAppointments: 612, missedOrCancelledAppointments: 54, completedRevenue: 64100 },
+      { period: "Sep", totalAppointments: 724, completedAppointments: 640, missedOrCancelledAppointments: 61, completedRevenue: 68240 },
+      { period: "Oct", totalAppointments: 771, completedAppointments: 691, missedOrCancelledAppointments: 58, completedRevenue: 73420 },
+      { period: "Nov", totalAppointments: 742, completedAppointments: 662, missedOrCancelledAppointments: 63, completedRevenue: 70580 },
+      { period: "Dec", totalAppointments: 798, completedAppointments: 721, missedOrCancelledAppointments: 55, completedRevenue: 78100 },
+      { period: "Jan", totalAppointments: 822, completedAppointments: 744, missedOrCancelledAppointments: 59, completedRevenue: 82400 },
+      { period: "Feb", totalAppointments: 790, completedAppointments: 706, missedOrCancelledAppointments: 66, completedRevenue: 79150 },
+      { period: "Mar", totalAppointments: 846, completedAppointments: 769, missedOrCancelledAppointments: 57, completedRevenue: 86280 },
+      { period: "Apr", totalAppointments: 881, completedAppointments: 803, missedOrCancelledAppointments: 61, completedRevenue: 91420 },
+      { period: "May", totalAppointments: 902, completedAppointments: 826, missedOrCancelledAppointments: 64, completedRevenue: 94680 },
+      { period: "Jun", totalAppointments: 874, completedAppointments: 792, missedOrCancelledAppointments: 68, completedRevenue: 89920 },
+      { period: "Jul", totalAppointments: 932, completedAppointments: 811, missedOrCancelledAppointments: 71, completedRevenue: 96800 },
+    ],
+  },
+  appointmentStatusBreakdownByRange: {
+    "7d": [
+      { status: "confirmed", count: 75 },
+      { status: "completed", count: 256 },
+      { status: "cancelled", count: 22 },
+      { status: "no_show", count: 8 },
+      { status: "in_progress", count: 6 },
+    ],
+    "30d": [
+      { status: "confirmed", count: 182 },
+      { status: "completed", count: 421 },
+      { status: "cancelled", count: 38 },
+      { status: "no_show", count: 21 },
+      { status: "in_progress", count: 9 },
+    ],
+    "12m": [
+      { status: "confirmed", count: 518 },
+      { status: "completed", count: 8777 },
+      { status: "cancelled", count: 612 },
+      { status: "no_show", count: 310 },
+      { status: "in_progress", count: 18 },
+    ],
+  },
+  topRatedDoctors: [
+    { doctorId: 3, doctorName: "Dr. Emily Davis", specialization: "Neurology", averageRating: 4.9, ratingCount: 186, status: "active" },
+    { doctorId: 1, doctorName: "Dr. Sarah Jenkins", specialization: "Cardiology", averageRating: 4.8, ratingCount: 243, status: "active" },
+    { doctorId: 5, doctorName: "Dr. Aisha Khan", specialization: "Dermatology", averageRating: 4.7, ratingCount: 171, status: "active" },
+    { doctorId: 2, doctorName: "Dr. Robert Chen", specialization: "Pediatrics", averageRating: 4.6, ratingCount: 154, status: "active" },
+    { doctorId: 6, doctorName: "Dr. Noah Anderson", specialization: "Radiology", averageRating: 4.4, ratingCount: 92, status: "inactive" },
+  ],
+};
 
 const quickActions = [
-  { label: "Doctors", to: "/admin/doctors", icon: Stethoscope },
-  { label: "Patients", to: "/admin/patients", icon: Users },
-  { label: "Appointments", to: "/admin/appointments", icon: CalendarDays },
-  { label: "Queue", to: "/admin/queue", icon: ListOrdered },
-  { label: "Ratings", to: "/admin/ratings", icon: Star },
-  { label: "Rating Reports", to: "/admin/rating-reports", icon: Flag },
+  { label: "Manage Doctors", to: "/admin/doctors", icon: Stethoscope },
+  { label: "Manage Clinics", to: "/admin/clinics", icon: Hospital },
+  { label: "View Appointments", to: "/admin/appointments", icon: CalendarDays },
+  { label: "Live Queue", to: "/admin/queue", icon: ListOrdered },
   { label: "Schedule Requests", to: "/admin/schedule-change-requests", icon: CalendarClock },
-  { label: "Data Lookups", to: "/admin/data-lookups", icon: Database },
-  { label: "System Policies", to: "/admin/system-policies", icon: Scale },
+  { label: "Rating Reports", to: "/admin/rating-reports", icon: Star },
 ];
 
-function SummaryCard({ card }) {
+const chartConfig = {
+  totalAppointments: {
+    label: "Total",
+    color: "#2563eb",
+  },
+  completedAppointments: {
+    label: "Completed",
+    color: "#16a34a",
+  },
+  missedOrCancelledAppointments: {
+    label: "Missed / Cancelled",
+    color: "#f59e0b",
+  },
+  completedRevenue: {
+    label: "Revenue",
+    color: "#0f766e",
+  },
+};
+
+function normalizeDashboardData(payload) {
+  if (!payload) {
+    return fallbackDashboardData;
+  }
+
+  return {
+    summary: payload.summary ?? fallbackDashboardData.summary,
+    trendsByRange: {
+      ...fallbackDashboardData.trendsByRange,
+      current: payload.trends,
+    },
+    appointmentStatusBreakdownByRange: {
+      ...fallbackDashboardData.appointmentStatusBreakdownByRange,
+      current: payload.appointmentStatusBreakdown,
+    },
+    topRatedDoctors: payload.topRatedDoctors ?? fallbackDashboardData.topRatedDoctors,
+  };
+}
+
+function formatNumber(value) {
+  return Number(value || 0).toLocaleString();
+}
+
+function formatMoney(value) {
+  return `$${Number(value || 0).toLocaleString()}`;
+}
+
+function getStatusVariant(status) {
+  if (status === "active") {
+    return "default";
+  }
+
+  if (status === "inactive" || status === "closed") {
+    return "secondary";
+  }
+
+  return "outline";
+}
+
+function getStatusLabel(status) {
+  if (!status) {
+    return "Unknown";
+  }
+
+  return String(status)
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function StatCard({ card }) {
   const Icon = card.icon;
 
   return (
@@ -186,9 +237,9 @@ function SummaryCard({ card }) {
       className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-blue-200 hover:bg-blue-50/30"
     >
       <div className="flex items-start justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <p className="text-sm font-medium text-slate-500">{card.label}</p>
-          <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
+          <p className="mt-2 truncate text-2xl font-semibold tracking-tight text-slate-900">
             {card.value}
           </p>
         </div>
@@ -196,15 +247,17 @@ function SummaryCard({ card }) {
           <Icon className="h-5 w-5" />
         </span>
       </div>
-      <p className="mt-3 text-sm leading-5 text-slate-500">{card.helper}</p>
+      <p className="mt-3 min-h-10 text-sm leading-5 text-slate-500">
+        {card.helper}
+      </p>
     </Link>
   );
 }
 
-function Section({ title, description, action, children }) {
+function Section({ title, description, action, children, className = "" }) {
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
+    <section className={`rounded-2xl border border-slate-200 bg-white shadow-sm ${className}`}>
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
         <div>
           <h2 className="text-base font-semibold text-slate-900">{title}</h2>
           {description ? (
@@ -218,120 +271,386 @@ function Section({ title, description, action, children }) {
   );
 }
 
-function ScheduleRequestRow({ group }) {
-  const firstSlot = group.slots[0];
-  const lastSlot = group.slots[group.slots.length - 1];
-
+function SegmentedControl({ options, value, onChange, label }) {
   return (
-    <Link
-      to="/admin/schedule-change-requests"
-      className="grid gap-3 px-5 py-4 transition hover:bg-slate-50 md:grid-cols-[minmax(0,1fr)_170px_130px]"
-    >
-      <div>
-        <p className="font-medium text-slate-900">
-          {getDoctorDisplayName(group.doctor)}
-        </p>
-        <p className="mt-0.5 text-sm text-slate-500">
-          {group.clinic.name} - {DAY_NAMES[group.dayOfWeek] ?? "Unknown day"}
-        </p>
-      </div>
-      <p className="text-sm text-slate-600">
-        {formatSlotTime(firstSlot?.startTime)} - {formatSlotTime(lastSlot?.endTime)}
-      </p>
-      <Badge variant={group.affectedAppointmentsCount ? "destructive" : "outline"}>
-        {pluralize(group.affectedAppointmentsCount, "affected visit")}
-      </Badge>
-    </Link>
+    <div className="flex flex-wrap gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1" aria-label={label}>
+      {options.map((option) => (
+        <Button
+          key={option.value}
+          type="button"
+          size="sm"
+          variant={value === option.value ? "default" : "ghost"}
+          className="h-7"
+          onClick={() => onChange(option.value)}
+        >
+          {option.label}
+        </Button>
+      ))}
+    </div>
   );
 }
 
-function RatingReportRow({ report }) {
+function DashboardTrendChart({ data, view }) {
+  const isRevenueView = view === "revenue";
+
   return (
-    <Link
-      to={`/admin/rating-reports/${report.id}`}
-      className="grid gap-3 px-5 py-4 transition hover:bg-slate-50 md:grid-cols-[minmax(0,1fr)_160px_110px]"
-    >
-      <div>
-        <p className="font-medium text-slate-900">
-          {getReportReasonLabel(report.reason)}
-        </p>
-        <p className="mt-0.5 text-sm text-slate-500">
-          {getCommentPreview(report.rating?.comment, 90)}
-        </p>
-      </div>
-      <p className="text-sm text-slate-600">
-        {getRatingDoctorName(report.rating)}
-      </p>
-      <p className="text-sm text-slate-500">{formatRatingDate(report.createdAt)}</p>
-    </Link>
+    <ChartContainer config={chartConfig} className="h-80 w-full">
+      <AreaChart data={data} margin={{ left: 12, right: 12, top: 12, bottom: 0 }}>
+        <CartesianGrid vertical={false} strokeDasharray="3 3" />
+        <XAxis
+          dataKey="period"
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+          minTickGap={24}
+        />
+        <YAxis
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+          width={44}
+          tickFormatter={(value) => (isRevenueView ? `$${Number(value) / 1000}k` : value)}
+        />
+        <ChartTooltip
+          cursor={false}
+          content={
+            <ChartTooltipContent
+              indicator="line"
+              formatter={(value, name) => {
+                const label = chartConfig[name]?.label ?? name;
+                const displayValue = name === "completedRevenue" ? formatMoney(value) : formatNumber(value);
+
+                return (
+                  <div className="flex min-w-32 items-center justify-between gap-6">
+                    <span className="text-slate-500">{label}</span>
+                    <span className="font-mono font-medium text-slate-900">{displayValue}</span>
+                  </div>
+                );
+              }}
+            />
+          }
+        />
+        {isRevenueView ? (
+          <Area
+            type="monotone"
+            dataKey="completedRevenue"
+            stroke="var(--color-completedRevenue)"
+            fill="var(--color-completedRevenue)"
+            fillOpacity={0.16}
+            strokeWidth={2.4}
+          />
+        ) : (
+          <>
+            <Area
+              type="monotone"
+              dataKey="totalAppointments"
+              stroke="var(--color-totalAppointments)"
+              fill="var(--color-totalAppointments)"
+              fillOpacity={0.12}
+              strokeWidth={2.4}
+            />
+            <Area
+              type="monotone"
+              dataKey="completedAppointments"
+              stroke="var(--color-completedAppointments)"
+              fill="var(--color-completedAppointments)"
+              fillOpacity={0.08}
+              strokeWidth={2}
+            />
+            <Area
+              type="monotone"
+              dataKey="missedOrCancelledAppointments"
+              stroke="var(--color-missedOrCancelledAppointments)"
+              fill="var(--color-missedOrCancelledAppointments)"
+              fillOpacity={0.08}
+              strokeWidth={2}
+            />
+          </>
+        )}
+      </AreaChart>
+    </ChartContainer>
   );
 }
 
-function DoctorStatusRow({ doctor }) {
+function AppointmentStatusDonut({ data }) {
+  const total = data.reduce((sum, item) => sum + Number(item.count || 0), 0);
+
   return (
-    <Link
-      to={`/admin/doctors/${doctor.id}`}
-      className="flex items-center justify-between gap-4 px-5 py-4 transition hover:bg-slate-50"
-    >
-      <div>
-        <p className="font-medium text-slate-900">{getDoctorDisplayName(doctor)}</p>
-        <p className="mt-0.5 text-sm text-slate-500">{doctor.specialization}</p>
+    <div className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_180px] lg:items-center">
+      <ChartContainer config={{}} className="mx-auto h-64 w-full max-w-sm">
+        <PieChart>
+          <ChartTooltip
+            cursor={false}
+            content={
+              <ChartTooltipContent
+                hideLabel
+                formatter={(value, name) => (
+                  <div className="flex min-w-32 items-center justify-between gap-6">
+                    <span className="text-slate-500">{statusLabels[name] ?? name}</span>
+                    <span className="font-mono font-medium text-slate-900">{formatNumber(value)}</span>
+                  </div>
+                )}
+              />
+            }
+          />
+          <Pie
+            data={data}
+            dataKey="count"
+            nameKey="status"
+            innerRadius={62}
+            outerRadius={92}
+            paddingAngle={2}
+            strokeWidth={3}
+          >
+            {data.map((item) => (
+              <Cell key={item.status} fill={STATUS_COLORS[item.status] ?? "#64748b"} />
+            ))}
+            <Label
+              content={({ viewBox }) => {
+                if (!viewBox || !("cx" in viewBox) || !("cy" in viewBox)) {
+                  return null;
+                }
+
+                return (
+                  <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
+                    <tspan x={viewBox.cx} y={viewBox.cy} className="fill-slate-900 text-2xl font-semibold">
+                      {formatNumber(total)}
+                    </tspan>
+                    <tspan x={viewBox.cx} y={(viewBox.cy || 0) + 22} className="fill-slate-500 text-xs">
+                      visits
+                    </tspan>
+                  </text>
+                );
+              }}
+            />
+          </Pie>
+        </PieChart>
+      </ChartContainer>
+
+      <div className="grid gap-2">
+        {data.map((item) => (
+          <div key={item.status} className="flex items-center justify-between gap-4 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+            <span className="flex min-w-0 items-center gap-2 text-sm text-slate-600">
+              <span
+                className="h-2.5 w-2.5 shrink-0 rounded-full"
+                style={{ backgroundColor: STATUS_COLORS[item.status] ?? "#64748b" }}
+              />
+              <span className="truncate">{statusLabels[item.status] ?? getStatusLabel(item.status)}</span>
+            </span>
+            <span className="font-mono text-sm font-medium text-slate-900">
+              {formatNumber(item.count)}
+            </span>
+          </div>
+        ))}
       </div>
-      <div className="flex flex-wrap justify-end gap-2">
-        {!doctor.isApproved ? <Badge variant="outline">Pending approval</Badge> : null}
-        <Badge variant={doctor.status === "ACTIVE" ? "default" : "secondary"}>
-          {formatDoctorStatus(doctor.status)}
-        </Badge>
-      </div>
-    </Link>
+    </div>
+  );
+}
+
+function TopRatedDoctorsTable({ doctors }) {
+  return (
+    <div className="p-5">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Doctor</TableHead>
+            <TableHead>Specialty</TableHead>
+            <TableHead>Rating</TableHead>
+            <TableHead>Reviews</TableHead>
+            <TableHead>Status</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {doctors.map((doctor) => (
+            <TableRow key={doctor.doctorId}>
+              <TableCell>
+                <Link to={`/admin/doctors/${doctor.doctorId}`} className="font-medium text-slate-900 hover:text-blue-700">
+                  {doctor.doctorName}
+                </Link>
+              </TableCell>
+              <TableCell className="text-slate-600">{doctor.specialization || "N/A"}</TableCell>
+              <TableCell>
+                <span className="inline-flex items-center gap-1 font-medium text-slate-900">
+                  <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                  {Number(doctor.averageRating || 0).toFixed(1)}
+                </span>
+              </TableCell>
+              <TableCell className="text-slate-600">{formatNumber(doctor.ratingCount)}</TableCell>
+              <TableCell>
+                <Badge variant={getStatusVariant(doctor.status)}>
+                  {getStatusLabel(doctor.status)}
+                </Badge>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
 
 export default function Dashboard() {
+  const [range, setRange] = useState("30d");
+  const [chartView, setChartView] = useState("appointments");
+  const [dashboardData, setDashboardData] = useState(fallbackDashboardData);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadDashboardData() {
+      setIsLoading(true);
+
+      try {
+        const response = await axiosClient.get("/admin/dashboard", {
+          params: { range },
+        });
+
+        if (isMounted) {
+          setDashboardData(normalizeDashboardData(response.data));
+        }
+      } catch {
+        if (isMounted) {
+          setDashboardData(fallbackDashboardData);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadDashboardData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [range]);
+
+  const trends = dashboardData.trendsByRange.current ?? dashboardData.trendsByRange[range] ?? [];
+  const appointmentStatusBreakdown =
+    dashboardData.appointmentStatusBreakdownByRange.current ??
+    dashboardData.appointmentStatusBreakdownByRange[range] ??
+    [];
+
+  const summaryCards = useMemo(() => {
+    const summary = dashboardData.summary;
+
+    return [
+      {
+        label: "Total Patients",
+        value: formatNumber(summary.totalPatients),
+        helper: `${formatNumber(summary.newPatientsThisMonth)} new this month`,
+        to: "/admin/patients",
+        icon: Users,
+      },
+      {
+        label: "New Patients This Month",
+        value: formatNumber(summary.newPatientsThisMonth),
+        helper: "Recently registered patient profiles",
+        to: "/admin/patients",
+        icon: UserPlus,
+      },
+      {
+        label: "Active Doctors",
+        value: formatNumber(summary.activeDoctors),
+        helper: "Approved doctors currently active",
+        to: "/admin/doctors",
+        icon: Stethoscope,
+      },
+      {
+        label: "Pending Schedule Requests",
+        value: formatNumber(summary.pendingScheduleRequests),
+        helper: "Schedule changes waiting for review",
+        to: "/admin/schedule-change-requests",
+        icon: CalendarClock,
+      },
+      {
+        label: "Today's Appointments",
+        value: formatNumber(summary.todaysAppointments),
+        helper: "All appointments scheduled today",
+        to: "/admin/appointments",
+        icon: CalendarDays,
+      },
+      {
+        label: "Live Queue Now",
+        value: formatNumber(summary.liveQueueNow),
+        helper: "Patients waiting, calling, or in progress",
+        to: "/admin/queue",
+        icon: ListOrdered,
+      },
+      {
+        label: "Clinics Needing Attention",
+        value: formatNumber(summary.clinicsNeedingAttention),
+        helper: "Clinics closed or under maintenance",
+        to: "/admin/clinics",
+        icon: Hospital,
+      },
+      {
+        label: "Monthly Revenue",
+        value: formatMoney(summary.monthlyRevenue),
+        helper: `${formatMoney(summary.heldPayments)} currently held`,
+        to: "/admin/appointments",
+        icon: CircleDollarSign,
+      },
+    ];
+  }, [dashboardData.summary]);
+
+  const topRatedDoctors = [...(dashboardData.topRatedDoctors ?? [])].sort(
+    (first, second) => Number(second.averageRating || 0) - Number(first.averageRating || 0),
+  );
+
   return (
-    <section className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-          Dashboard
-        </h1>
-        <p className="mt-1 text-sm text-slate-600">
-          A focused admin overview using records that already exist in this application.
-        </p>
+    <section className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+            Dashboard
+          </h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Admin overview for patient growth, clinic operations, and revenue.
+          </p>
+        </div>
+
+        <SegmentedControl
+          label="Dashboard range"
+          options={RANGE_OPTIONS}
+          value={range}
+          onChange={setRange}
+        />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {summaryCards.map((card) => (
-          <SummaryCard key={card.label} card={card} />
+          <StatCard key={card.label} card={card} />
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <Section
-          title="Pending Schedule Changes"
-          description="Grouped the same way as the Schedule Change Requests page."
+          title="Appointments And Revenue"
+          description="Trend view follows the selected dashboard range."
           action={
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/admin/schedule-change-requests">
-                Open
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
+            <SegmentedControl
+              label="Chart view"
+              options={CHART_VIEWS}
+              value={chartView}
+              onChange={setChartView}
+            />
           }
         >
-          <div className="divide-y divide-slate-100">
-            {pendingScheduleGroups.length ? (
-              pendingScheduleGroups
-                .slice(0, 4)
-                .map((group) => <ScheduleRequestRow key={group.key} group={group} />)
+          <div className="px-3 pb-4 pt-3">
+            {isLoading ? (
+              <div className="flex h-80 items-center justify-center rounded-xl bg-slate-50 text-sm text-slate-500">
+                Loading dashboard data...
+              </div>
             ) : (
-              <p className="px-5 py-6 text-sm text-slate-500">
-                No pending schedule change requests.
-              </p>
+              <DashboardTrendChart data={trends} view={chartView} />
             )}
           </div>
         </Section>
 
-        <Section title="Quick Actions">
+        <Section title="Quick Actions" description="Common admin destinations.">
           <div className="grid gap-3 p-5">
             {quickActions.map((action) => {
               const Icon = action.icon;
@@ -357,35 +676,18 @@ export default function Dashboard() {
         </Section>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 xl:grid-cols-[430px_minmax(0,1fr)]">
         <Section
-          title="Pending Rating Reports"
-          description="Reports that are still pending on the Rating Reports page."
-          action={
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/admin/rating-reports">
-                Open
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          }
+          title="Appointment Status"
+          description="Status distribution for the selected range."
+          action={<ClipboardList className="mt-1 h-5 w-5 text-slate-400" />}
         >
-          <div className="divide-y divide-slate-100">
-            {pendingRatingReports.length ? (
-              pendingRatingReports.map((report) => (
-                <RatingReportRow key={report.id} report={report} />
-              ))
-            ) : (
-              <p className="px-5 py-6 text-sm text-slate-500">
-                No pending rating reports.
-              </p>
-            )}
-          </div>
+          <AppointmentStatusDonut data={appointmentStatusBreakdown} />
         </Section>
 
         <Section
-          title="Doctor Records To Check"
-          description="Only doctors that are inactive, on leave, or pending approval."
+          title="Top Rated Doctors"
+          description="All-time ranking by visible average rating."
           action={
             <Button asChild variant="ghost" size="sm">
               <Link to="/admin/doctors">
@@ -395,50 +697,9 @@ export default function Dashboard() {
             </Button>
           }
         >
-          <div className="divide-y divide-slate-100">
-            {doctorStatusIssues.length ? (
-              doctorStatusIssues.map((doctor) => (
-                <DoctorStatusRow key={doctor.id} doctor={doctor} />
-              ))
-            ) : (
-              <p className="px-5 py-6 text-sm text-slate-500">
-                All doctor records are active and approved.
-              </p>
-            )}
-          </div>
+          <TopRatedDoctorsTable doctors={topRatedDoctors} />
         </Section>
       </div>
-
-      <Section
-        title="Clinic Status"
-        description="Clinic records exactly as they appear in the Clinics page."
-        action={
-          <Button asChild variant="ghost" size="sm">
-            <Link to="/admin/clinics">
-              Open
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Button>
-        }
-      >
-        <div className="grid gap-3 p-5 md:grid-cols-2">
-          {clinics.map((clinic) => (
-            <Link
-              key={clinic.id}
-              to={`/admin/clinics/${clinic.id}`}
-              className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 p-4 transition hover:border-blue-200 hover:bg-blue-50/30"
-            >
-              <div>
-                <p className="font-medium text-slate-900">{clinic.name}</p>
-                <p className="mt-0.5 text-sm text-slate-500">{clinic.location}</p>
-              </div>
-              <Badge variant={getClinicStatusVariant(clinic.status)}>
-                {formatClinicStatus(clinic.status)}
-              </Badge>
-            </Link>
-          ))}
-        </div>
-      </Section>
     </section>
   );
 }

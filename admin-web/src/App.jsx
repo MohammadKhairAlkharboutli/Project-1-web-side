@@ -35,6 +35,11 @@ import RatingDetails from "./pages/Admin/Ratings/RatingDetails";
 import RatingReportsPage from "./pages/Admin/Ratings/RatingReportsPage";
 import RatingReportDetails from "./pages/Admin/Ratings/RatingReportDetails";
 import AdminQueuePage from "./pages/Admin/Queue/AdminQueuePage";
+import DoctorPageLayout from "./pages/Doctor/DoctorPageLayout";
+import DoctorDashboard from "./pages/Doctor/Dashboard";
+import DoctorPortalAppointments from "./pages/Doctor/Appointments";
+import DoctorPortalSchedule from "./pages/Doctor/Schedule";
+import DoctorPortalProfile from "./pages/Doctor/Profile";
 
 function App() {
   return (
@@ -88,6 +93,13 @@ function App() {
           <Route path="schedule-change-requests" element={<ScheduleChangeRequestsPage />} />
           <Route path="data-lookups" element={<DataLookupsPage />} />
           <Route path="system-policies" element={<SystemPoliciesPage />} />
+        </Route>
+
+        <Route path="/doctor" element={<DoctorPageLayout />}>
+          <Route index element={<DoctorDashboard />} />
+          <Route path="appointments" element={<DoctorPortalAppointments />} />
+          <Route path="schedule" element={<DoctorPortalSchedule />} />
+          <Route path="profile" element={<DoctorPortalProfile />} />
         </Route>
       </Route>
     </Routes>
