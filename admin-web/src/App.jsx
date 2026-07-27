@@ -40,7 +40,12 @@ import DoctorPageLayout from "./pages/Doctor/DoctorPageLayout";
 import DoctorDashboard from "./pages/Doctor/Dashboard";
 import DoctorPortalAppointments from "./pages/Doctor/Appointments";
 import DoctorPortalSchedule from "./pages/Doctor/Schedule";
-import DoctorPortalProfile from "./pages/Doctor/Profile";
+import DoctorProfileSettings from "./pages/Doctor/DoctorProfileSettings"; 
+import DoctorLeaves from "./pages/Doctor/DoctorLeaves";
+import DoctorSettings from "./pages/Doctor/Settings";
+import PatientsList from "./pages/Doctor/PatientsList";
+import PatientMedicalHistoryView from "./pages/Doctor/PatientMedicalHistoryView";
+import DoctorLiveQueue from "./pages/Doctor/DoctorLiveQueue"; // استيراد مكون قائمة الانتظار الحية للطبيب
 
 function App() {
   return (
@@ -102,7 +107,12 @@ function App() {
           <Route index element={<DoctorDashboard />} />
           <Route path="appointments" element={<DoctorPortalAppointments />} />
           <Route path="schedule" element={<DoctorPortalSchedule />} />
-          <Route path="profile" element={<DoctorPortalProfile />} />
+          <Route path="profile" element={<DoctorProfileSettings />} />
+          <Route path="patients" element={<PatientsList />} />
+          <Route path="medical-history/:appointmentId" element={<PatientMedicalHistoryView />} />
+          <Route path="queue" element={<DoctorLiveQueue />} /> {/* مسار قائمة الانتظار المباشرة للطبيب */}
+          <Route path="leaves" element={<DoctorLeaves />} />
+          <Route path="settings" element={<DoctorSettings />} />
         </Route>
       </Route>
     </Routes>
