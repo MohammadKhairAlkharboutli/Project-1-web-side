@@ -47,6 +47,7 @@ import PatientMedicalHistoryView from "./pages/Doctor/PatientMedicalHistoryView"
 import DoctorLiveQueue from "./pages/Doctor/DoctorLiveQueue";
 import ConsultationPage from "./pages/Doctor/ConsultationPage";
 import PatientMedicalFile from "./pages/Doctor/PatientMedicalFile";
+import ReferralsPage from "./pages/Doctor/ReferralsPage";
 
 function App() {
   return (
@@ -116,6 +117,7 @@ function App() {
         <Route path="medical-history/:appointmentId" element={<PatientMedicalHistoryView />} />
         <Route path="consultation/:appointmentId" element={<ConsultationPage />} />
         <Route path="queue" element={<DoctorLiveQueue />} />
+        <Route path="referrals" element={<ReferralsPage />} />
         <Route path="leaves" element={<DoctorLeaves />} />
         <Route path="settings" element={<DoctorSettings />} />
       </Route>

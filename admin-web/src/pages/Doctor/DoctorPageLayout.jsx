@@ -12,6 +12,7 @@ import {
   CalendarOff,
   Users,
   ListOrdered,
+  Send,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -30,8 +31,9 @@ import { getCurrentDoctor } from "./doctorPortalData";
 const doctorNavItems = [
   { label: "Dashboard", path: "/doctor", icon: LayoutDashboard, end: true },
   { label: "Appointments", path: "/doctor/appointments", icon: CalendarDays },
-  { label: "Queue", path: "/doctor/queue", icon: ListOrdered }, // 👈 تمت إضافة قائمة الانتظار الحية هنا
+  { label: "Queue", path: "/doctor/queue", icon: ListOrdered },
   { label: "Patients", path: "/doctor/patients", icon: Users },
+  { label: "Referrals", path: "/doctor/referrals", icon: Send }, // 👈 Added Referrals here
   { label: "Schedule", path: "/doctor/schedule", icon: Stethoscope },
   { label: "Leaves & Time-Off", path: "/doctor/leaves", icon: CalendarOff },
   { label: "Profile", path: "/doctor/profile", icon: User },
@@ -68,13 +70,10 @@ export default function DoctorPageLayout() {
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#F1F5F9] text-slate-900 justify-center p-4 box-border">
       
-      {/* الحاوية الكبرى ثابتة الارتفاع والعرض لتمنع أي حركة غير مقصودة */}
       <div className="flex w-full max-w-[1440px] h-full bg-white shadow-xl rounded-3xl overflow-hidden border border-slate-200/60">
 
-        {/* 1. السايدبار الثابت (ممنوع انكماشه أو تمدده، وعرضه ثابت تماماً) */}
         <aside className="hidden md:flex flex-col w-72 min-w-[18rem] max-w-[18rem] shrink-0 bg-white p-5 m-3 rounded-2xl shadow-md border border-slate-100/80 relative z-10 h-[calc(100vh-3.5rem)]">
           
-          {/* الشعار مع خط فاصل (ثابت في الأعلى) */}
           <div className="flex items-center gap-3 pb-4 mb-3 border-b border-slate-100 shrink-0">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-600 text-white text-base font-bold shadow-md shadow-blue-500/25">
               T
@@ -84,7 +83,6 @@ export default function DoctorPageLayout() {
             </span>
           </div>
 
-          {/* عناصر التنقل - قابلة للتمرير الداخلي إن زاد عددها */}
           <div className="space-y-1.5 flex-1 overflow-y-auto pr-1">
             <nav className="space-y-1">
               {doctorNavItems.map((item) => {
@@ -115,7 +113,6 @@ export default function DoctorPageLayout() {
             </nav>
           </div>
 
-          {/* أزرار الإعدادات وتسجيل الخروج في الأسفل (ثابتة تماماً ولا تتأثر بحجم المحتوى) */}
           <div className="pt-3 mt-auto border-t border-slate-100 space-y-1 shrink-0">
             <NavLink
               to="/doctor/settings"
@@ -148,13 +145,10 @@ export default function DoctorPageLayout() {
           </div>
         </aside>
 
-        {/* القسم الرئيسي (المحتوى يتمرر لوحده دون التأثير على إطار الصفحة أو السايدبار) */}
         <div className="flex-1 flex flex-col min-w-0 bg-white h-full overflow-hidden">
           
-          {/* الهيدر العلوي */}
           <header className="hidden md:flex items-center justify-between px-8 py-4 bg-white border-b border-slate-100 shrink-0 z-20">
             
-            {/* شريط البحث */}
             <div className="w-[420px]">
               <div className="relative">
                 <input
@@ -166,7 +160,6 @@ export default function DoctorPageLayout() {
               </div>
             </div>
 
-            {/* الأيقونات وبروفايل الطبيب */}
             <div className="flex items-center gap-4">
               <button className="relative p-2.5 rounded-2xl bg-slate-50 border border-slate-200/60 text-slate-600 hover:bg-slate-100 transition-all">
                 <Bell size={18} />
@@ -205,12 +198,10 @@ export default function DoctorPageLayout() {
             </div>
           </header>
 
-          {/* محتوى الصفحة (يتمرر عمودياً ضمن منطقته فقط) */}
           <main className="flex-1 p-8 sm:p-10 max-w-7xl w-full mx-auto bg-white overflow-y-auto">
             <Outlet />
           </main>
 
-          {/* التذييل */}
           <footer className="border-t border-slate-100 bg-white py-4 px-10 text-xs font-semibold text-slate-400 flex justify-between items-center shrink-0">
             <p>© 2026 Tabibi Clinical Systems. All rights reserved.</p>
           </footer>
