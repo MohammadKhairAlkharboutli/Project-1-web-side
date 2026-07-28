@@ -48,12 +48,14 @@ import DoctorLiveQueue from "./pages/Doctor/DoctorLiveQueue";
 import ConsultationPage from "./pages/Doctor/ConsultationPage";
 import PatientMedicalFile from "./pages/Doctor/PatientMedicalFile";
 import ReferralsPage from "./pages/Doctor/ReferralsPage";
+import DoctorInviteSignupPage from "./pages/Doctor/DoctorInviteSignupPage";
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/doctor" replace />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/doctor-invite/:token" element={<DoctorInviteSignupPage />} />
 
       {/* Admin Routes */}
       <Route path="/admin" element={<AdminPageLayout />}>
