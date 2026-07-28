@@ -33,7 +33,7 @@ export function getDoctorColumns(onViewDoctor) {
             <p className="font-medium text-slate-900">
               {getDoctorDisplayName(doctor)}
             </p>
-            <p className="text-sm text-slate-500">{doctor.user.email}</p>
+            <p className="text-sm text-slate-500">{doctor.user?.email || "No email"}</p>
           </div>
         );
       },
@@ -45,7 +45,10 @@ export function getDoctorColumns(onViewDoctor) {
     {
       accessorKey: "experienceYears",
       header: "Experience",
-      cell: ({ row }) => `${row.original.experienceYears} years`,
+      cell: ({ row }) => {
+        const experienceYears = row.original.experienceYears;
+        return typeof experienceYears === "number" ? `${experienceYears} years` : "N/A";
+      },
     },
     {
       id: "languagesSpoken",
@@ -56,9 +59,9 @@ export function getDoctorColumns(onViewDoctor) {
       accessorKey: "averageRating",
       header: "Rating",
       cell: ({ row }) => {
-        const averageRating = row.original.averageRating;
+        const averageRating = Number(row.original.averageRating);
 
-        return typeof averageRating === "number"
+        return Number.isFinite(averageRating)
           ? averageRating.toFixed(1)
           : "N/A";
       },

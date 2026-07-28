@@ -31,6 +31,7 @@ export default function ScheduleChangeRequestCard({
   requestGroup,
   onApprove,
   onReject,
+  disabled,
 }) {
   const dayName = DAYS_OF_WEEK[requestGroup.dayOfWeek] || "Unknown day";
 
@@ -77,6 +78,7 @@ export default function ScheduleChangeRequestCard({
         <div className="flex shrink-0 flex-col gap-2 sm:flex-row lg:flex-col">
           <Button
             className="bg-slate-900 text-white hover:bg-slate-800"
+            disabled={disabled}
             onClick={() => onApprove(requestGroup)}
           >
             Accept request
@@ -84,6 +86,7 @@ export default function ScheduleChangeRequestCard({
           <Button
             variant="outline"
             className="border-red-200 bg-white text-red-600 hover:bg-red-50 hover:text-red-700"
+            disabled={disabled}
             onClick={() => onReject(requestGroup)}
           >
             Reject request

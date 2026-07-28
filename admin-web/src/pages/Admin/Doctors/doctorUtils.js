@@ -35,7 +35,9 @@ export function formatDoctorStatus(status) {
 }
 
 export function formatCurrency(value) {
-  if (typeof value !== "number") {
+  const numericValue = Number(value);
+
+  if (!Number.isFinite(numericValue)) {
     return "N/A";
   }
 
@@ -43,7 +45,7 @@ export function formatCurrency(value) {
     style: "currency",
     currency: "USD",
     maximumFractionDigits: 0,
-  }).format(value);
+  }).format(numericValue);
 }
 
 export function formatLanguagesSpoken(languagesSpoken) {

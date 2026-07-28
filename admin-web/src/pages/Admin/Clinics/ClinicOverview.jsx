@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useOutletContext } from "react-router-dom";
 
 import {
   profileCardLabel,
@@ -6,7 +6,6 @@ import {
   profileCardValue,
 } from "@/components/shared/styles";
 
-import { clinics } from "../ClinicData";
 import {
   formatClinicRating,
   formatClinicStatus,
@@ -14,12 +13,7 @@ import {
 } from "./clinicUtils";
 
 export default function ClinicOverview() {
-  const { clinicId } = useParams();
-  const clinic = clinics.find((item) => String(item.id) === clinicId);
-
-  if (!clinic) {
-    return null;
-  }
+  const { clinic } = useOutletContext();
 
   return (
     <div className="space-y-6">

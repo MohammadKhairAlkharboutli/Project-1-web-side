@@ -55,6 +55,8 @@ export default function DataLookupFormDialog({
   lookup,
   lookups,
   onSubmit,
+  isSaving,
+  submitError,
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -66,6 +68,8 @@ export default function DataLookupFormDialog({
           lookups={lookups}
           onOpenChange={onOpenChange}
           onSubmit={onSubmit}
+          isSaving={isSaving}
+          submitError={submitError}
         />
       )}
     </Dialog>
@@ -101,6 +105,8 @@ function DataLookupFormContent({
   lookups,
   onOpenChange,
   onSubmit,
+  isSaving,
+  submitError,
 }) {
   const {
     control,
@@ -123,8 +129,8 @@ function DataLookupFormContent({
 
   const hasParentOptions = parentOptions.length > 0;
 
-  function submitLookup(formData) {
-    onSubmit({
+  async function submitLookup(formData) {
+    await onSubmit({
       ...formData,
       parentId: formData.parentId ? Number(formData.parentId) : null,
     });
@@ -238,15 +244,17 @@ function DataLookupFormContent({
         </div>
 
         <DialogFooter>
+          {submitError && <p className="mr-auto text-sm text-red-600">{submitError}</p>}
           <Button
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
+            disabled={isSaving}
           >
             Cancel
           </Button>
-          <Button type="submit">
-            {mode === "edit" ? "Save changes" : "Add lookup"}
+          <Button type="submit" disabled={isSaving}>
+            {isSaving ? "Saving…" : mode === "edit" ? "Save changes" : "Add lookup"}
           </Button>
         </DialogFooter>
       </form>

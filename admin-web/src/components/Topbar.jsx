@@ -23,10 +23,6 @@ function getPageTitle(pathname) {
     return "Secretaries";
   }
 
-  if (pathname.startsWith("/admin/statistics")) {
-    return "Statistics";
-  }
-
   if (pathname.startsWith("/admin/clinics")) {
     return "Clinics";
   }

@@ -13,7 +13,7 @@ import {
   getReportReasonLabel,
 } from "@/components/shared/Ratings/ratingUtils";
 
-export function getRatingReportColumns() {
+export function getRatingReportColumns({ resolveReport, resolvingReportId }) {
   return [
     {
       accessorKey: "reason",
@@ -113,11 +113,21 @@ export function getRatingReportColumns() {
 
             {isPending ? (
               <>
-                <Button variant="outline" size="sm" disabled>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={resolvingReportId === row.original.id}
+                  onClick={() => resolveReport(row.original, "accept")}
+                >
                   <Check className="h-4 w-4" />
-                  Accept
+                  {resolvingReportId === row.original.id ? "Resolving..." : "Accept"}
                 </Button>
-                <Button variant="outline" size="sm" disabled>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={resolvingReportId === row.original.id}
+                  onClick={() => resolveReport(row.original, "dismiss")}
+                >
                   <X className="h-4 w-4" />
                   Dismiss
                 </Button>

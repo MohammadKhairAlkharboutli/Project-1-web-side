@@ -10,6 +10,7 @@ import {
 
 import { patients } from "../PatientData";
 import { formatEnumLabel, formatOptionalValue } from "./patientUtils";
+import MedicalAttachmentsTable from "./components/MedicalAttachmentsTable";
 
 export default function PatientMedicalInfo() {
   const { patientId } = useParams();
@@ -20,6 +21,7 @@ export default function PatientMedicalInfo() {
   }
 
   const profileMedicines = patient.prescribedMedicines?.profileMedicines || [];
+  const profileAttachments = patient.medicalAttachments?.profileAttachments || [];
 
   return (
     <div className="space-y-6">
@@ -134,6 +136,22 @@ export default function PatientMedicalInfo() {
             </p>
           </div>
         )}
+      </section>
+
+      <section className="space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold tracking-tight text-slate-900">
+            Medical Attachments
+          </h3>
+          <p className="mt-1 text-sm text-slate-600">
+            Documents attached to this patient&apos;s medical profile.
+          </p>
+        </div>
+
+        <MedicalAttachmentsTable
+          attachments={profileAttachments}
+          emptyMessage="No medical profile attachments."
+        />
       </section>
     </div>
   );

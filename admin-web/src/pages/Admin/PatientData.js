@@ -46,6 +46,46 @@ export const patients = [
       lifestyleHabits: "Walks daily, non-smoker",
       vaccinationStatus: "Up to date",
     },
+    medicalAttachments: {
+      profileAttachments: [
+        {
+          id: 8001,
+          medicalProfileId: 3001,
+          medicalHistoryId: null,
+          originalName: "blood-test-results.pdf",
+          fileType: "application/pdf",
+          fileSize: 482_304,
+          description: "Blood test results uploaded by the patient.",
+          createdAt: "2026-06-16T09:20:00.000Z",
+          uploadedBy: { fullName: "Layla Hassan", role: "patient" },
+        },
+        {
+          id: 8002,
+          medicalProfileId: 3001,
+          medicalHistoryId: null,
+          originalName: "allergy-note.jpg",
+          fileType: "image/jpeg",
+          fileSize: 238_481,
+          description: "Allergy information provided during the appointment.",
+          createdAt: "2026-06-18T13:38:00.000Z",
+          uploadedBy: { fullName: "Dr. Sarah Jenkins", role: "doctor" },
+        },
+      ],
+      historyAttachments: [
+        {
+          id: 8003,
+          medicalProfileId: null,
+          medicalHistoryId: 4001,
+          appointmentId: 1004,
+          originalName: "migraine-care-plan.pdf",
+          fileType: "application/pdf",
+          fileSize: 156_672,
+          description: "Care plan from the completed migraine visit.",
+          createdAt: "2026-06-18T13:40:00.000Z",
+          uploadedBy: { fullName: "Dr. Sarah Jenkins", role: "doctor" },
+        },
+      ],
+    },
     prescribedMedicines: {
       profileMedicines: [
         {
@@ -237,6 +277,35 @@ export const patients = [
       currentMedications: "Metformin",
       lifestyleHabits: "Former smoker, light exercise",
       vaccinationStatus: "Up to date",
+    },
+    medicalAttachments: {
+      profileAttachments: [
+        {
+          id: 8004,
+          medicalProfileId: 3002,
+          medicalHistoryId: null,
+          originalName: "hearing-assessment.pdf",
+          fileType: "application/pdf",
+          fileSize: 324_608,
+          description: "Previous hearing assessment supplied by the patient.",
+          createdAt: "2026-05-27T11:45:00.000Z",
+          uploadedBy: { fullName: "Daniel Murphy", role: "patient" },
+        },
+      ],
+      historyAttachments: [
+        {
+          id: 8005,
+          medicalProfileId: null,
+          medicalHistoryId: 4002,
+          appointmentId: 1008,
+          originalName: "lower-back-exercise-plan.pdf",
+          fileType: "application/pdf",
+          fileSize: 189_440,
+          description: "Recommended exercises for the visit-specific back strain.",
+          createdAt: "2026-06-10T10:10:00.000Z",
+          uploadedBy: { fullName: "Dr. Robert Chen", role: "doctor" },
+        },
+      ],
     },
     prescribedMedicines: {
       profileMedicines: [

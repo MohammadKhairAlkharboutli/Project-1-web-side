@@ -22,18 +22,15 @@ export default function ClinicsTableToolbar({
       <div className="flex gap-2">
         <NativeSelect
           className="w-[160px]"
-          value={table.getColumn("status")?.getFilterValue() ?? "all"}
+          value={table.getColumn("status")?.getFilterValue() ?? "active"}
           onChange={(event) => {
             const value = event.target.value;
             table
               .getColumn("status")
-              ?.setFilterValue(value === "all" ? undefined : value);
+              ?.setFilterValue(value);
           }}
         >
-          <NativeSelectOption value="all">All statuses</NativeSelectOption>
           <NativeSelectOption value="active">Active</NativeSelectOption>
-          <NativeSelectOption value="maintenance">Maintenance</NativeSelectOption>
-          <NativeSelectOption value="closed">Closed</NativeSelectOption>
         </NativeSelect>
 
         <NativeSelect

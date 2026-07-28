@@ -1,3 +1,7 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,16 +28,32 @@ export default function MoveQueueDialog({
   onSubmit,
 }) {
   const newPosition = String(queueItem?.position ?? "");
+  const moveQueueSchema = z.object({
+    newPosition: z
+      .string()
+      .min(1, "Choose a new queue position.")
+      .refine(
+        (value) => availablePositions.includes(Number(value)),
+        "Choose one of the available queue positions.",
+      ),
+  });
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(moveQueueSchema),
+    defaultValues: { newPosition },
+  });
 
-  function handleSubmit(event) {
-    event.preventDefault();
-    onSubmit(Number(event.currentTarget.newPosition.value));
+  function submitMove({ newPosition: selectedPosition }) {
+    onSubmit(Number(selectedPosition));
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit(submitMove)} noValidate>
           <DialogHeader>
             <DialogTitle>Move queue position</DialogTitle>
             <DialogDescription>
@@ -44,13 +64,14 @@ export default function MoveQueueDialog({
           <div className="space-y-2 px-5 py-4">
             <label className="space-y-1.5 text-sm font-medium text-slate-700">
               <span>New position</span>
-              <NativeSelect name="newPosition" defaultValue={newPosition}>
+              <NativeSelect {...register("newPosition")} aria-invalid={Boolean(errors.newPosition)}>
                 {availablePositions.map((position) => (
                   <NativeSelectOption key={position} value={String(position)}>
                     Position #{position}
                   </NativeSelectOption>
                 ))}
               </NativeSelect>
+              {errors.newPosition?.message && <p className="text-sm font-normal text-red-600">{errors.newPosition.message}</p>}
             </label>
             <p className="text-sm text-slate-500">
               Only waiting patients can be reordered. Called and in-consultation patients stay locked.
@@ -67,7 +88,7 @@ export default function MoveQueueDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={submitting || !newPosition}>
+            <Button type="submit" disabled={submitting || !availablePositions.length}>
               {submitting ? "Moving..." : "Move"}
             </Button>
           </DialogFooter>

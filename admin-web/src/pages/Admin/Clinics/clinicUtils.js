@@ -19,7 +19,8 @@ export function getClinicStatusVariant(status) {
 }
 
 export function formatClinicRating(averageRating) {
-  return typeof averageRating === "number" ? averageRating.toFixed(1) : "N/A";
+  const rating = Number(averageRating);
+  return Number.isFinite(rating) ? rating.toFixed(1) : "N/A";
 }
 
 export function formatDateTime(value) {

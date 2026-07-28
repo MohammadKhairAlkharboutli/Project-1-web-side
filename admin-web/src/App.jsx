@@ -18,7 +18,6 @@ import PatientProfileLogs from "./pages/Admin/Patients/PatientProfileLogs";
 import SecretariesPage from "./pages/Admin/Secretaries/SecretariesPage";
 import SecretaryProfile from "./pages/Admin/Secretaries/SecretaryProfile";
 import SecretaryOverview from "./pages/Admin/Secretaries/SecretaryOverview";
-import StatisticsPage from "./pages/Admin/Statistics/StatisticsPage";
 import ScheduleChangeRequestsPage from "./pages/Admin/ScheduleChangeRequests/ScheduleChangeRequestsPage";
 import DataLookupsPage from "./pages/Admin/DataLookups/DataLookupsPage";
 import SystemPoliciesPage from "./pages/Admin/SystemPolicies/SystemPoliciesPage";
@@ -32,7 +31,6 @@ import ClinicOverview from "./pages/Admin/Clinics/ClinicOverview";
 import ClinicAppointments from "./pages/Admin/Clinics/ClinicAppointments";
 import ClinicDoctors from "./pages/Admin/Clinics/ClinicDoctors";
 import RatingsPage from "./pages/Admin/Ratings/RatingsPage";
-import RatingDetails from "./pages/Admin/Ratings/RatingDetails";
 import RatingReportsPage from "./pages/Admin/Ratings/RatingReportsPage";
 import RatingReportDetails from "./pages/Admin/Ratings/RatingReportDetails";
 import AdminQueuePage from "./pages/Admin/Queue/AdminQueuePage";
@@ -41,11 +39,13 @@ import DoctorDashboard from "./pages/Doctor/Dashboard";
 import DoctorPortalAppointments from "./pages/Doctor/Appointments";
 import DoctorPortalSchedule from "./pages/Doctor/Schedule";
 import DoctorPortalProfile from "./pages/Doctor/Profile";
+import DoctorInvitePage from "./pages/DoctorInvitePage";
 
 function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/doctor-invite/:token" element={<DoctorInvitePage />} />
 
       <Route element={<ProtectedRoute />}>
         <Route path="/admin" element={<AdminPageLayout />}>
@@ -63,7 +63,6 @@ function App() {
           <Route path="appointments/:appointmentId" element={<AppointmentDetails />} />
           <Route path="queue" element={<AdminQueuePage />} />
           <Route path="ratings" element={<RatingsPage />} />
-          <Route path="ratings/:ratingId" element={<RatingDetails />} />
           <Route path="rating-reports" element={<RatingReportsPage />} />
           <Route path="rating-reports/:reportId" element={<RatingReportDetails />} />
           <Route path="patients">
@@ -90,7 +89,6 @@ function App() {
               <Route index element={<SecretaryOverview />} />
             </Route>
           </Route>
-          <Route path="statistics" element={<StatisticsPage />} />
           <Route path="schedule-change-requests" element={<ScheduleChangeRequestsPage />} />
           <Route path="data-lookups" element={<DataLookupsPage />} />
           <Route path="system-policies" element={<SystemPoliciesPage />} />

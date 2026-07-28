@@ -15,11 +15,11 @@ import {
 } from "@/pages/Admin/Doctors/doctorUtils";
 
 function getDoctorStatusVariant(status) {
-  if (status === "ACTIVE") {
+  if (String(status).toUpperCase() === "ACTIVE") {
     return "default";
   }
 
-  if (status === "INACTIVE") {
+  if (String(status).toUpperCase() === "INACTIVE") {
     return "destructive";
   }
 
@@ -27,7 +27,8 @@ function getDoctorStatusVariant(status) {
 }
 
 function formatRating(averageRating) {
-  return typeof averageRating === "number" ? averageRating.toFixed(1) : "N/A";
+  const rating = Number(averageRating);
+  return Number.isFinite(rating) ? rating.toFixed(1) : "N/A";
 }
 
 export default function DoctorCard({ doctor, actions, className }) {

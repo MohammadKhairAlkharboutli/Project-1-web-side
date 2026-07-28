@@ -5,6 +5,7 @@ import { sharedEmptyStateShell } from "@/components/shared/styles";
 import { Button } from "@/components/ui/button";
 
 import { patients } from "../PatientData";
+import MedicalAttachmentsTable from "./components/MedicalAttachmentsTable";
 import PatientMedicalHistoryCard from "./components/PatientMedicalHistoryCard";
 
 function getHistorySortDate(history) {
@@ -64,6 +65,19 @@ export default function PatientMedicalHistory() {
     );
   }, [patient]);
 
+  const historyAttachments = useMemo(() => {
+    const attachments = patient?.medicalAttachments?.historyAttachments || [];
+
+    if (!appointmentFilterId) {
+      return attachments;
+    }
+
+    const visibleHistoryIds = new Set(visibleHistories.map((history) => String(history.id)));
+    return attachments.filter((attachment) =>
+      visibleHistoryIds.has(String(attachment.medicalHistoryId)),
+    );
+  }, [appointmentFilterId, patient, visibleHistories]);
+
   if (!patient) {
     return null;
   }
@@ -110,6 +124,22 @@ export default function PatientMedicalHistory() {
           </p>
         </div>
       )}
+
+      <section className="space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold tracking-tight text-slate-900">
+            Medical Attachments
+          </h3>
+          <p className="mt-1 text-sm text-slate-600">
+            Documents attached to this patient&apos;s visit history.
+          </p>
+        </div>
+
+        <MedicalAttachmentsTable
+          attachments={historyAttachments}
+          emptyMessage="No medical history attachments."
+        />
+      </section>
     </div>
   );
 }

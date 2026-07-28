@@ -45,12 +45,12 @@ export default function DoctorProfileHeader({ doctor, onDeactivateDoctor }) {
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-600">
             <div className="flex items-center gap-2">
               <Mail className="h-4 w-4 text-slate-400" />
-              <span>{doctor.user.email}</span>
+              <span>{doctor.user?.email || "No email"}</span>
             </div>
 
             <div className="flex items-center gap-2">
               <Phone className="h-4 w-4 text-slate-400" />
-              <span>{doctor.user.phone}</span>
+              <span>{doctor.user?.phone || "No phone"}</span>
             </div>
           </div>
 
@@ -88,7 +88,9 @@ export default function DoctorProfileHeader({ doctor, onDeactivateDoctor }) {
               Rating
             </p>
             <p className={profileHeaderDetailsValue}>
-              {doctor.averageRating ? doctor.averageRating.toFixed(1) : "N/A"}
+              {Number.isFinite(Number(doctor.averageRating))
+                ? Number(doctor.averageRating).toFixed(1)
+                : "N/A"}
             </p>
           </div>
 
@@ -97,7 +99,7 @@ export default function DoctorProfileHeader({ doctor, onDeactivateDoctor }) {
               Clinics Count
             </p>
             <p className={profileHeaderDetailsValue}>
-              {doctor.clinics_count}
+              {doctor.clinics_count ?? "N/A"}
             </p>
           </div>
 

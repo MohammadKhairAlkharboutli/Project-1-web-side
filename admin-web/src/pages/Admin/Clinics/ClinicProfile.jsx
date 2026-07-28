@@ -1,10 +1,10 @@
-import { useState } from "react";
-import { Outlet, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Outlet, useNavigate, useParams } from "react-router-dom";
 
+import { clinicsApi } from "@/api/clinicsApi";
 import ProfileLayout from "@/components/shared/ProfileLayout";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -12,17 +12,102 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
-import { clinics } from "../ClinicData";
 import ClinicFormDialog from "./components/ClinicFormDialog";
 import ClinicProfileHeader from "./components/ClinicProfileHeader";
 import ClinicProfileNav from "./components/ClinicProfileNav";
 
+function getErrorMessage(error, fallback) {
+  const message = error?.response?.data?.message || error?.message || fallback;
+  return Array.isArray(message) ? message.join(" ") : message;
+}
+
 export default function ClinicProfile() {
   const { clinicId } = useParams();
+  const navigate = useNavigate();
   const [editClinicOpen, setEditClinicOpen] = useState(false);
   const [deactivateClinicOpen, setDeactivateClinicOpen] = useState(false);
-  const clinic = clinics.find((item) => String(item.id) === clinicId);
+  const [clinic, setClinic] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const [closeError, setCloseError] = useState("");
+  const [isClosing, setIsClosing] = useState(false);
+
+  useEffect(() => {
+    let isCurrent = true;
+
+    async function loadClinic() {
+      try {
+        const data = await clinicsApi.getClinic(clinicId);
+
+        if (isCurrent) {
+          setClinic(data);
+          setLoadError("");
+        }
+      } catch (error) {
+        if (isCurrent) {
+          setClinic(null);
+          setLoadError(getErrorMessage(error, "We could not load this clinic."));
+        }
+      } finally {
+        if (isCurrent) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadClinic();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [clinicId, loadAttempt]);
+
+  function retryLoad() {
+    setIsLoading(true);
+    setLoadAttempt((attempt) => attempt + 1);
+  }
+
+  async function updateClinic(formData) {
+    const updatedClinic = await clinicsApi.updateClinic(clinic.id, formData);
+    setClinic(updatedClinic);
+  }
+
+  async function closeClinic() {
+    setIsClosing(true);
+    setCloseError("");
+
+    try {
+      await clinicsApi.closeClinic(clinic.id);
+      navigate("/admin/clinics", { replace: true });
+    } catch (error) {
+      setCloseError(
+        getErrorMessage(error, "We could not close this clinic. Please try again."),
+      );
+    } finally {
+      setIsClosing(false);
+    }
+  }
+
+  function handleDeactivateDialogChange(open) {
+    if (!open && !isClosing) {
+      setCloseError("");
+      setDeactivateClinicOpen(false);
+      return;
+    }
+
+    setDeactivateClinicOpen(open);
+  }
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-3xl rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+        <p className="text-sm text-slate-600">Loading clinic profile...</p>
+      </div>
+    );
+  }
 
   if (!clinic) {
     return (
@@ -31,18 +116,17 @@ export default function ClinicProfile() {
           Clinic not found
         </h1>
         <p className="mt-2 text-sm text-slate-600">
-          The clinic profile you requested does not exist.
+          {loadError || "The clinic profile you requested does not exist."}
         </p>
+        <button
+          type="button"
+          className="mt-4 text-sm font-medium text-[var(--color-primary)] hover:underline"
+          onClick={retryLoad}
+        >
+          Try again
+        </button>
       </div>
     );
-  }
-
-  function closeEditClinicDialog() {
-    setEditClinicOpen(false);
-  }
-
-  function closeDeactivateClinicDialog() {
-    setDeactivateClinicOpen(false);
   }
 
   return (
@@ -57,7 +141,7 @@ export default function ClinicProfile() {
         }
         nav={<ClinicProfileNav clinicId={clinic.id} />}
       >
-        <Outlet />
+        <Outlet context={{ clinic, refreshClinic: retryLoad }} />
       </ProfileLayout>
 
       <ClinicFormDialog
@@ -65,30 +149,31 @@ export default function ClinicProfile() {
         onOpenChange={setEditClinicOpen}
         mode="edit"
         clinic={clinic}
-        onSubmit={closeEditClinicDialog}
+        onSubmit={updateClinic}
       />
 
       <AlertDialog
         open={deactivateClinicOpen}
-        onOpenChange={setDeactivateClinicOpen}
+        onOpenChange={handleDeactivateDialogChange}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Deactivate clinic?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will prepare {clinic.name} to be marked as closed instead of
-              deleting its records. Backend deactivation is not connected yet,
-              so confirming only closes this modal for now.
+              This closes {clinic.name} and removes it from the active clinic list.
+              The backend will prevent closing it while doctors are still assigned.
             </AlertDialogDescription>
+            {closeError ? (
+              <p className="text-sm text-red-700" role="alert">
+                {closeError}
+              </p>
+            ) : null}
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              onClick={closeDeactivateClinicDialog}
-            >
-              Deactivate clinic
-            </AlertDialogAction>
+            <AlertDialogCancel disabled={isClosing}>Cancel</AlertDialogCancel>
+            <Button variant="destructive" onClick={closeClinic} disabled={isClosing}>
+              {isClosing ? "Closing..." : "Deactivate clinic"}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

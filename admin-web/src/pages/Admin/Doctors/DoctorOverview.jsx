@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useOutletContext } from "react-router-dom";
 
 import {
   profileCardBody,
@@ -7,7 +7,6 @@ import {
   profileCardValue,
 } from "@/components/shared/styles";
 
-import { doctors } from "../DoctorData";
 import {
   formatCurrency,
   formatDoctorStatus,
@@ -16,12 +15,7 @@ import {
 } from "./doctorUtils";
 
 export default function DoctorOverview() {
-  const { doctorId } = useParams();
-  const doctor = doctors.find((item) => String(item.id) === doctorId);
-
-  if (!doctor) {
-    return null;
-  }
+  const { doctor } = useOutletContext();
 
   return (
     <div className="space-y-6">
@@ -58,7 +52,9 @@ export default function DoctorOverview() {
             Experience
           </p>
           <p className={profileCardValue}>
-            {doctor.experienceYears} years
+            {typeof doctor.experienceYears === "number"
+              ? `${doctor.experienceYears} years`
+              : "N/A"}
           </p>
         </div>
 
@@ -94,7 +90,9 @@ export default function DoctorOverview() {
             Rating
           </p>
           <p className={profileCardValue}>
-            {doctor.averageRating ? doctor.averageRating.toFixed(1) : "N/A"}
+            {Number.isFinite(Number(doctor.averageRating))
+              ? Number(doctor.averageRating).toFixed(1)
+              : "N/A"}
           </p>
         </div>
 
@@ -112,7 +110,7 @@ export default function DoctorOverview() {
             Clinics Count
           </p>
           <p className={profileCardValue}>
-            {doctor.clinics_count}
+            {doctor.clinics_count ?? "N/A"}
           </p>
         </div>
 
@@ -139,7 +137,7 @@ export default function DoctorOverview() {
             Gender
           </p>
           <p className={profileCardValue}>
-            {formatEnumLabel(doctor.user.gender)}
+            {formatEnumLabel(doctor.user?.gender)}
           </p>
         </div>
 
@@ -148,7 +146,7 @@ export default function DoctorOverview() {
             Age
           </p>
           <p className={profileCardValue}>
-            {doctor.user.age}
+            {doctor.user?.age ?? "N/A"}
           </p>
         </div>
 
@@ -157,7 +155,7 @@ export default function DoctorOverview() {
             Preferred Language
           </p>
           <p className={profileCardValue}>
-            {doctor.user.preferredLanguage}
+            {doctor.user?.preferredLanguage || "N/A"}
           </p>
         </div>
 
@@ -166,7 +164,7 @@ export default function DoctorOverview() {
             Email
           </p>
           <p className={profileCardValue}>
-            {doctor.user.email}
+            {doctor.user?.email || "N/A"}
           </p>
         </div>
 
@@ -175,7 +173,7 @@ export default function DoctorOverview() {
             Phone
           </p>
           <p className={profileCardValue}>
-            {doctor.user.phone}
+            {doctor.user?.phone || "N/A"}
           </p>
         </div>
 
@@ -184,7 +182,7 @@ export default function DoctorOverview() {
             Address
           </p>
           <p className={profileCardValue}>
-            {doctor.user.address}
+            {doctor.user?.address || "N/A"}
           </p>
         </div>
 
@@ -193,7 +191,7 @@ export default function DoctorOverview() {
             Bio
           </p>
           <p className={profileCardBody}>
-            {doctor.bio}
+            {doctor.bio || "No biography provided."}
           </p>
         </div>
       </div>

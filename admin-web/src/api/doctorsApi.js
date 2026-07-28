@@ -7,11 +7,27 @@ export const doctorsApi = {
         `/doctor-clinics/clinics/${filters.clinicId}/doctors`,
       );
 
-      return data;
+      return Promise.all(
+        data.map(async (doctor) => {
+          if (doctor.user) {
+            return doctor;
+          }
+
+          const { data: doctorDetails } = await axiosClient.get(
+            `/doctors/${doctor.id}`,
+          );
+          return doctorDetails;
+        }),
+      );
     }
 
     const { data } = await axiosClient.get("/doctors");
 
+    return data;
+  },
+
+  async getDoctor(doctorId) {
+    const { data } = await axiosClient.get(`/doctors/${doctorId}`);
     return data;
   },
 };

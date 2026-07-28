@@ -13,7 +13,7 @@ import {
   getRatingPatientName,
 } from "@/components/shared/Ratings/ratingUtils";
 
-export function getRatingColumns() {
+export function getRatingColumns({ onViewDetails, onHide, hidingRatingId }) {
   return [
     {
       accessorKey: "score",
@@ -108,15 +108,22 @@ export function getRatingColumns() {
       header: "Actions",
       cell: ({ row }) => (
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link to={`/admin/ratings/${row.original.id}`}>
-              <Eye className="h-4 w-4" />
-              Details
-            </Link>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onViewDetails(row.original)}
+          >
+            <Eye className="h-4 w-4" />
+            Details
           </Button>
-          <Button variant="outline" size="sm" disabled>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={row.original.status !== "visible" || hidingRatingId === row.original.id}
+            onClick={() => onHide(row.original)}
+          >
             <EyeOff className="h-4 w-4" />
-            Hide
+            {hidingRatingId === row.original.id ? "Hiding..." : "Hide"}
           </Button>
         </div>
       ),

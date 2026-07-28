@@ -8,4 +8,9 @@ export const appointmentsApi = {
 
     return data;
   },
+
+  async getAppointment(appointmentId) {
+    const { data } = await axiosClient.get(`/appointments/${appointmentId}`);
+    return data;
+  },
 };

@@ -1,12 +1,40 @@
-import { useRef, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect, useRef, useState } from "react";
 import { Camera, KeyRound, Languages, LoaderCircle, RotateCcw, Save, ShieldCheck, Trash2, UserRound } from "lucide-react";
+import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
+import { z } from "zod";
 
 import { authApi } from "@/api/authApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { sharedSurfaceShell } from "@/components/shared/styles";
 import { useAdminAccount } from "@/context/AdminAccountContext";
+
+const profileDetailsSchema = z.object({
+  firstName: z.string().trim().min(1, "First name is required.").max(100, "First name cannot be longer than 100 characters."),
+  lastName: z.string().trim().min(1, "Last name is required.").max(100, "Last name cannot be longer than 100 characters."),
+  address: z.string().trim().max(500, "Address cannot be longer than 500 characters."),
+});
+
+const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Enter your current password."),
+    newPassword: z.string().min(8, "Your new password must contain at least 8 characters."),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Your new password and confirmation do not match.",
+  });
+
+function getProfileDefaultValues(account) {
+  return {
+    firstName: account?.firstName ?? "",
+    lastName: account?.lastName ?? "",
+    address: account?.address ?? "",
+  };
+}
 
 function getInitials(account) {
   return [account?.firstName, account?.lastName]
@@ -57,69 +85,54 @@ export default function AdminProfilePage() {
     uploadAvatar,
     removeAvatar,
   } = useAdminAccount();
-  const [form, setForm] = useState(null);
   const [formError, setFormError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isRemovingAvatar, setIsRemovingAvatar] = useState(false);
-  const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
   const [passwordError, setPasswordError] = useState("");
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [languagePreview, setLanguagePreview] = useState("en");
+  const {
+    register: registerProfile,
+    handleSubmit: handleProfileSubmit,
+    reset: resetProfile,
+    formState: { errors: profileErrors, isDirty: isProfileDirty, isSubmitting: isSaving },
+  } = useForm({
+    resolver: zodResolver(profileDetailsSchema),
+    defaultValues: getProfileDefaultValues(account),
+  });
+  const {
+    register: registerPassword,
+    handleSubmit: handlePasswordSubmit,
+    formState: { errors: passwordErrors },
+  } = useForm({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" },
+  });
 
-  const currentForm = form ?? {
-    firstName: account?.firstName ?? "",
-    lastName: account?.lastName ?? "",
-    address: account?.address ?? "",
-  };
+  useEffect(() => {
+    resetProfile(getProfileDefaultValues(account));
+  }, [account, resetProfile]);
 
-  const hasChanges = (
-    currentForm.firstName !== (account?.firstName ?? "")
-    || currentForm.lastName !== (account?.lastName ?? "")
-    || currentForm.address !== (account?.address ?? "")
-  );
-
-  function updateField(field, value) {
-    setForm({ ...currentForm, [field]: value });
+  function clearProfileMessages() {
     setFormError("");
     setSuccessMessage("");
   }
 
   function resetForm() {
-    setForm(null);
-    setFormError("");
-    setSuccessMessage("");
+    resetProfile(getProfileDefaultValues(account));
+    clearProfileMessages();
   }
 
-  async function handleProfileSave(event) {
-    event.preventDefault();
-
-    const firstName = currentForm.firstName.trim();
-    const lastName = currentForm.lastName.trim();
-
-    if (!firstName || !lastName) {
-      setFormError("Enter both your first and last name.");
-      return;
-    }
-
-    if (firstName.length > 100 || lastName.length > 100) {
-      setFormError("Names cannot be longer than 100 characters.");
-      return;
-    }
-
-    setIsSaving(true);
-    setFormError("");
-    setSuccessMessage("");
+  async function handleProfileSave({ firstName, lastName, address }) {
+    clearProfileMessages();
 
     try {
-      await updateAccount({ firstName, lastName, address: currentForm.address.trim() });
-      setForm(null);
+      await updateAccount({ firstName, lastName, address });
+      resetProfile({ firstName, lastName, address });
       setSuccessMessage("Profile details saved.");
     } catch (requestError) {
       setFormError(requestError?.response?.data?.message || "We could not save your profile.");
-    } finally {
-      setIsSaving(false);
     }
   }
 
@@ -170,36 +183,14 @@ export default function AdminProfilePage() {
     }
   }
 
-  function updatePasswordField(field, value) {
-    setPasswordForm((current) => ({ ...current, [field]: value }));
-    setPasswordError("");
-  }
-
-  async function handlePasswordChange(event) {
-    event.preventDefault();
-
-    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-      setPasswordError("Complete all password fields.");
-      return;
-    }
-
-    if (passwordForm.newPassword.length < 8) {
-      setPasswordError("Your new password must contain at least 8 characters.");
-      return;
-    }
-
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordError("Your new password and confirmation do not match.");
-      return;
-    }
-
+  async function handlePasswordChange({ currentPassword, newPassword }) {
     setIsChangingPassword(true);
     setPasswordError("");
 
     try {
       await authApi.changePassword({
-        oldPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword,
+        oldPassword: currentPassword,
+        newPassword,
       });
       authApi.clearSession();
       navigate("/login", { replace: true, state: { passwordChanged: true } });
@@ -286,7 +277,7 @@ export default function AdminProfilePage() {
         </p>
       )}
 
-      <form className={`${sharedSurfaceShell} p-5 sm:p-6`} onSubmit={handleProfileSave}>
+      <form className={`${sharedSurfaceShell} p-5 sm:p-6`} onSubmit={handleProfileSubmit(handleProfileSave)} noValidate>
         <div className="flex flex-col gap-1 border-b border-slate-100 pb-5">
           <h2 className="text-base font-semibold text-slate-900">Personal details</h2>
           <p className="text-sm text-slate-600">Use the name that should appear across the admin workspace.</p>
@@ -294,22 +285,25 @@ export default function AdminProfilePage() {
 
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <ProfileField label="First name">
-            <Input value={currentForm.firstName} maxLength={100} onChange={(event) => updateField("firstName", event.target.value)} autoComplete="given-name" />
+            <Input {...registerProfile("firstName", { onChange: clearProfileMessages })} maxLength={100} aria-invalid={Boolean(profileErrors.firstName)} autoComplete="given-name" />
+            {profileErrors.firstName?.message && <span className="text-xs font-normal text-red-600">{profileErrors.firstName.message}</span>}
           </ProfileField>
           <ProfileField label="Last name">
-            <Input value={currentForm.lastName} maxLength={100} onChange={(event) => updateField("lastName", event.target.value)} autoComplete="family-name" />
+            <Input {...registerProfile("lastName", { onChange: clearProfileMessages })} maxLength={100} aria-invalid={Boolean(profileErrors.lastName)} autoComplete="family-name" />
+            {profileErrors.lastName?.message && <span className="text-xs font-normal text-red-600">{profileErrors.lastName.message}</span>}
           </ProfileField>
           <ProfileField label="Address" className="sm:col-span-2">
-            <textarea value={currentForm.address} onChange={(event) => updateField("address", event.target.value)} rows={3} className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-[var(--color-primary)] focus:ring-3 focus:ring-blue-100" autoComplete="street-address" />
+            <textarea {...registerProfile("address", { onChange: clearProfileMessages })} maxLength={500} aria-invalid={Boolean(profileErrors.address)} rows={3} className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-[var(--color-primary)] focus:ring-3 focus:ring-blue-100 aria-invalid:border-red-500" autoComplete="street-address" />
+            {profileErrors.address?.message && <span className="text-xs font-normal text-red-600">{profileErrors.address.message}</span>}
           </ProfileField>
         </div>
 
         <div className="mt-6 flex flex-col-reverse gap-2 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
-          <Button type="button" variant="outline" onClick={resetForm} disabled={!hasChanges || isSaving}>
+          <Button type="button" variant="outline" onClick={resetForm} disabled={!isProfileDirty || isSaving}>
             <RotateCcw />
             Reset
           </Button>
-          <Button type="submit" disabled={!hasChanges || isSaving}>
+          <Button type="submit" disabled={!isProfileDirty || isSaving}>
             {isSaving ? <LoaderCircle className="animate-spin" /> : <Save />}
             Save changes
           </Button>
@@ -355,7 +349,7 @@ export default function AdminProfilePage() {
         )}
       </section>
 
-      <form className={`${sharedSurfaceShell} p-5 sm:p-6`} onSubmit={handlePasswordChange}>
+      <form className={`${sharedSurfaceShell} p-5 sm:p-6`} onSubmit={handlePasswordSubmit(handlePasswordChange)} noValidate>
         <div className="flex items-start gap-3 border-b border-slate-100 pb-5">
           <div className="rounded-lg bg-amber-50 p-2 text-amber-700"><KeyRound className="h-5 w-5" /></div>
           <div>
@@ -367,15 +361,18 @@ export default function AdminProfilePage() {
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <label className="grid gap-1.5 text-sm font-medium text-slate-700 sm:col-span-2">
             Current password
-            <Input type="password" value={passwordForm.currentPassword} onChange={(event) => updatePasswordField("currentPassword", event.target.value)} autoComplete="current-password" />
+            <Input type="password" {...registerPassword("currentPassword", { onChange: () => setPasswordError("") })} aria-invalid={Boolean(passwordErrors.currentPassword)} autoComplete="current-password" />
+            {passwordErrors.currentPassword?.message && <span className="text-xs font-normal text-red-600">{passwordErrors.currentPassword.message}</span>}
           </label>
           <label className="grid gap-1.5 text-sm font-medium text-slate-700">
             New password
-            <Input type="password" value={passwordForm.newPassword} onChange={(event) => updatePasswordField("newPassword", event.target.value)} autoComplete="new-password" />
+            <Input type="password" {...registerPassword("newPassword", { onChange: () => setPasswordError("") })} aria-invalid={Boolean(passwordErrors.newPassword)} autoComplete="new-password" />
+            {passwordErrors.newPassword?.message && <span className="text-xs font-normal text-red-600">{passwordErrors.newPassword.message}</span>}
           </label>
           <label className="grid gap-1.5 text-sm font-medium text-slate-700">
             Confirm new password
-            <Input type="password" value={passwordForm.confirmPassword} onChange={(event) => updatePasswordField("confirmPassword", event.target.value)} autoComplete="new-password" />
+            <Input type="password" {...registerPassword("confirmPassword", { onChange: () => setPasswordError("") })} aria-invalid={Boolean(passwordErrors.confirmPassword)} autoComplete="new-password" />
+            {passwordErrors.confirmPassword?.message && <span className="text-xs font-normal text-red-600">{passwordErrors.confirmPassword.message}</span>}
           </label>
         </div>
         <p className="mt-3 text-xs leading-5 text-slate-500">Use at least 8 characters. Do not reuse a password from another service.</p>

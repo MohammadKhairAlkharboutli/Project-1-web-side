@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
+import { ratingsApi } from "@/api/ratingsApi";
 import {
   profileCardBody,
   profileCardLabel,
@@ -9,7 +11,6 @@ import {
 } from "@/components/shared/styles";
 import RatingReportStatusBadge from "@/components/shared/Ratings/RatingReportStatusBadge";
 import RatingScoreBadge from "@/components/shared/Ratings/RatingScoreBadge";
-import { mockRatingReports } from "@/components/shared/Ratings/mockRatingData";
 import {
   formatRatingDate,
   getRatingDoctorName,
@@ -17,6 +18,8 @@ import {
   getReportReasonLabel,
 } from "@/components/shared/Ratings/ratingUtils";
 import { Button } from "@/components/ui/button";
+
+import RatingDetails from "./RatingDetails";
 
 function InfoItem({ label, value }) {
   return (
@@ -27,11 +30,100 @@ function InfoItem({ label, value }) {
   );
 }
 
+function getErrorMessage(error) {
+  const message =
+    error?.response?.data?.message ||
+    error?.message ||
+    "We could not load this rating report. Please try again.";
+
+  return Array.isArray(message) ? message.join(" ") : message;
+}
+
 export default function RatingReportDetails() {
   const { reportId } = useParams();
   const navigate = useNavigate();
-  const report = mockRatingReports.find((item) => String(item.id) === reportId);
-  const rating = report?.rating;
+  const [report, setReport] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const [actionError, setActionError] = useState("");
+  const [isResolving, setIsResolving] = useState(false);
+  const [isRatingDetailsOpen, setIsRatingDetailsOpen] = useState(false);
+
+  useEffect(() => {
+    let isCurrent = true;
+
+    async function loadReport() {
+      try {
+        const response = await ratingsApi.getAdminReports();
+        const matchingReport = response.data.find(
+          (item) => String(item.id) === reportId,
+        );
+
+        if (isCurrent) {
+          setReport(matchingReport ?? null);
+          setLoadError(
+            matchingReport ? "" : "The rating report you requested does not exist.",
+          );
+        }
+      } catch (error) {
+        if (isCurrent) {
+          setReport(null);
+          setLoadError(getErrorMessage(error));
+        }
+      } finally {
+        if (isCurrent) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadReport();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [loadAttempt, reportId]);
+
+  async function resolveReport(action) {
+    if (!report) {
+      return;
+    }
+
+    setIsResolving(true);
+    setActionError("");
+
+    try {
+      const updatedReport = await ratingsApi.resolveReport(report.id, action);
+      setReport((currentReport) => ({
+        ...currentReport,
+        ...updatedReport,
+        rating:
+          action === "accept" && currentReport?.rating
+            ? { ...currentReport.rating, ...updatedReport.rating, status: "hidden" }
+            : updatedReport.rating ?? currentReport?.rating,
+      }));
+    } catch (error) {
+      setActionError(
+        getErrorMessage(error, "We could not resolve this rating report."),
+      );
+    } finally {
+      setIsResolving(false);
+    }
+  }
+
+  function retryLoad() {
+    setIsLoading(true);
+    setLoadAttempt((attempt) => attempt + 1);
+  }
+
+  if (isLoading) {
+    return (
+      <section className="mx-auto max-w-3xl rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+        <p className="text-sm text-slate-600">Loading rating report...</p>
+      </section>
+    );
+  }
 
   if (!report) {
     return (
@@ -39,9 +131,16 @@ export default function RatingReportDetails() {
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
           Rating report not found
         </h1>
+        <p className="mt-2 text-sm text-slate-600">{loadError}</p>
+        <Button className="mt-4" variant="outline" size="sm" onClick={retryLoad}>
+          Try again
+        </Button>
       </section>
     );
   }
+
+  const rating = report.rating;
+  const isPending = report.status === "pending";
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-4">
@@ -66,6 +165,12 @@ export default function RatingReportDetails() {
             <RatingReportStatusBadge status={report.status} />
           </div>
 
+          {actionError ? (
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+              {actionError}
+            </p>
+          ) : null}
+
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <InfoItem label="Reason" value={getReportReasonLabel(report.reason)} />
             <InfoItem
@@ -75,7 +180,7 @@ export default function RatingReportDetails() {
                   to={`/admin/patients/${report.reporterPatientId}`}
                   className="text-[var(--color-primary)] hover:underline"
                 >
-                  {report.reporterPatient?.user?.full_name}
+                  {report.reporterPatient?.user?.full_name || "Unknown Patient"}
                 </Link>
               }
             />
@@ -85,12 +190,13 @@ export default function RatingReportDetails() {
             <InfoItem
               label="Reported Rating"
               value={
-                <Link
-                  to={`/admin/ratings/${report.ratingId}`}
-                  className="text-[var(--color-primary)] hover:underline"
+                <Button
+                  variant="link"
+                  className="h-auto p-0 text-[var(--color-primary)]"
+                  onClick={() => setIsRatingDetailsOpen(true)}
                 >
                   Rating #{report.ratingId}
-                </Link>
+                </Button>
               }
             />
 
@@ -123,16 +229,24 @@ export default function RatingReportDetails() {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" disabled>
-              Accept report
-            </Button>
-            <Button variant="outline" disabled>
-              Dismiss report
-            </Button>
-          </div>
+          {isPending ? (
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={() => resolveReport("accept")} disabled={isResolving}>
+                {isResolving ? "Resolving..." : "Accept report"}
+              </Button>
+              <Button variant="outline" onClick={() => resolveReport("dismiss")} disabled={isResolving}>
+                Dismiss report
+              </Button>
+            </div>
+          ) : null}
         </div>
       </div>
+
+      <RatingDetails
+        rating={rating}
+        open={isRatingDetailsOpen}
+        onOpenChange={setIsRatingDetailsOpen}
+      />
     </section>
   );
 }

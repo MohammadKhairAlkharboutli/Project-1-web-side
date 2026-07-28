@@ -1,33 +1,67 @@
-import { useMemo, useState } from "react";
-import { useSearchParams, useParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useOutletContext, useSearchParams } from "react-router-dom";
 
+import { appointmentsApi } from "@/api/appointmentsApi";
 import DataTable from "@/components/shared/DataTable";
 import {
   filterAppointmentsByDate,
   getUniqueAppointmentsById,
 } from "@/components/shared/Appointments/appointmentFilters";
-import { mockAppointments } from "@/components/shared/Appointments/mockAppointmentData";
 
-import { clinics } from "../ClinicData";
 import { getClinicAppointmentColumns } from "./components/ClinicAppointmentColumns";
 import ClinicAppointmentsToolbar from "./components/ClinicAppointmentsToolbar";
 
+function getErrorMessage(error) {
+  const message =
+    error?.response?.data?.message ||
+    error?.message ||
+    "We could not load this clinic's appointments.";
+
+  return Array.isArray(message) ? message.join(" ") : message;
+}
+
 export default function ClinicAppointments() {
-  const { clinicId } = useParams();
+  const { clinic } = useOutletContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const doctorIdParam = searchParams.get("doctorId");
-  const clinic = clinics.find((item) => String(item.id) === clinicId);
+  const [clinicAppointments, setClinicAppointments] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [dateRange, setDateRange] = useState("all");
   const [exactDate, setExactDate] = useState("");
   const [selectedDoctorId, setSelectedDoctorId] = useState(null);
 
-  const clinicAppointments = useMemo(
-    () =>
-      mockAppointments.filter(
-        (appointment) => String(appointment.clinicId) === clinicId,
-      ),
-    [clinicId],
-  );
+  useEffect(() => {
+    let isCurrent = true;
+
+    async function loadAppointments() {
+      try {
+        const data = await appointmentsApi.getAdminAppointments({
+          clinicId: clinic.id,
+        });
+
+        if (isCurrent) {
+          setClinicAppointments(data);
+          setLoadError("");
+        }
+      } catch (error) {
+        if (isCurrent) {
+          setLoadError(getErrorMessage(error));
+        }
+      } finally {
+        if (isCurrent) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadAppointments();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [clinic.id, loadAttempt]);
 
   const queryDoctorId = useMemo(() => {
     const hasMatchingDoctor = clinicAppointments.some(
@@ -65,10 +99,6 @@ export default function ClinicAppointments() {
     setSearchParams({ doctorId });
   }
 
-  if (!clinic) {
-    return null;
-  }
-
   function resetFilters(table, setGlobalFilter) {
     setGlobalFilter("");
     table.resetColumnFilters();
@@ -77,6 +107,11 @@ export default function ClinicAppointments() {
     setExactDate("");
     setSelectedDoctorId("all");
     setSearchParams({});
+  }
+
+  function retryLoad() {
+    setIsLoading(true);
+    setLoadAttempt((attempt) => attempt + 1);
   }
 
   return (
@@ -93,7 +128,13 @@ export default function ClinicAppointments() {
       <DataTable
         columns={getClinicAppointmentColumns()}
         data={appointments}
-        emptyMessage="No appointments found for this clinic."
+        emptyMessage={
+          isLoading
+            ? "Loading appointments..."
+            : loadError
+              ? "Appointments could not be loaded."
+              : "No appointments found for this clinic."
+        }
         toolbar={(toolbarProps) => (
           <ClinicAppointmentsToolbar
             {...toolbarProps}
@@ -113,6 +154,18 @@ export default function ClinicAppointments() {
           />
         )}
       />
+
+      {loadError ? (
+        <div
+          className="flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 sm:flex-row sm:items-center sm:justify-between"
+          role="alert"
+        >
+          <span>{loadError}</span>
+          <button type="button" className="font-medium underline" onClick={retryLoad}>
+            Try again
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

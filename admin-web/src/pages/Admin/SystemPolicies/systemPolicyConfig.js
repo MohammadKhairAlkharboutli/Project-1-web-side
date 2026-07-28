@@ -182,11 +182,17 @@ export function arePoliciesEqual(firstPolicies, secondPolicies) {
 }
 
 export function formatPolicyTimestamp(date) {
+  const timestamp = date instanceof Date ? date : new Date(date);
+
+  if (Number.isNaN(timestamp.getTime())) {
+    return "N/A";
+  }
+
   return new Intl.DateTimeFormat("en", {
     year: "numeric",
     month: "short",
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
-  }).format(date);
+  }).format(timestamp);
 }

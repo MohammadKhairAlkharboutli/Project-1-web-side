@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { CalendarClock, CalendarDays, Database, Flag, Hospital, ListOrdered, Scale, Star, BarChart3, ChevronRight, ChevronLeft, LayoutDashboard, Stethoscope, Users, UserRoundCog } from 'lucide-react'
+import { CalendarClock, CalendarDays, Database, Flag, Hospital, ListOrdered, Scale, Star, ChevronRight, ChevronLeft, LayoutDashboard, Stethoscope, Users, UserRoundCog } from 'lucide-react'
 import { useState } from 'react'
 
 const sidebarItems=[          
@@ -15,8 +15,7 @@ const sidebarItems=[
     {label:"Data Lookups" , path:"/admin/data-lookups" , icon:Database },
     {label:"System Policies" , path:"/admin/system-policies" , icon:Scale },
     {label:"Secretaries" , path:"/admin/secretaries" , icon:UserRoundCog },
-    {label:"Clinics" , path:"/admin/clinics" , icon:Hospital },
-    {label:"Statistics" , path:"/admin/statistics" , icon:BarChart3 }
+    {label:"Clinics" , path:"/admin/clinics" , icon:Hospital }
 ]
 
 const SidebarItem = ({item, isCollapsed}) => {

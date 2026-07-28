@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -60,6 +61,15 @@ function FieldError({ message }) {
   return <span className="text-xs font-normal text-red-600">{message}</span>;
 }
 
+function getErrorMessage(error) {
+  const message =
+    error?.response?.data?.message ||
+    error?.message ||
+    "We could not save the clinic. Please try again.";
+
+  return Array.isArray(message) ? message.join(" ") : message;
+}
+
 export default function ClinicFormDialog({
   open,
   onOpenChange,
@@ -86,14 +96,23 @@ function ClinicFormContent({ mode, clinic, onOpenChange, onSubmit }) {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(clinicFormSchema),
     defaultValues: getDefaultValues(clinic),
   });
 
-  function submitClinic(formData) {
-    onSubmit(formData);
+  const [requestError, setRequestError] = useState("");
+
+  async function submitClinic(formData) {
+    setRequestError("");
+
+    try {
+      await onSubmit(formData);
+      onOpenChange(false);
+    } catch (error) {
+      setRequestError(getErrorMessage(error));
+    }
   }
 
   const isEditMode = mode === "edit";
@@ -157,6 +176,15 @@ function ClinicFormContent({ mode, clinic, onOpenChange, onSubmit }) {
             />
             <FieldError message={errors.description?.message} />
           </label>
+
+          {requestError ? (
+            <p
+              className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 sm:col-span-2"
+              role="alert"
+            >
+              {requestError}
+            </p>
+          ) : null}
         </div>
 
         <DialogFooter>
@@ -164,11 +192,16 @@ function ClinicFormContent({ mode, clinic, onOpenChange, onSubmit }) {
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
           >
             Cancel
           </Button>
-          <Button type="submit">
-            {isEditMode ? "Save changes" : "Add clinic"}
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting
+              ? "Saving..."
+              : isEditMode
+                ? "Save changes"
+                : "Add clinic"}
           </Button>
         </DialogFooter>
       </form>
