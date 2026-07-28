@@ -1,9 +1,8 @@
 import { NavLink } from 'react-router-dom'
-import { CalendarClock, CalendarDays, Database, Flag, Hospital, ListOrdered, Scale, Star, BarChart3, ChevronRight, ChevronLeft, LayoutDashboard, Stethoscope, Users, UserRoundCog } from 'lucide-react'
+import { CalendarClock, CalendarDays, Database, Flag, Hospital, ListOrdered, Scale, Star, BarChart3, ChevronRight, ChevronLeft, LayoutDashboard, Stethoscope, Users, UserRoundCog, Settings } from 'lucide-react'
 import { useState } from 'react'
 
-const sidebarItems=[          
-    //just for the icons I can just switch them out for real icons later
+const sidebarItems=[         
     {label:"Dashboard" , path:"/admin" , icon:LayoutDashboard },
     {label:"Doctors" , path:"/admin/doctors" , icon:Stethoscope},
     {label:"Patients" , path:"/admin/patients" , icon: Users},
@@ -22,20 +21,19 @@ const sidebarItems=[
 const SidebarItem = ({item, isCollapsed}) => {
     const Icon = item.icon;
     return(
-
         <NavLink to={item.path}
                 end={item.path==="/admin"} 
                 title={isCollapsed ? item.label : ""}
                 className={({ isActive }) =>
-                            `flex items-center overflow-hidden rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 ease-in-out ${
+                            `flex items-center overflow-hidden rounded-xl px-3 py-2.5 text-xs font-bold transition-all duration-300 ease-in-out ${
                                 isCollapsed ? "justify-center gap-0" : "gap-3"
                             } ${
                             isActive
-                                ? "bg-[var(--color-primary)] text-white shadow-sm"
-                                : "text-slate-600 hover:bg-[var(--color-primary-light)] hover:text-slate-900"}`
-                                }
+                                ? "bg-gradient-to-r from-sky-300 to-sky-400 text-slate-900 shadow-sm shadow-sky-400/20"
+                                : "text-slate-600 hover:bg-sky-50/80 hover:text-sky-600"}`
+                            }
             >
-            <Icon size={19} className="shrink-0" />
+            <Icon size={18} className="shrink-0" />
             <span
                 className={`overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out ${
                     isCollapsed ? "w-0 opacity-0" : "w-40 opacity-100"
@@ -44,66 +42,72 @@ const SidebarItem = ({item, isCollapsed}) => {
                 {item.label}
             </span>
         </NavLink>
-        
     )
 }
 
 const Sidebar = () => {
-
   const [isCollapsed, setIsCollapsed]= useState(false)
+  
   return (
+    <aside className={`flex min-h-screen flex-col overflow-hidden border-r border-slate-200/70 bg-white/90 backdrop-blur-md p-4 text-slate-800 transition-[width] duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-64'}`} >
 
-    <aside className={`flex min-h-screen flex-col overflow-hidden border-r border-slate-200 bg-white p-5 text-slate-800 transition-[width] duration-300 ease-in-out
-                ${isCollapsed ? 'w-20' : 'w-64'}`} >
-
-        <div className={`flex items-center justify-between gap-2`}>       {/* ----------logo area------------ */}
+        <div className={`flex items-center justify-between gap-2 px-1`}> 
             <div className='flex items-center gap-3'>
-
-                <div className='flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--color-primary)] text-lg font-bold text-white'>
+                {/* تم جعل الشعار بألوان سماوية فاتحة وزاهية */}
+                <div className='flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-sky-300 to-sky-500 text-lg font-black text-white shadow-md shadow-sky-400/20'>
                 T
                 </div>
 
                 <div className={`overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out ${isCollapsed ? "w-0 opacity-0" : "w-28 opacity-100"}`}>
-                    <h1 className='text-lg font-bold leading-tight text-slate-900'>Tabibi</h1>
-                    <p className='text-xs text-slate-500 leading-tight'>admin panel</p>
+                    <h1 className='text-base font-extrabold leading-tight text-slate-800'>Tabibi</h1>
+                    <span className='text-[10px] text-sky-500 font-bold uppercase tracking-wider block'>Admin Suite</span>
                 </div>
             </div>
 
-       <button
-                            className={`rounded-lg p-2 text-slate-500 transition-all duration-200 hover:bg-slate-100 hover:text-slate-700 ${
-                                isCollapsed ? "pointer-events-none w-0 translate-x-2 p-0 opacity-0" : "opacity-100"
-                            }`}
-                            type='button'
-                            onClick={()=>setIsCollapsed(true)}>
-                                <ChevronLeft size={19}/>
-                        </button>
+            <button
+                className={`rounded-xl p-2 text-slate-400 transition-all duration-200 hover:bg-sky-50 hover:text-sky-600 ${
+                    isCollapsed ? "pointer-events-none w-0 translate-x-2 p-0 opacity-0" : "opacity-100"
+                }`}
+                type='button'
+                onClick={()=>setIsCollapsed(true)}>
+                <ChevronLeft size={18}/>
+            </button>
         </div>
 
-
-
         <button
-                type="button"
-                onClick={() => setIsCollapsed(false)}
-                className={`mt-4 flex h-9 w-full items-center justify-center rounded-lg text-slate-500 transition-all duration-300 hover:bg-slate-100 hover:text-slate-700 ${
-                    isCollapsed ? "opacity-100" : "pointer-events-none h-0 translate-y-[-6px] opacity-0"
-                }`}
-                >
-                <ChevronRight size={19} />
-                </button>
+            type="button"
+            onClick={() => setIsCollapsed(false)}
+            className={`mt-4 flex h-9 w-full items-center justify-center rounded-xl text-slate-400 transition-all duration-300 hover:bg-sky-50 hover:text-sky-600 ${
+                isCollapsed ? "opacity-100" : "pointer-events-none h-0 translate-y-[-6px] opacity-0"
+            }`}
+        >
+            <ChevronRight size={18} />
+        </button>
 
-
-        <nav className='mt-8 flex flex-col gap-1.5'>        {/* Here we have the items.*/}
-
+        <nav className='mt-6 flex flex-col gap-1.5'> 
             {sidebarItems.map((item)=>(
                 <SidebarItem key={item.path} item={item} isCollapsed={isCollapsed}/>
             ))}
         </nav>
 
-         {/* Bottom small text */}
-        <div className={`mt-auto overflow-hidden rounded-lg bg-slate-50 text-xs text-slate-500 transition-all duration-300 ease-in-out ${
-            isCollapsed ? "max-h-0 p-0 opacity-0" : "max-h-20 p-3 opacity-100"
-        }`}>
-        Clinic management system
+        {/* قسم الإعدادات في الأسفل بلون أفتح وتصميم متناسق */}
+        <div className={`mt-auto pt-4 transition-all duration-300 ease-in-out ${isCollapsed ? "px-0" : ""}`}>
+            <NavLink 
+                to="/admin/settings"
+                title={isCollapsed ? "Settings" : ""}
+                className={({ isActive }) => `flex items-center overflow-hidden rounded-xl px-3 py-2.5 text-xs font-bold transition-all duration-300 ${
+                    isCollapsed ? "justify-center gap-0" : "gap-3"
+                } ${
+                    isActive 
+                        ? "bg-gradient-to-r from-sky-300 to-sky-400 text-slate-900 shadow-sm shadow-sky-400/20" 
+                        : "bg-sky-50/60 border border-sky-100/80 text-slate-600 hover:bg-sky-100/70 hover:text-sky-600"
+                }`}
+            >
+                <Settings size={18} className="shrink-0" />
+                <span className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${isCollapsed ? "w-0 opacity-0" : "w-40 opacity-100"}`}>
+                    Settings
+                </span>
+            </NavLink>
         </div>
 
     </aside>

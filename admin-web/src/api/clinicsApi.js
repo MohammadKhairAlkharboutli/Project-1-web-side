@@ -1,7 +1,8 @@
-import { clinics } from "@/pages/Admin/ClinicData";
+import axiosClient from "./axiosClient";
 
 export const clinicsApi = {
   async getClinics() {
-    return clinics;
+    const { data } = await axiosClient.get("/clinics");
+    return data;
   },
 };

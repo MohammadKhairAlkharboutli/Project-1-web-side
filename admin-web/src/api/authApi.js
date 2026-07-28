@@ -1,6 +1,11 @@
 import axiosClient from "./axiosClient";
 
 export const authApi = {
+  clearSession: () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+  },
+
   login: async (loginData) => {
     const response = await axiosClient.post("/auth/login", loginData);
 
@@ -16,8 +21,12 @@ export const authApi = {
     try {
       await axiosClient.post("/auth/logout");
     } finally {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
+      authApi.clearSession();
     }
+  },
+
+  changePassword: async (passwords) => {
+    const response = await axiosClient.post("/auth/change-password", passwords);
+    return response.data;
   },
 };

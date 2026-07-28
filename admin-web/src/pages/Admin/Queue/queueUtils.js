@@ -48,7 +48,11 @@ export function sortQueueByPosition(queueItems) {
 }
 
 export function getPatientNameFromQueueItem(queueItem) {
-  const user = queueItem?.appointment?.patient?.user;
+  return getPatientNameFromAppointment(queueItem?.appointment);
+}
+
+export function getPatientNameFromAppointment(appointment) {
+  const user = appointment?.patient?.user;
 
   if (user?.full_name) {
     return user.full_name;
