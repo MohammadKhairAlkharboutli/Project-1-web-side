@@ -1,563 +1,414 @@
-import { useState, useEffect, useRef } from "react";
-import { Loader2, Sliders, AlertCircle, ChevronDown } from "lucide-react";
+import { useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { AlertCircle, CheckCircle2, Sliders } from "lucide-react";
+
 import {
   formatCurrency,
   formatDoctorStatus,
   formatEnumLabel,
   formatLanguagesSpoken,
 } from "../Admin/Doctors/doctorUtils";
+import { getCurrentDoctor } from "./doctorPortalData";
 
-// --- 1. Sub-component: View Mode ---
+const requiredProfileFields = [
+  { name: "fatherName", label: "father's name" },
+  { name: "phone", label: "phone number" },
+  { name: "address", label: "address" },
+  { name: "birthDate", label: "birth date" },
+  { name: "gender", label: "gender" },
+  { name: "specialization", label: "medical specialty" },
+  { name: "licenseNumber", label: "license number" },
+  { name: "experienceYears", label: "years of experience" },
+];
+
+const fieldClassName =
+  "w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs font-medium text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 aria-invalid:border-rose-400 aria-invalid:ring-rose-100";
+
+function asDateInputValue(value) {
+  return value ? String(value).split("T")[0] : "";
+}
+
+function buildProfileDefaults(doctor) {
+  return {
+    fatherName: doctor?.user?.fatherName || "",
+    phone: doctor?.user?.phone || "",
+    address: doctor?.user?.address || "",
+    gender: doctor?.user?.gender || "",
+    birthDate: asDateInputValue(doctor?.user?.birthDate),
+    specialization: doctor?.specialization || "",
+    subSpecialization: doctor?.subSpecialization || "",
+    licenseNumber: doctor?.licenseNumber || "",
+    experienceYears: doctor?.experienceYears ?? "",
+    initialVisitFee: doctor?.initialVisitFee ?? "",
+    returnVisitFee: doctor?.returnVisitFee ?? "",
+    bio: doctor?.bio || "",
+    languagesSpoken: Array.isArray(doctor?.languagesSpoken)
+      ? doctor.languagesSpoken.join(", ")
+      : doctor?.languagesSpoken || "",
+  };
+}
+
+function getCompletionStatus(values) {
+  const missingFields = requiredProfileFields.filter(({ name }) => {
+    const value = values?.[name];
+    return value === undefined || value === null || String(value).trim() === "";
+  });
+  const completionPercentage =
+    ((requiredProfileFields.length - missingFields.length) / requiredProfileFields.length) * 100;
+
+  return {
+    isComplete: missingFields.length === 0,
+    completionPercentage,
+    missingFields,
+  };
+}
+
+function FieldError({ error }) {
+  return error ? <p className="mt-1.5 text-xs font-medium text-rose-600">{error.message}</p> : null;
+}
+
 function DoctorViewProfile({ doctor, onEditClick, completionStatus }) {
   const fullName = doctor?.user?.full_name || "Doctor Name";
-  const isComplete = completionStatus?.isComplete ?? true;
 
   return (
     <div className="space-y-8">
-      
-      {/* Incomplete profile warning banner */}
-      {!isComplete && (
-        <div className="bg-amber-50 border border-amber-200 p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+      {!completionStatus.isComplete && (
+        <div className="flex flex-col items-start justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-xs sm:flex-row sm:items-center">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-amber-100 text-amber-700 rounded-xl">
+            <div className="rounded-xl bg-amber-100 p-2 text-amber-700">
               <AlertCircle size={20} />
             </div>
             <div>
-              <h4 className="text-xs font-black text-amber-900 uppercase tracking-wider">Profile Incomplete</h4>
-              <p className="text-xs text-amber-700 mt-0.5">
-                Please complete your profile information to activate all clinical features ({Math.round(completionStatus?.completionPercentage || 0)}% completed).
+              <h4 className="text-xs font-black uppercase tracking-wider text-amber-900">Profile incomplete</h4>
+              <p className="mt-0.5 text-xs text-amber-700">
+                Complete the required personal and professional details ({Math.round(completionStatus.completionPercentage)}% completed).
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onEditClick}
-            className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-xs transition-all shrink-0 cursor-pointer"
+            className="shrink-0 rounded-xl bg-amber-600 px-5 py-2.5 text-xs font-bold text-white shadow-xs transition-all hover:bg-amber-700"
           >
-            Complete Profile
+            Complete profile
           </button>
         </div>
       )}
 
-      {/* Edit Profile Action Button */}
       <div className="flex justify-end">
         <button
+          type="button"
           onClick={onEditClick}
-          className="bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] hover:opacity-95 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer"
+          className="flex items-center gap-2 rounded-xl bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] px-5 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:opacity-95"
         >
           <Sliders size={14} />
-          <span>Complete Profile</span>
+          <span>Edit profile</span>
         </button>
       </div>
 
-      {/* Executive Header Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white border border-slate-200/70 rounded-[28px] p-8 shadow-xs relative overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-br from-[#1e61dc] to-[#3b9df5]" />
-
-        <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
-          <div className="relative group shrink-0">
-            <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] p-1 shadow-md overflow-hidden">
+      <div className="relative flex flex-col justify-between gap-6 overflow-hidden rounded-[28px] border border-slate-200/70 bg-white p-8 shadow-xs lg:flex-row lg:items-center">
+        <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-br from-[#1e61dc] to-[#3b9df5]" />
+        <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:text-left">
+          <div className="relative shrink-0">
+            <div className="h-28 w-28 overflow-hidden rounded-2xl bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] p-1 shadow-md sm:h-32 sm:w-32">
               <img
-                src={doctor?.user?.avatar || doctor?.photo || "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=300"}
+                src={doctor?.user?.avatarUrl || doctor?.photo || "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=300"}
                 alt={fullName}
-                className="w-full h-full object-cover rounded-xl"
+                className="h-full w-full rounded-xl object-cover"
               />
             </div>
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white shadow-xs" />
+            <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-white bg-emerald-500 shadow-xs" />
           </div>
-
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-blue-50 border border-blue-100 text-[#1e61dc] text-xs font-bold tracking-wide">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#1e61dc]" />
+            <div className="inline-flex items-center gap-2 rounded-md border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-bold tracking-wide text-[#1e61dc]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#1e61dc]" />
               {doctor?.specialization || "Specialist Practitioner"}
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              {fullName}
-            </h1>
-            <p className="text-sm text-slate-500 font-medium">
-              {doctor?.subSpecialization ? doctor.subSpecialization : "Clinical Operations & Patient Services"}
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">{fullName}</h1>
+            <p className="text-sm font-medium text-slate-500">
+              {doctor?.subSpecialization || "Clinical Operations & Patient Services"}
             </p>
           </div>
         </div>
-
-        <div className="flex flex-wrap items-center justify-center gap-3 border-t lg:border-t-0 lg:border-l border-slate-100 pt-6 lg:pt-0 lg:pl-8">
-          <div className="bg-blue-50/50 border border-blue-100 px-5 py-3 rounded-xl text-center min-w-[100px]">
-            <span className="text-[11px] font-bold text-blue-500 uppercase tracking-wider block">Rating</span>
-            <span className="text-sm font-black text-[#1e61dc] mt-0.5 block">★ {doctor?.averageRating?.toFixed(1) || "0.0"}</span>
-          </div>
-          <div className="bg-blue-50/50 border border-blue-100 px-5 py-3 rounded-xl text-center min-w-[100px]">
-            <span className="text-[11px] font-bold text-blue-500 uppercase tracking-wider block">Clinics</span>
-            <span className="text-sm font-black text-[#1e61dc] mt-0.5 block">{doctor?.clinics_count || 0} Units</span>
-          </div>
-          <div className="bg-emerald-50 border border-emerald-200/60 px-5 py-3 rounded-xl text-center min-w-[110px]">
-            <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider block">Status</span>
-            <span className="text-sm font-black text-emerald-700 mt-0.5 block">{formatDoctorStatus(doctor?.status)}</span>
-          </div>
+        <div className="flex flex-wrap items-center justify-center gap-3 border-t border-slate-100 pt-6 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+          <ProfileMetric label="Rating" value={`★ ${doctor?.averageRating?.toFixed(1) || "0.0"}`} />
+          <ProfileMetric label="Clinics" value={`${doctor?.clinics_count || 0} Units`} />
+          <ProfileMetric label="Status" value={formatDoctorStatus(doctor?.status)} success />
         </div>
       </div>
 
-      {/* Structured Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white border border-slate-200/70 rounded-[28px] p-8 shadow-xs space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-xs font-black text-[#1e61dc] uppercase tracking-wider">Professional Biography</h3>
-              <span className="text-xs font-mono text-slate-400">Overview</span>
-            </div>
-            <p className="text-sm text-slate-600 leading-relaxed font-normal bg-blue-50/30 p-5 rounded-2xl border border-blue-50">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          <ProfileSection title="Professional biography" subtitle="Overview">
+            <p className="rounded-2xl border border-blue-50 bg-blue-50/30 p-5 text-sm leading-relaxed text-slate-600">
               {doctor?.bio || "No professional biography registered in the system database."}
             </p>
-          </div>
+          </ProfileSection>
 
-          <div className="bg-white border border-slate-200/70 rounded-[28px] p-8 shadow-xs space-y-6">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-xs font-black text-[#1e61dc] uppercase tracking-wider">Identity & Credentials</h3>
-              <span className="text-xs font-mono text-slate-400">Metadata</span>
+          <ProfileSection title="Identity & credentials" subtitle="Metadata">
+            <div className="grid grid-cols-1 gap-4 text-xs sm:grid-cols-2">
+              <ProfileDetail label="Email address" value={doctor?.user?.email} />
+              <ProfileDetail label="Phone number" value={doctor?.user?.phone} />
+              <ProfileDetail label="Father's name" value={doctor?.user?.fatherName} />
+              <ProfileDetail label="License ID" value={doctor?.licenseNumber} />
+              <ProfileDetail label="Gender" value={formatEnumLabel(doctor?.user?.gender)} />
+              <ProfileDetail label="Age" value={doctor?.user?.age ? `${doctor.user.age} years` : null} />
+              <ProfileDetail label="Languages" value={formatLanguagesSpoken(doctor?.languagesSpoken)} />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div className="bg-slate-50/70 p-4 rounded-xl border border-slate-100 flex items-center justify-between">
-                <span className="text-slate-400 font-bold">Email Address</span>
-                <span className="text-slate-800 font-bold truncate max-w-[160px]">{doctor?.user?.email || "N/A"}</span>
-              </div>
-              <div className="bg-slate-50/70 p-4 rounded-xl border border-slate-100 flex items-center justify-between">
-                <span className="text-slate-400 font-bold">Phone Number</span>
-                <span className="text-slate-800 font-bold">{doctor?.user?.phone || "N/A"}</span>
-              </div>
-              <div className="bg-slate-50/70 p-4 rounded-xl border border-slate-100 flex items-center justify-between">
-                <span className="text-slate-400 font-bold">License ID</span>
-                <span className="text-slate-800 font-bold">{doctor?.licenseNumber || "N/A"}</span>
-              </div>
-              <div className="bg-slate-50/70 p-4 rounded-xl border border-slate-100 flex items-center justify-between">
-                <span className="text-slate-400 font-bold">Gender</span>
-                <span className="text-slate-800 font-bold">{formatEnumLabel(doctor?.user?.gender) || "N/A"}</span>
-              </div>
-              <div className="bg-slate-50/70 p-4 rounded-xl border border-slate-100 flex items-center justify-between">
-                <span className="text-slate-400 font-bold">Age</span>
-                <span className="text-slate-800 font-bold">{doctor?.user?.age ? `${doctor.user.age} Years` : "N/A"}</span>
-              </div>
-              <div className="bg-slate-50/70 p-4 rounded-xl border border-slate-100 flex items-center justify-between">
-                <span className="text-slate-400 font-bold">Languages</span>
-                <span className="text-slate-800 font-bold">{formatLanguagesSpoken(doctor?.languagesSpoken) || "N/A"}</span>
-              </div>
-            </div>
-          </div>
+          </ProfileSection>
         </div>
 
         <div className="space-y-6">
-          <div className="bg-white border border-slate-200/70 rounded-[28px] p-8 shadow-xs space-y-6">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-xs font-black text-[#1e61dc] uppercase tracking-wider">Consultation Tariffs</h3>
-              <span className="text-xs font-mono text-slate-400">Pricing</span>
-            </div>
+          <ProfileSection title="Consultation tariffs" subtitle="Pricing">
             <div className="space-y-3">
-              <div className="p-4 rounded-xl bg-blue-50/50 border border-blue-100 flex items-center justify-between">
-                <div>
-                  <span className="text-[11px] font-bold text-blue-500 uppercase tracking-wide block">Initial Visit</span>
-                  <span className="text-base font-black text-[#1e61dc] mt-0.5 block">{formatCurrency(doctor?.initialVisitFee)}</span>
-                </div>
-                <span className="text-lg">💳</span>
-              </div>
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                <div>
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide block">Return Visit</span>
-                  <span className="text-base font-black text-slate-800 mt-0.5 block">{formatCurrency(doctor?.returnVisitFee)}</span>
-                </div>
-                <span className="text-lg">🔄</span>
-              </div>
+              <Tariff label="Initial visit" value={formatCurrency(doctor?.initialVisitFee)} primary />
+              <Tariff label="Return visit" value={formatCurrency(doctor?.returnVisitFee)} />
             </div>
-          </div>
-
-          <div className="bg-white border border-slate-200/70 rounded-[28px] p-8 shadow-xs space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-xs font-black text-[#1e61dc] uppercase tracking-wider">Facility Location</h3>
-              <span className="text-xs font-mono text-slate-400">Address</span>
-            </div>
-            <div className="p-4 rounded-xl bg-blue-50/30 border border-blue-50 flex items-start gap-3">
-              <span className="text-base mt-0.5">📍</span>
+          </ProfileSection>
+          <ProfileSection title="Contact address" subtitle="Address">
+            <div className="flex items-start gap-3 rounded-xl border border-blue-50 bg-blue-50/30 p-4">
+              <span className="mt-0.5 text-base">📍</span>
               <div className="space-y-1">
-                <span className="text-xs font-bold text-slate-800 block">Primary Office</span>
-                <p className="text-xs text-slate-500 leading-relaxed font-medium">{doctor?.user?.address || "No facility location address registered."}</p>
+                <span className="block text-xs font-bold text-slate-800">Primary address</span>
+                <p className="text-xs font-medium leading-relaxed text-slate-500">
+                  {doctor?.user?.address || "No contact address registered."}
+                </p>
               </div>
             </div>
-          </div>
+          </ProfileSection>
         </div>
       </div>
     </div>
   );
 }
 
-// --- Custom Dropdown Component for Gender ---
-function CustomGenderSelect({ value, onChange }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
-
-  const options = [
-    { label: "Select Gender", value: "", disabled: true },
-    { label: "Male", value: "male" },
-    { label: "Female", value: "female" },
-  ];
-
-  const selectedOption = options.find((opt) => opt.value === value) || options[0];
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
+function ProfileMetric({ label, value, success = false }) {
   return (
-    <div className="relative" ref={dropdownRef}>
-      <label className="font-bold text-slate-600 block mb-1">Gender</label>
-      
-      {/* Trigger Button matching the design style */}
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full bg-[#1e61dc] text-white font-medium text-xs px-4 py-3 rounded-xl shadow-md flex items-center justify-between cursor-pointer focus:outline-none transition-all"
-      >
-        <span className="flex items-center gap-2">
-          {selectedOption.label}
-        </span>
-        <div className="flex items-center gap-2">
-          {value && <span className="w-2 h-2 rounded-full bg-white shadow-xs"></span>}
-          <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
-        </div>
-      </button>
-
-      {/* Dropdown Menu */}
-      {isOpen && (
-        <div className="absolute z-50 mt-1.5 w-full bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden py-1 animate-in fade-in zoom-in-95 duration-150">
-          {options.map((option, idx) => (
-            <div
-              key={idx}
-              onClick={() => {
-                if (!option.disabled) {
-                  onChange({ target: { name: "gender", value: option.value } });
-                  setIsOpen(false);
-                }
-              }}
-              className={`px-4 py-3 text-xs font-medium cursor-pointer transition-colors ${
-                option.disabled 
-                  ? "text-slate-400 select-none cursor-default" 
-                  : value === option.value 
-                    ? "bg-[#1e61dc] text-white font-bold" 
-                    : "text-slate-700 hover:bg-slate-50"
-              }`}
-            >
-              {option.label}
-            </div>
-          ))}
-        </div>
-      )}
+    <div className={`min-w-[100px] rounded-xl border px-5 py-3 text-center ${success ? "border-emerald-200/60 bg-emerald-50" : "border-blue-100 bg-blue-50/50"}`}>
+      <span className={`block text-[11px] font-bold uppercase tracking-wider ${success ? "text-emerald-600" : "text-blue-500"}`}>{label}</span>
+      <span className={`mt-0.5 block text-sm font-black ${success ? "text-emerald-700" : "text-[#1e61dc]"}`}>{value}</span>
     </div>
   );
 }
 
-// --- 2. Sub-component: Edit / Completion Mode with Live Progress Bar ---
-function DoctorEditProfile({ initialData, completionStatus: backendCompletion, onSaveSuccess, onCancel }) {
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState({ type: "", text: "" });
+function ProfileSection({ title, subtitle, children }) {
+  return (
+    <section className="space-y-4 rounded-[28px] border border-slate-200/70 bg-white p-8 shadow-xs">
+      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 className="text-xs font-black uppercase tracking-wider text-[#1e61dc]">{title}</h3>
+        <span className="text-xs font-mono text-slate-400">{subtitle}</span>
+      </div>
+      {children}
+    </section>
+  );
+}
 
-  const [formData, setFormData] = useState({
-    specialization: initialData?.specialization || "",
-    subSpecialization: initialData?.subSpecialization || "",
-    licenseNumber: initialData?.licenseNumber || "",
-    experienceYears: initialData?.experienceYears || "",
-    initialVisitFee: initialData?.initialVisitFee || "",
-    returnVisitFee: initialData?.returnVisitFee || "",
-    bio: initialData?.bio || "",
-    languagesSpoken: initialData?.languagesSpoken || "",
-    gender: initialData?.user?.gender || "",
-    birthDate: initialData?.user?.birthDate ? initialData.user.birthDate.split("T")[0] : ""
+function ProfileDetail({ label, value }) {
+  return (
+    <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/70 p-4">
+      <span className="font-bold text-slate-400">{label}</span>
+      <span className="max-w-[160px] truncate font-bold text-slate-800">{value || "N/A"}</span>
+    </div>
+  );
+}
+
+function Tariff({ label, value, primary = false }) {
+  return (
+    <div className={`flex items-center justify-between rounded-xl border p-4 ${primary ? "border-blue-100 bg-blue-50/50" : "border-slate-100 bg-slate-50"}`}>
+      <div>
+        <span className={`block text-[11px] font-bold uppercase tracking-wide ${primary ? "text-blue-500" : "text-slate-400"}`}>{label}</span>
+        <span className={`mt-0.5 block text-base font-black ${primary ? "text-[#1e61dc]" : "text-slate-800"}`}>{value}</span>
+      </div>
+      <span className="text-lg">{primary ? "💳" : "🔄"}</span>
+    </div>
+  );
+}
+
+function DoctorEditProfile({ initialData, onSaveSuccess, onCancel }) {
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    defaultValues: buildProfileDefaults(initialData),
+    mode: "onTouched",
   });
+  const values = useWatch({ control });
+  const completionStatus = getCompletionStatus(values);
 
-  // Live calculation of completion progress based on 5 core fields
-  const calculateLiveCompletion = () => {
-    const missing = [];
-    if (!formData.birthDate) missing.push('birthDate');
-    if (!formData.gender) missing.push('gender');
-    if (!formData.licenseNumber || formData.licenseNumber.trim() === '') missing.push('syndicateNumber');
-    if (!formData.specialization || formData.specialization.trim() === '') missing.push('medicalSpecialty');
-    if (!formData.subSpecialization || formData.subSpecialization.trim() === '') missing.push('medicalSubSpecialty');
-
-    const percentage = ((5 - missing.length) / 5) * 100;
-    return {
-      completionPercentage: percentage,
-      missingFields: missing,
-      isComplete: missing.length === 0
+  function saveProfile(data) {
+    const savedProfile = {
+      ...initialData,
+      specialization: data.specialization.trim(),
+      subSpecialization: data.subSpecialization.trim(),
+      licenseNumber: data.licenseNumber.trim(),
+      experienceYears: Number(data.experienceYears),
+      initialVisitFee: data.initialVisitFee === "" ? null : Number(data.initialVisitFee),
+      returnVisitFee: data.returnVisitFee === "" ? null : Number(data.returnVisitFee),
+      bio: data.bio.trim(),
+      languagesSpoken: data.languagesSpoken
+        .split(",")
+        .map((language) => language.trim())
+        .filter(Boolean),
+      user: {
+        ...initialData.user,
+        fatherName: data.fatherName.trim(),
+        phone: data.phone.trim(),
+        address: data.address.trim(),
+        gender: data.gender,
+        birthDate: data.birthDate,
+      },
     };
-  };
 
-  const currentProgress = calculateLiveCompletion();
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    setMessage({ type: "", text: "" });
-
-    try {
-      const response = await fetch("/api/doctors/profile", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...formData,
-          experienceYears: formData.experienceYears ? Number(formData.experienceYears) : undefined,
-          initialVisitFee: formData.initialVisitFee ? Number(formData.initialVisitFee) : undefined,
-          returnVisitFee: formData.returnVisitFee ? Number(formData.returnVisitFee) : undefined,
-        })
-      });
-
-      if (!response.ok) throw new Error("Failed to update profile");
-      
-      const result = await response.json();
-      setMessage({ type: "success", text: "Profile updated successfully!" });
-      
-      setTimeout(() => {
-        onSaveSuccess(result);
-      }, 800);
-    } catch (err) {
-      console.error(err);
-      setMessage({ type: "error", text: "Error updating profile. Please try again." });
-    } finally {
-      setSaving(false);
-    }
-  };
+    onSaveSuccess(savedProfile);
+  }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-slate-200/70 shadow-xs">
+    <form onSubmit={handleSubmit(saveProfile)} noValidate className="space-y-6">
+      <div className="flex flex-col justify-between gap-4 rounded-2xl border border-slate-200/70 bg-white p-6 shadow-xs sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-xl font-black text-slate-900">Complete Profile</h1>
-          <p className="text-xs text-slate-500 mt-1">Please fill in the required fields to activate all clinical features.</p>
+          <h1 className="text-xl font-black text-slate-900">Complete profile</h1>
+          <p className="mt-1 text-xs text-slate-500">Fill in your personal, contact, and professional information.</p>
         </div>
         <div className="flex items-center gap-3">
-          {onCancel && (
-            <button 
-              type="button" 
-              onClick={onCancel}
-              className="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer"
-            >
-              Cancel
-            </button>
-          )}
-          <button 
-            type="submit" 
-            disabled={saving}
-            className="bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] hover:opacity-95 text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-2 disabled:opacity-55 cursor-pointer"
-          >
-            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-            <span>Save Changes</span>
+          <button type="button" onClick={onCancel} className="rounded-xl bg-slate-100 px-4 py-2.5 text-xs font-bold text-slate-700 transition-all hover:bg-slate-200">
+            Cancel
+          </button>
+          <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 rounded-xl bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] px-6 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-55">
+            {isSubmitting && <Sliders className="h-4 w-4 animate-spin" />}
+            Save changes
           </button>
         </div>
       </div>
 
-      {message.text && (
-        <div className={`p-4 rounded-xl text-xs font-bold ${message.type === "success" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-rose-50 text-rose-700 border border-rose-200"}`}>
-          {message.text}
-        </div>
-      )}
+      <CompletionProgress completionStatus={completionStatus} />
 
-      {/* Live Interactive Progress Bar */}
-      <div className="bg-blue-50 border border-blue-100 p-5 rounded-2xl space-y-3">
-        <div className="flex justify-between items-center">
-          <span className="text-xs font-bold text-blue-900 uppercase tracking-wider">Completion Progress</span>
-          <span className="text-xs font-black text-blue-700">{Math.round(currentProgress.completionPercentage)}% Completed</span>
+      <ProfileFormSection title="Personal & contact information" description="Required to complete your account profile.">
+        <div className="grid grid-cols-1 gap-4 text-xs sm:grid-cols-2">
+          <FormField label="Father's name" error={errors.fatherName}>
+            <input {...register("fatherName", { required: "Father's name is required" })} aria-invalid={Boolean(errors.fatherName)} className={fieldClassName} />
+          </FormField>
+          <FormField label="Phone number" error={errors.phone}>
+            <input {...register("phone", { required: "Phone number is required", pattern: { value: /^\+?[0-9\s-]{7,20}$/, message: "Enter a valid phone number" } })} inputMode="tel" aria-invalid={Boolean(errors.phone)} className={fieldClassName} />
+          </FormField>
+          <FormField label="Gender" error={errors.gender}>
+            <select {...register("gender", { required: "Gender is required" })} aria-invalid={Boolean(errors.gender)} className={fieldClassName}>
+              <option value="">Select gender</option>
+              <option value="MALE">Male</option>
+              <option value="FEMALE">Female</option>
+            </select>
+          </FormField>
+          <FormField label="Birth date" error={errors.birthDate}>
+            <input {...register("birthDate", { required: "Birth date is required" })} type="date" aria-invalid={Boolean(errors.birthDate)} className={fieldClassName} />
+          </FormField>
+          <div className="sm:col-span-2">
+            <FormField label="Address" error={errors.address}>
+              <textarea {...register("address", { required: "Address is required" })} rows="3" aria-invalid={Boolean(errors.address)} className={fieldClassName} />
+            </FormField>
+          </div>
         </div>
-        <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
-          <div 
-            className="bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] h-full rounded-full transition-all duration-500 ease-out" 
-            style={{ width: `${currentProgress.completionPercentage}%` }}
-          />
-        </div>
-        {currentProgress.missingFields?.length > 0 ? (
-          <p className="text-xs text-amber-700 font-medium">
-            ⚠️ Missing required fields: <span className="font-bold">{currentProgress.missingFields.join(', ')}</span>
-          </p>
-        ) : (
-          <p className="text-xs text-emerald-700 font-bold">
-            🎉 Excellent! All core fields have been successfully fulfilled.
-          </p>
-        )}
-      </div>
+      </ProfileFormSection>
 
-      <div className="bg-white p-8 rounded-[28px] border border-slate-200/70 shadow-xs space-y-5">
-        <h3 className="text-xs font-black text-[#1e61dc] uppercase tracking-wider border-b pb-3 flex items-center gap-2">
-          <Sliders size={16} />
-          <span>Professional & Financial Parameters</span>
-        </h3>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-          <div>
-            <label className="font-bold text-slate-600 block mb-1">Specialization (Medical Specialty)</label>
-            <input 
-              type="text" 
-              name="specialization"
-              value={formData.specialization} 
-              onChange={handleChange}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 font-medium" 
-            />
-          </div>
-          <div>
-            <label className="font-bold text-slate-600 block mb-1">Sub-Specialization (Medical Sub-Specialty)</label>
-            <input 
-              type="text" 
-              name="subSpecialization"
-              value={formData.subSpecialization} 
-              onChange={handleChange}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 font-medium" 
-            />
-          </div>
-          <div>
-            <label className="font-bold text-slate-600 block mb-1">Syndicate License Number (Syndicate Number)</label>
-            <input 
-              type="text" 
-              name="licenseNumber"
-              value={formData.licenseNumber} 
-              onChange={handleChange}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 font-medium" 
-            />
-          </div>
-          <div>
-            <label className="font-bold text-slate-600 block mb-1">Experience Years</label>
-            <input 
-              type="number" 
-              name="experienceYears"
-              value={formData.experienceYears} 
-              onChange={handleChange}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 font-medium" 
-            />
-          </div>
-          <div>
-            <label className="font-bold text-slate-600 block mb-1">Initial Visit Fee ($)</label>
-            <input 
-              type="number" 
-              name="initialVisitFee"
-              value={formData.initialVisitFee} 
-              onChange={handleChange}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 font-medium" 
-            />
-          </div>
-          <div>
-            <label className="font-bold text-slate-600 block mb-1">Return Visit Fee ($)</label>
-            <input 
-              type="number" 
-              name="returnVisitFee"
-              value={formData.returnVisitFee} 
-              onChange={handleChange}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 font-medium" 
-            />
-          </div>
-          
-          {/* حقل الجنس (Gender) بالتصميم المطلوب تماماً */}
-          <CustomGenderSelect 
-            value={formData.gender} 
-            onChange={handleChange} 
-          />
-
-          <div>
-            <label className="font-bold text-slate-600 block mb-1">Birth Date</label>
-            <input 
-              type="date" 
-              name="birthDate"
-              value={formData.birthDate} 
-              onChange={handleChange}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 font-medium" 
-            />
-          </div>
+      <ProfileFormSection title="Professional information" description="Required credentials and optional practice details.">
+        <div className="grid grid-cols-1 gap-4 text-xs sm:grid-cols-2">
+          <FormField label="Medical specialty" error={errors.specialization}>
+            <input {...register("specialization", { required: "Medical specialty is required" })} aria-invalid={Boolean(errors.specialization)} className={fieldClassName} />
+          </FormField>
+          <FormField label="Sub-specialty" error={errors.subSpecialization}>
+            <input {...register("subSpecialization")} aria-invalid={Boolean(errors.subSpecialization)} className={fieldClassName} />
+          </FormField>
+          <FormField label="Syndicate license number" error={errors.licenseNumber}>
+            <input {...register("licenseNumber", { required: "License number is required" })} aria-invalid={Boolean(errors.licenseNumber)} className={fieldClassName} />
+          </FormField>
+          <FormField label="Experience years" error={errors.experienceYears}>
+            <input {...register("experienceYears", { required: "Experience years are required", min: { value: 0, message: "Experience cannot be negative" } })} type="number" min="0" inputMode="numeric" aria-invalid={Boolean(errors.experienceYears)} className={fieldClassName} />
+          </FormField>
+          <FormField label="Initial visit fee" error={errors.initialVisitFee}>
+            <input {...register("initialVisitFee", { min: { value: 0, message: "Fee cannot be negative" } })} type="number" min="0" inputMode="decimal" aria-invalid={Boolean(errors.initialVisitFee)} className={fieldClassName} />
+          </FormField>
+          <FormField label="Return visit fee" error={errors.returnVisitFee}>
+            <input {...register("returnVisitFee", { min: { value: 0, message: "Fee cannot be negative" } })} type="number" min="0" inputMode="decimal" aria-invalid={Boolean(errors.returnVisitFee)} className={fieldClassName} />
+          </FormField>
         </div>
-
-        <div>
-          <label className="text-xs font-bold text-slate-600 block mb-1">Languages Spoken</label>
-          <input 
-            type="text" 
-            name="languagesSpoken"
-            value={formData.languagesSpoken} 
-            onChange={handleChange}
-            placeholder="e.g. Arabic, English" 
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-800 font-medium" 
-          />
+        <div className="mt-4 space-y-4 text-xs">
+          <FormField label="Languages spoken" error={errors.languagesSpoken}>
+            <input {...register("languagesSpoken")} placeholder="e.g. Arabic, English" aria-invalid={Boolean(errors.languagesSpoken)} className={fieldClassName} />
+          </FormField>
+          <FormField label="Professional biography" error={errors.bio}>
+            <textarea {...register("bio")} rows="4" aria-invalid={Boolean(errors.bio)} className={fieldClassName} />
+          </FormField>
         </div>
-
-        <div>
-          <label className="text-xs font-bold text-slate-600 block mb-1">Bio / Professional Biography</label>
-          <textarea 
-            rows="3" 
-            name="bio"
-            value={formData.bio} 
-            onChange={handleChange}
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-800 font-medium" 
-          />
-        </div>
-      </div>
+      </ProfileFormSection>
     </form>
   );
 }
 
-// --- 3. Main Container Component ---
-export default function DoctorProfileContainer() {
-  const [loading, setLoading] = useState(true);
-  const [doctorData, setDoctorData] = useState(null);
-  const [completionStatus, setCompletionStatus] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
-
-  const fetchProfile = async () => {
-    try {
-      const response = await fetch("/api/doctors/me");
-      if (!response.ok) throw new Error("Failed to fetch profile");
-      const data = await response.json();
-      
-      setDoctorData(data.profile || data);
-      if (data.completionStatus) {
-        setCompletionStatus(data.completionStatus);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-96">
-        <Loader2 className="w-8 h-8 animate-spin text-[#1e61dc]" />
-      </div>
-    );
-  }
+function CompletionProgress({ completionStatus }) {
+  const missingLabels = completionStatus.missingFields.map(({ label }) => label).join(", ");
 
   return (
-    <div className="w-full min-h-screen bg-[#f4f7fb] text-slate-900 font-sans antialiased p-6 sm:p-10 lg:p-12" dir="ltr">
-      <div className="max-w-[1400px] mx-auto">
+    <div className="space-y-3 rounded-2xl border border-blue-100 bg-blue-50 p-5">
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-xs font-bold uppercase tracking-wider text-blue-900">Profile completion</span>
+        <span className="text-xs font-black text-blue-700">{Math.round(completionStatus.completionPercentage)}% completed</span>
+      </div>
+      <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
+        <div className="h-full rounded-full bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] transition-all duration-300" style={{ width: `${completionStatus.completionPercentage}%` }} />
+      </div>
+      {completionStatus.isComplete ? (
+        <p className="flex items-center gap-2 text-xs font-bold text-emerald-700"><CheckCircle2 className="h-4 w-4" /> All required profile details are complete.</p>
+      ) : (
+        <p className="text-xs font-medium text-amber-700">Missing required fields: <span className="font-bold">{missingLabels}</span></p>
+      )}
+    </div>
+  );
+}
+
+function ProfileFormSection({ title, description, children }) {
+  return (
+    <section className="space-y-5 rounded-[28px] border border-slate-200/70 bg-white p-8 shadow-xs">
+      <div className="border-b border-slate-100 pb-3">
+        <h3 className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#1e61dc]"><Sliders size={16} /> {title}</h3>
+        <p className="mt-1 text-xs text-slate-500">{description}</p>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function FormField({ label, error, children }) {
+  return (
+    <div>
+      <label className="mb-1 block font-bold text-slate-600">{label}</label>
+      {children}
+      <FieldError error={error} />
+    </div>
+  );
+}
+
+export default function DoctorProfileContainer() {
+  const [doctorData, setDoctorData] = useState(() => ({
+    ...getCurrentDoctor(),
+    user: { ...getCurrentDoctor()?.user },
+  }));
+  const [isEditing, setIsEditing] = useState(false);
+  const completionStatus = getCompletionStatus(buildProfileDefaults(doctorData));
+
+  return (
+    <div className="min-h-full w-full bg-[#f4f7fb] p-6 font-sans text-slate-900 antialiased sm:p-10 lg:p-12" dir="ltr">
+      <div className="mx-auto max-w-[1400px]">
         {isEditing ? (
-          <DoctorEditProfile 
+          <DoctorEditProfile
             initialData={doctorData}
-            completionStatus={completionStatus}
-            onSaveSuccess={() => {
-              fetchProfile();
+            onSaveSuccess={(updatedProfile) => {
+              setDoctorData(updatedProfile);
               setIsEditing(false);
             }}
             onCancel={() => setIsEditing(false)}
           />
         ) : (
-          <DoctorViewProfile 
-            doctor={doctorData}
-            completionStatus={completionStatus}
-            onEditClick={() => setIsEditing(true)}
-          />
+          <DoctorViewProfile doctor={doctorData} completionStatus={completionStatus} onEditClick={() => setIsEditing(true)} />
         )}
       </div>
     </div>

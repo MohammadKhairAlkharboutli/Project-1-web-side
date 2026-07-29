@@ -43,7 +43,6 @@ import DoctorProfileSettings from "./pages/Doctor/DoctorProfileSettings";
 import DoctorLeaves from "./pages/Doctor/DoctorLeaves";
 import DoctorSettings from "./pages/Doctor/Settings";
 import PatientsList from "./pages/Doctor/PatientsList";
-import PatientMedicalHistoryView from "./pages/Doctor/PatientMedicalHistoryView";
 import DoctorLiveQueue from "./pages/Doctor/DoctorLiveQueue";
 import ConsultationPage from "./pages/Doctor/ConsultationPage";
 import PatientMedicalFile from "./pages/Doctor/PatientMedicalFile";
@@ -116,7 +115,6 @@ function App() {
         <Route path="profile" element={<DoctorProfileSettings />} />
         <Route path="patients" element={<PatientsList />} />
         <Route path="patients/:patientId" element={<PatientMedicalFile />} />
-        <Route path="medical-history/:appointmentId" element={<PatientMedicalHistoryView />} />
         <Route path="consultation/:appointmentId" element={<ConsultationPage />} />
         <Route path="queue" element={<DoctorLiveQueue />} />
         <Route path="referrals" element={<ReferralsPage />} />

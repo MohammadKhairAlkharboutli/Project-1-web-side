@@ -841,6 +841,7 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 
 import { patients } from "../Admin/PatientData";
 import { getCurrentDoctorAppointments } from "./doctorPortalData";
+import ReferralDialog from "./ReferralDialog";
 
 export default function ConsultationPage() {
   const { appointmentId } = useParams();
@@ -911,6 +912,8 @@ export default function ConsultationPage() {
     appointment?.status === "completed"
   );
   const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [showReferralDialog, setShowReferralDialog] = useState(false);
+  const canCreateReferral = !isCompleted && Boolean(appointment?.patientId);
 
   // Handlers
   const handleAddPrescription = (e) => {
@@ -1021,6 +1024,16 @@ export default function ConsultationPage() {
             <Save size={16} />
             Save Draft
           </Button>
+          {canCreateReferral && (
+            <Button
+              variant="outline"
+              onClick={() => setShowReferralDialog(true)}
+              className="gap-2"
+            >
+              <Stethoscope size={16} />
+              Create referral
+            </Button>
+          )}
           <Button
             onClick={() => setShowCompleteModal(true)}
             disabled={isCompleted}
@@ -1608,6 +1621,13 @@ export default function ConsultationPage() {
           </div>
         </div>
       )}
+
+      <ReferralDialog
+        open={showReferralDialog}
+        onOpenChange={setShowReferralDialog}
+        appointment={appointment}
+        onCreated={() => setSaveMessage("Referral created successfully.")}
+      />
     </div>
   );
 }

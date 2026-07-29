@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @source "./pages/Doctor/DoctorInviteSignupPage.jsx";
+@source "./pages/Doctor/DoctorProfileSettings.jsx";
 
 :root {
   --color-primary: #2563eb;
