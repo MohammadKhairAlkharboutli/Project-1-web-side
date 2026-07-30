@@ -1,7 +1,7 @@
-import { mockAppointments } from "@/components/shared/Appointments/mockAppointmentData";
 import { mockDoctorWeeklyScheduleSlots } from "@/components/shared/DoctorWeeklySchedule/mockScheduleData";
 
 import { doctors } from "../Admin/DoctorData";
+import { getMockDoctorAppointments } from "./doctorMockWorkflow";
 
 export const CURRENT_DOCTOR_ID = 1;
 
@@ -10,11 +10,7 @@ export function getCurrentDoctor() {
 }
 
 export function getCurrentDoctorAppointments() {
-  const currentDoctor = getCurrentDoctor();
-
-  return mockAppointments.filter(
-    (appointment) => appointment.doctorId === currentDoctor?.id,
-  );
+  return getMockDoctorAppointments();
 }
 
 export function getCurrentDoctorScheduleSlots() {

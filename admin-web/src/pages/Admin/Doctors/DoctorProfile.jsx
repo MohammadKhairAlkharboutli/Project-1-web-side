@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { doctorsApi } from "@/api/doctorsApi";
+import { doctorClinicsApi } from "@/api/doctorClinicsApi";
 import DoctorProfileHeader from "./components/DoctorProfileHeader";
 import DoctorProfileNav from "./components/DoctorProfileNav";
 import { getDoctorDisplayName } from "./doctorUtils";
@@ -41,9 +42,17 @@ export default function DoctorProfile() {
     async function loadDoctor() {
       try {
         const data = await doctorsApi.getDoctor(doctorId);
+        let assignedClinic = null;
+
+        try {
+          const clinics = await doctorClinicsApi.getClinicsForDoctor(data.id);
+          assignedClinic = clinics[0] || null;
+        } catch {
+          // Clinic data is supplementary to the doctor profile itself.
+        }
 
         if (isCurrent) {
-          setDoctor(data);
+          setDoctor({ ...data, assignedClinic });
           setLoadError("");
         }
       } catch (error) {

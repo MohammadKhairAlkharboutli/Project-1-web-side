@@ -16,6 +16,7 @@ import {
 export const APPOINTMENT_STATUSES = [
   "pending",
   "confirmed",
+  "in_progress",
   "completed",
   "cancelled",
   "no_show",
@@ -25,6 +26,7 @@ export const APPOINTMENT_STATUS_OPTIONS = [
   { value: "all", label: "All statuses" },
   { value: "pending", label: "Pending" },
   { value: "confirmed", label: "Confirmed" },
+  { value: "in_progress", label: "In consultation" },
   { value: "completed", label: "Completed" },
   { value: "cancelled", label: "Cancelled" },
   { value: "no_show", label: "No-show" },
@@ -44,6 +46,7 @@ export function getAppointmentStatusLabel(status) {
   const labels = {
     pending: "Pending",
     confirmed: "Confirmed",
+    in_progress: "In consultation",
     completed: "Completed",
     cancelled: "Cancelled",
     no_show: "No-show",
@@ -57,7 +60,7 @@ export function getAppointmentStatusVariant(status) {
     return "destructive";
   }
 
-  if (status === "completed") {
+  if (status === "completed" || status === "in_progress") {
     return "secondary";
   }
 

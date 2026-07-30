@@ -56,6 +56,7 @@ export default function DoctorClinics() {
   const [clinicToUnassign, setClinicToUnassign] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
+  const hasAssignedClinic = assignedClinics.length > 0;
 
   useEffect(() => {
     let isCurrent = true;
@@ -91,9 +92,13 @@ export default function DoctorClinics() {
   }, [doctor.id, loadAttempt]);
 
   const assignableClinics = useMemo(() => {
+    if (hasAssignedClinic) {
+      return [];
+    }
+
     const assignedIds = new Set(assignedClinics.map((clinic) => String(clinic.id)));
     return allClinics.filter((clinic) => !assignedIds.has(String(clinic.id)));
-  }, [allClinics, assignedClinics]);
+  }, [allClinics, assignedClinics, hasAssignedClinic]);
 
   function openAssignDialog() {
     setActionError("");
@@ -155,16 +160,16 @@ export default function DoctorClinics() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-xl font-semibold tracking-tight text-slate-900">
-            Clinics
+            Clinic
           </h2>
           <p className="mt-1 text-sm text-slate-600">
-            Clinics this doctor is assigned to.
+            The clinic this doctor is assigned to.
           </p>
         </div>
 
         <Button
           onClick={openAssignDialog}
-          disabled={isLoading || assignableClinics.length === 0}
+          disabled={isLoading || hasAssignedClinic || assignableClinics.length === 0}
         >
           <Plus className="h-4 w-4" />
           Assign doctor to clinic
@@ -174,6 +179,12 @@ export default function DoctorClinics() {
       {actionError ? (
         <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
           {actionError}
+        </p>
+      ) : null}
+
+      {assignedClinics.length > 1 ? (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          This record has more than one clinic assignment. The frontend now prevents additional assignments; an administrator should keep one assignment and remove the rest.
         </p>
       ) : null}
 

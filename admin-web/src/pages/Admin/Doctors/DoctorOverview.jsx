@@ -14,6 +14,15 @@ import {
   formatLanguagesSpoken,
 } from "./doctorUtils";
 
+function formatDate(value) {
+  if (!value) {
+    return "N/A";
+  }
+
+  const date = new Date(`${String(value).slice(0, 10)}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? "N/A" : date.toLocaleDateString();
+}
+
 export default function DoctorOverview() {
   const { doctor } = useOutletContext();
 
@@ -107,10 +116,10 @@ export default function DoctorOverview() {
 
         <div className={profileCardShell}>
           <p className={profileCardLabel}>
-            Clinics Count
+            Clinic
           </p>
           <p className={profileCardValue}>
-            {doctor.clinics_count ?? "N/A"}
+            {doctor.assignedClinic?.name || "Not assigned"}
           </p>
         </div>
 
@@ -143,19 +152,10 @@ export default function DoctorOverview() {
 
         <div className={profileCardShell}>
           <p className={profileCardLabel}>
-            Age
+            Birth Date
           </p>
           <p className={profileCardValue}>
-            {doctor.user?.age ?? "N/A"}
-          </p>
-        </div>
-
-        <div className={profileCardShell}>
-          <p className={profileCardLabel}>
-            Preferred Language
-          </p>
-          <p className={profileCardValue}>
-            {doctor.user?.preferredLanguage || "N/A"}
+            {formatDate(doctor.user?.birthDate)}
           </p>
         </div>
 

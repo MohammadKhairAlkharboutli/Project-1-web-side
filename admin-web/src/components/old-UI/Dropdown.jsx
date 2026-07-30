@@ -1,57 +1,55 @@
 import { useEffect, useRef, useState } from "react";
 
-
-const Dropdown = ({   
+const Dropdown = ({ 
     trigger,
     children,
     align = "right",
-    width = "w-48"
+    width = "w-56"
 }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef(null);
 
-    const [isOpen,setIsOpen]= useState(false);
-    const dropdownRef=useRef(null);
-
-    function toggleDropdown(){
-        setIsOpen((currentValue)=> !currentValue)
+    function toggleDropdown() {
+        setIsOpen((currentValue) => !currentValue);
     }
 
-    function closeDropdown(){
+    function closeDropdown() {
         setIsOpen(false);
     }
 
-    useEffect( //this is so that when the dropdown is opened we quit when we click outside
-        ()=>{
-            function handleClickOutside(event){
-                if(dropdownRef.current && !dropdownRef.current.contains(event.target))   //this means if the dropdown exists and the thing you clicked is NOT inside the dropdown
-                    closeDropdown();
-            }
-            
-            document.addEventListener("mousedown",handleClickOutside);
-
-            return () => {       //clean up function to remove listening to clicks
-                 document.removeEventListener("mousedown",handleClickOutside)
-            }
-        },[])
-
-        const alignStyles={
-            left:"left-0",
-            right:"right-0"
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) 
+                closeDropdown();
         }
+        
+        document.addEventListener("mousedown", handleClickOutside);
 
+        return () => {       
+             document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
 
+    const alignStyles = {
+        left: "left-0 origin-top-left",
+        right: "right-0 origin-top-right"
+    };
 
   return (
-    <div ref={dropdownRef} className="relative inline-block" >
-        <div onClick={toggleDropdown}>{trigger}</div>
+    <div ref={dropdownRef} className="relative inline-block">
+        <div onClick={toggleDropdown} className="cursor-pointer">
+            {trigger}
+        </div>
 
-        {isOpen && (                //this is the styling of the dropdown menu as a whole not the buttons
-            <div className={`absolute z-50 mt-2  ${width} ${alignStyles[align]} rounded-lg border border-slate-200 bg-white py-1 shadow-lg`}>
-                {children}
+        {isOpen && (            
+            <div className={`absolute z-50 mt-2.5 ${width} ${alignStyles[align]} rounded-[20px] border border-slate-200/80 bg-white/95 backdrop-blur-md p-1.5 shadow-xl shadow-slate-200/60 transition-all duration-200 animate-in fade-in-50 zoom-in-95`}>
+                <div className="space-y-0.5">
+                    {children}
+                </div>
             </div>
         )}
-
     </div>
-  )
-}
+  );
+};
 
-export default Dropdown
+export default Dropdown;

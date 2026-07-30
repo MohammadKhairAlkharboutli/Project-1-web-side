@@ -96,10 +96,10 @@ export default function DoctorProfileHeader({ doctor, onDeactivateDoctor }) {
 
           <div>
             <p className={profileHeaderDetailsLabel}>
-              Clinics Count
-            </p>
-            <p className={profileHeaderDetailsValue}>
-              {doctor.clinics_count ?? "N/A"}
+            Clinic
+          </p>
+          <p className={profileHeaderDetailsValue}>
+              {doctor.assignedClinic?.name || "Not assigned"}
             </p>
           </div>
 

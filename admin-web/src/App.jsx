@@ -25,6 +25,9 @@ import AdminProfilePage from "./pages/Admin/AdminProfilePage";
 import AdminPageLayout from "./pages/AdminPageLayout";
 import LoginPage from "./pages/LoginPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import RoleProtectedRoute from "./components/RoleProtectedRoute";
+import DoctorProfileCompletionGuard from "./components/DoctorProfileCompletionGuard";
+import DoctorClinicAssignmentGuard from "./components/DoctorClinicAssignmentGuard";
 import ClinicsPage from "./pages/Admin/Clinics/ClinicsPage";
 import ClinicProfile from "./pages/Admin/Clinics/ClinicProfile";
 import ClinicOverview from "./pages/Admin/Clinics/ClinicOverview";
@@ -37,18 +40,28 @@ import AdminQueuePage from "./pages/Admin/Queue/AdminQueuePage";
 import DoctorPageLayout from "./pages/Doctor/DoctorPageLayout";
 import DoctorDashboard from "./pages/Doctor/Dashboard";
 import DoctorPortalAppointments from "./pages/Doctor/Appointments";
+import DoctorAppointmentDetails from "./pages/Doctor/DoctorAppointmentDetails";
 import DoctorPortalSchedule from "./pages/Doctor/Schedule";
-import DoctorPortalProfile from "./pages/Doctor/Profile";
+import DoctorProfileSettings from "./pages/Doctor/DoctorProfileSettings"; 
+import DoctorLeaves from "./pages/Doctor/DoctorLeaves";
+import DoctorSettings from "./pages/Doctor/Settings";
+import PatientsList from "./pages/Doctor/PatientsList";
+import DoctorLiveQueue from "./pages/Doctor/DoctorLiveQueue";
+import ConsultationPage from "./pages/Doctor/ConsultationPage";
+import PatientMedicalFile from "./pages/Doctor/PatientMedicalFile";
+import ReferralsPage from "./pages/Doctor/ReferralsPage";
 import DoctorInvitePage from "./pages/DoctorInvitePage";
 
 function App() {
   return (
     <Routes>
+      <Route path="/" element={<Navigate to="/doctor" replace />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/doctor-invite/:token" element={<DoctorInvitePage />} />
 
       <Route element={<ProtectedRoute />}>
-        <Route path="/admin" element={<AdminPageLayout />}>
+        <Route element={<RoleProtectedRoute allowedRole="admin" />}>
+          <Route path="/admin" element={<AdminPageLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="doctors">
             <Route index element={<DoctorsPage />} />
@@ -94,13 +107,29 @@ function App() {
           <Route path="system-policies" element={<SystemPoliciesPage />} />
           <Route path="profile" element={<AdminProfilePage />} />
           <Route path="settings" element={<Navigate to="/admin/profile" replace />} />
+          </Route>
         </Route>
 
-        <Route path="/doctor" element={<DoctorPageLayout />}>
-          <Route index element={<DoctorDashboard />} />
-          <Route path="appointments" element={<DoctorPortalAppointments />} />
-          <Route path="schedule" element={<DoctorPortalSchedule />} />
-          <Route path="profile" element={<DoctorPortalProfile />} />
+        {/* Doctor Routes */}
+        <Route element={<RoleProtectedRoute allowedRole="doctor" />}>
+          <Route path="/doctor" element={<DoctorProfileCompletionGuard />}>
+            <Route element={<DoctorClinicAssignmentGuard />}>
+              <Route element={<DoctorPageLayout />}>
+              <Route index element={<DoctorDashboard />} />
+              <Route path="appointments" element={<DoctorPortalAppointments />} />
+              <Route path="appointments/:appointmentId" element={<DoctorAppointmentDetails />} />
+              <Route path="schedule" element={<DoctorPortalSchedule />} />
+              <Route path="profile" element={<DoctorProfileSettings />} />
+              <Route path="patients" element={<PatientsList />} />
+              <Route path="patients/:patientId" element={<PatientMedicalFile />} />
+              <Route path="consultation/:appointmentId" element={<ConsultationPage />} />
+              <Route path="queue" element={<DoctorLiveQueue />} />
+              <Route path="referrals" element={<ReferralsPage />} />
+              <Route path="leaves" element={<DoctorLeaves />} />
+              <Route path="settings" element={<DoctorSettings />} />
+              </Route>
+            </Route>
+          </Route>
         </Route>
       </Route>
     </Routes>

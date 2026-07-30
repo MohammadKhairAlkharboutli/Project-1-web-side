@@ -1,0 +1,111 @@
+import axiosClient from "./axiosClient";
+
+const numericId = (value) => Number(value);
+
+export const doctorAppointmentsApi = {
+  async getAppointments(params = {}) {
+    const { data } = await axiosClient.get("/appointments/doctor/me", { params });
+    return data;
+  },
+
+  async getAppointment(appointmentId) {
+    const { data } = await axiosClient.get(`/appointments/${numericId(appointmentId)}`);
+    return data;
+  },
+
+  async checkIn(appointmentId) {
+    const { data } = await axiosClient.patch(`/appointments/${numericId(appointmentId)}/check-in`);
+    return data;
+  },
+
+  async cancel(appointmentId, cancellationReason) {
+    const { data } = await axiosClient.patch(`/appointments/${numericId(appointmentId)}/cancel`, {
+      ...(cancellationReason?.trim() ? { cancellationReason: cancellationReason.trim() } : {}),
+    });
+    return data;
+  },
+
+  async markNoShow(appointmentId) {
+    const { data } = await axiosClient.patch(`/appointments/${numericId(appointmentId)}/no-show`);
+    return data;
+  },
+};
+
+export const doctorQueueApi = {
+  async getMyQueue() {
+    const { data } = await axiosClient.get("/queues/doctor/my-queue");
+    return data;
+  },
+
+  async callNext(clinicId) {
+    const { data } = await axiosClient.patch("/queues/doctor/call-next", null, {
+      params: { clinicId: numericId(clinicId) },
+    });
+    return data;
+  },
+
+  async startConsultation(queueId) {
+    const { data } = await axiosClient.patch(`/queues/${numericId(queueId)}/start-consultation`);
+    return data;
+  },
+
+  async completeConsultation(queueId) {
+    const { data } = await axiosClient.patch(`/queues/${numericId(queueId)}/complete`);
+    return data;
+  },
+
+  async skip(queueId) {
+    const { data } = await axiosClient.patch(`/queues/${numericId(queueId)}/skip`);
+    return data;
+  },
+};
+
+export const doctorClinicalApi = {
+  async getMedicalProfile(appointmentId) {
+    const { data } = await axiosClient.get(`/medical-profiles/appointment/${numericId(appointmentId)}`);
+    return data;
+  },
+
+  async getMedicalHistories(appointmentId) {
+    const { data } = await axiosClient.get(`/medical-histories/appointment/${numericId(appointmentId)}`);
+    return data;
+  },
+
+  async getMedicines(appointmentId) {
+    const { data } = await axiosClient.get(`/prescribed-medicines/appointment/${numericId(appointmentId)}`);
+    return data;
+  },
+
+  async getAttachments(appointmentId) {
+    const { data } = await axiosClient.get(`/medical-attachments/appointment/${numericId(appointmentId)}`);
+    return data;
+  },
+
+  // Do not use /medical-profile-logs/patient/:patientId here. Its current
+  // backend implementation does not verify that the doctor owns a visit for
+  // the patient. The appointment-scoped endpoint performs that verification.
+  async getMedicalProfileLogs(appointmentId) {
+    const { data } = await axiosClient.get(`/medical-profile-logs/appointment/${numericId(appointmentId)}`);
+    return data;
+  },
+
+  async createMedicalHistory(payload) {
+    const { data } = await axiosClient.post("/medical-histories", payload);
+    return data;
+  },
+
+  async createHistoryMedicine(historyId, payload) {
+    const { data } = await axiosClient.post(`/prescribed-medicines/history/${numericId(historyId)}`, payload);
+    return data;
+  },
+
+  async uploadHistoryAttachments(historyId, files) {
+    if (!files?.length) return [];
+    const body = new FormData();
+    files.forEach((file) => body.append("files", file));
+    const { data } = await axiosClient.post(`/medical-attachments/history/${numericId(historyId)}`, body, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data;
+  },
+};
