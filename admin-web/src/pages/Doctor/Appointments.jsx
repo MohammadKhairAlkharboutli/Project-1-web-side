@@ -116,12 +116,14 @@ export default function DoctorAppointments() {
     return () => window.clearTimeout(timer);
   }, [loadAppointments]);
 
-  const filteredAppointments = useMemo(() => {
-    const dateFiltered = dateMode === "custom" ? appointments.filter((item) => isWithinCustomRange(item, fromDate, toDate)) : filterAppointmentsByDate(appointments, dateMode, "");
-    return dateFiltered.filter((appointment) => (status === "all" || appointment.status === status) && (priority === "all" || String(appointment.priority) === priority) && appointmentMatchesSearch(appointment, search));
-  }, [appointments, dateMode, fromDate, priority, search, status, toDate]);
+  const standardAppointments = useMemo(() => appointments.filter((appointment) => String(appointment.type || "").toLowerCase() !== "operation"), [appointments]);
 
-  const stats = useMemo(() => ({ total: appointments.length, scheduled: appointments.filter((item) => item.status === "confirmed").length, checkedIn: appointments.filter((item) => item.checkinTime || item.queue).length, completed: appointments.filter((item) => item.status === "completed").length }), [appointments]);
+  const filteredAppointments = useMemo(() => {
+    const dateFiltered = dateMode === "custom" ? standardAppointments.filter((item) => isWithinCustomRange(item, fromDate, toDate)) : filterAppointmentsByDate(standardAppointments, dateMode, "");
+    return dateFiltered.filter((appointment) => (status === "all" || appointment.status === status) && (priority === "all" || String(appointment.priority) === priority) && appointmentMatchesSearch(appointment, search));
+  }, [dateMode, fromDate, priority, search, standardAppointments, status, toDate]);
+
+  const stats = useMemo(() => ({ total: standardAppointments.length, scheduled: standardAppointments.filter((item) => item.status === "confirmed").length, checkedIn: standardAppointments.filter((item) => item.checkinTime || item.queue).length, completed: standardAppointments.filter((item) => item.status === "completed").length }), [standardAppointments]);
 
   function resetFilters() {
     setSearch(""); setStatus("all"); setPriority("all"); setDateMode("all"); setFromDate(""); setToDate("");

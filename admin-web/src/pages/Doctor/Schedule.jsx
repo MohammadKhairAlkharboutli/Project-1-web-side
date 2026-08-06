@@ -15,7 +15,9 @@ import {
 } from "lucide-react";
 
 import { doctorSchedulesApi } from "@/api/doctorSchedulesApi";
+import { notificationsApi } from "@/api/notificationsApi";
 import { DoctorClinicAssignmentContext } from "@/context/DoctorClinicAssignmentContext";
+import { useDoctorLocale } from "@/context/DoctorLocaleContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -40,6 +42,12 @@ const DAYS_OF_WEEK = [
 ];
 
 const SCHEDULE_TYPES = ["NORMAL", "BREAK", "EMERGENCY", "OPERATION"];
+const SCHEDULE_UPDATE_KEYS = new Set([
+  "doctor.schedule.approved",
+  "doctor.schedule.rejected",
+  "schedule.request_approved",
+  "schedule.request_rejected",
+]);
 const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use a valid time.");
 
 const slotSchema = z.object({
@@ -80,7 +88,14 @@ function createDefaultSlot() {
   return { startTime: "09:00", endTime: "17:00", type: "NORMAL", notes: "" };
 }
 
+function formatUpdateDate(value) {
+  if (!value) return "Recently";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "Recently" : new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(date);
+}
+
 export default function DoctorSchedule() {
+  const { text } = useDoctorLocale();
   const { assignedClinic } = useContext(DoctorClinicAssignmentContext) || {};
   const [scheduleSlots, setScheduleSlots] = useState([]);
   const [loadState, setLoadState] = useState("loading");
@@ -91,6 +106,7 @@ export default function DoctorSchedule() {
   const [notice, setNotice] = useState("");
   const [pendingSubmission, setPendingSubmission] = useState(null);
   const [isSavingSchedule, setIsSavingSchedule] = useState(false);
+  const [scheduleUpdates, setScheduleUpdates] = useState({ status: "loading", items: [], error: "" });
 
   const scheduleForm = useForm({
     resolver: zodResolver(scheduleSchema),
@@ -111,10 +127,27 @@ export default function DoctorSchedule() {
     }
   }, []);
 
+  const loadScheduleUpdates = useCallback(async () => {
+    setScheduleUpdates((current) => ({ ...current, status: "loading", error: "" }));
+    try {
+      const notifications = await notificationsApi.getMyNotifications();
+      const updates = notifications
+        .filter((notification) => SCHEDULE_UPDATE_KEYS.has(notification.messageKey))
+        .slice(0, 5);
+      setScheduleUpdates({ status: "ready", items: updates, error: "" });
+    } catch (error) {
+      setScheduleUpdates({ status: "error", items: [], error: getErrorMessage(error, "Unable to load schedule updates.") });
+    }
+  }, []);
+
+  const refreshScheduleData = useCallback(async () => {
+    await Promise.all([loadSchedule(), loadScheduleUpdates()]);
+  }, [loadSchedule, loadScheduleUpdates]);
+
   useEffect(() => {
-    const timer = window.setTimeout(loadSchedule, 0);
+    const timer = window.setTimeout(refreshScheduleData, 0);
     return () => window.clearTimeout(timer);
-  }, [loadSchedule]);
+  }, [refreshScheduleData]);
 
   const assignedClinicId = assignedClinic?.id;
   const assignedClinicName = assignedClinic?.name || "Assigned clinic";
@@ -131,7 +164,7 @@ export default function DoctorSchedule() {
     return map;
   }, [filteredSlots]);
   const activeDaySlots = slotsByDay[activeDayKey] || [];
-  const activeDayLabel = DAYS_OF_WEEK.find((day) => day.key === activeDayKey)?.label || "Sunday";
+  const activeDayLabel = text(DAYS_OF_WEEK.find((day) => day.key === activeDayKey)?.label || "Sunday");
   const hasExistingScheduleForDay = activeDaySlots.length > 0;
 
   function openScheduleModal() {
@@ -165,10 +198,10 @@ export default function DoctorSchedule() {
         })),
       });
       const isInitialSetup = Array.isArray(result);
-      setNotice(result?.message || (isInitialSetup ? "Availability saved." : "Schedule change request submitted for approval."));
+      setNotice(isInitialSetup ? "Availability saved." : "Your schedule change request is being reviewed by the admin. Your current hours stay active until it is approved.");
       setShowRequestModal(false);
       scheduleForm.reset({ slots: [createDefaultSlot()] });
-      await loadSchedule();
+      await refreshScheduleData();
     } catch (error) {
       setSubmitError(getErrorMessage(error, "Unable to save this schedule. Check the slots and try again."));
       setShowRequestModal(true);
@@ -205,7 +238,7 @@ export default function DoctorSchedule() {
       <div className="mx-auto max-w-[1600px] space-y-6">
         <header className="relative flex flex-col justify-between gap-4 rounded-[24px] bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] px-6 py-5 text-white shadow-lg sm:px-8 sm:py-6 lg:flex-row lg:items-center">
           <div className="relative z-10 space-y-1.5"><span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-white/30 bg-white/25 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-xs backdrop-blur-md"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" /> TABIBI PORTAL</span><h1 className="text-xl font-black tracking-tight text-white sm:text-2xl">Doctor Schedule</h1><p className="max-w-xl text-xs font-medium text-blue-100">Review your weekly operational hours at your assigned clinic.</p></div>
-          <div className="flex flex-wrap items-center gap-3"><div className="flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 p-3 shadow-inner backdrop-blur-md"><span className="whitespace-nowrap px-1 text-xs font-bold text-white">Clinic:</span><span className="rounded-xl border border-white/20 bg-white/15 px-3.5 py-2 text-xs font-bold text-white sm:text-sm">{assignedClinicName}</span></div><Button onClick={openScheduleModal} disabled={!assignedClinicId} className="h-auto gap-2 rounded-2xl border-none bg-white px-6 py-6 font-bold text-blue-600 shadow-lg shadow-black/5 hover:bg-blue-50"><CalendarClock size={20} /><span>{hasExistingScheduleForDay ? "Request Change" : "Set Availability"}</span></Button><Button type="button" variant="ghost" size="icon" onClick={loadSchedule} className="text-white hover:bg-white/15 hover:text-white" aria-label="Refresh schedule"><RefreshCw size={18} /></Button></div>
+          <div className="flex flex-wrap items-center gap-3"><div className="flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 p-3 shadow-inner backdrop-blur-md"><span className="rounded-xl border border-white/20 bg-white/15 px-3.5 py-2 text-xs font-bold text-white sm:text-sm">{assignedClinicName}</span></div><Button onClick={openScheduleModal} disabled={!assignedClinicId} className="h-auto gap-2 rounded-2xl border-none bg-white px-6 py-6 font-bold text-blue-600 shadow-lg shadow-black/5 hover:bg-blue-50"><CalendarClock size={20} /><span>{hasExistingScheduleForDay ? "Request Change" : "Set Availability"}</span></Button><Button type="button" variant="ghost" size="icon" onClick={loadSchedule} className="text-white hover:bg-white/15 hover:text-white" aria-label="Refresh schedule"><RefreshCw size={18} /></Button></div>
         </header>
 
         {notice ? <p role="status" className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">{notice}</p> : null}
@@ -214,12 +247,28 @@ export default function DoctorSchedule() {
           {DAYS_OF_WEEK.map(({ key, label }) => {
             const count = (slotsByDay[key] || []).length;
             const isSelected = activeDayKey === key;
-            return <button key={key} type="button" onClick={() => setActiveDayKey(key)} className={`flex shrink-0 cursor-pointer items-center justify-between gap-3 rounded-2xl border px-5 py-3 text-xs font-bold transition-all ${isSelected ? "scale-[1.02] border-blue-300 bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] text-white shadow-md shadow-blue-500/20" : "border-slate-100 bg-white text-slate-600 shadow-xs hover:border-slate-200 hover:bg-slate-50"}`}><span>{label}</span><span className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${isSelected ? "bg-white/25 text-white" : count > 0 ? "bg-sky-50 text-sky-600" : "bg-slate-100 text-slate-400"}`}>{count}</span></button>;
+            return <button key={key} type="button" onClick={() => setActiveDayKey(key)} className={`flex shrink-0 cursor-pointer items-center justify-between gap-3 rounded-2xl border px-5 py-3 text-xs font-bold transition-all ${isSelected ? "scale-[1.02] border-blue-300 bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] text-white shadow-md shadow-blue-500/20" : "border-slate-100 bg-white text-slate-600 shadow-xs hover:border-slate-200 hover:bg-slate-50"}`}><span>{text(label)}</span><span className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${isSelected ? "bg-white/25 text-white" : count > 0 ? "bg-sky-50 text-sky-600" : "bg-slate-100 text-slate-400"}`}>{count}</span></button>;
           })}
         </nav>
 
-        <section className="space-y-6 rounded-[24px] border border-slate-100 bg-white p-6 shadow-xs sm:p-8"><div className="flex items-center justify-between border-b border-slate-100 pb-4"><div><h2 className="text-base font-black text-slate-900 sm:text-lg">{activeDayLabel} Schedule</h2><p className="mt-0.5 text-xs text-slate-400">Clinic: <span className="font-bold text-slate-700">{assignedClinicName}</span></p></div><span className="rounded-full border border-sky-100 bg-sky-50 px-3.5 py-1.5 text-xs font-bold text-sky-600">{activeDaySlots.length} Active Slots</span></div>
+        <section className="space-y-6 rounded-[24px] border border-slate-100 bg-white p-6 shadow-xs sm:p-8"><div className="flex items-center justify-between border-b border-slate-100 pb-4"><div><h2 className="text-base font-black text-slate-900 sm:text-lg">{activeDayLabel} {text("Schedule")}</h2><p className="mt-0.5 text-xs text-slate-400"><span className="font-bold text-slate-700">{assignedClinicName}</span></p></div><span className="rounded-full border border-sky-100 bg-sky-50 px-3.5 py-1.5 text-xs font-bold text-sky-600">{activeDaySlots.length} {text("Active Slots")}</span></div>
           {activeDaySlots.length ? <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">{activeDaySlots.map((slot, index) => <article key={slot.id || index} className="group relative space-y-3 overflow-hidden rounded-2xl border border-slate-200/90 bg-gradient-to-br from-slate-50/90 via-white to-sky-50/30 p-5 transition-all duration-300 hover:border-sky-400 hover:shadow-lg hover:shadow-sky-500/5"><div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] opacity-60 transition-opacity group-hover:opacity-100" /><div className="flex items-center justify-between pt-1"><div className="flex items-center gap-2.5"><div className="flex h-8 w-8 items-center justify-center rounded-xl bg-sky-100/70 text-[#1e61dc] shadow-2xs transition-colors group-hover:bg-[#1e61dc] group-hover:text-white"><Clock size={16} /></div><span className="text-sm font-extrabold tracking-tight text-slate-900">{normalizeTime(slot.startTime)} - {normalizeTime(slot.endTime)}</span></div><span className="rounded-lg border border-sky-200/50 bg-sky-100/60 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-sky-700">{slot.type}</span></div>{slot.notes ? <p className="border-l-2 border-sky-200 pl-10 text-xs font-medium text-slate-600">{slot.notes}</p> : <p className="pl-10 text-xs italic text-slate-400">No additional notes provided.</p>}</article>)}</div> : <div className="space-y-2 rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 py-16 text-center"><p className="text-sm font-bold text-slate-700">No shifts scheduled for {activeDayLabel}</p><p className="text-xs text-slate-400">Set your availability for this day, or wait for an approved schedule-change request.</p><Button variant="outline" className="mt-3" onClick={openScheduleModal}>{hasExistingScheduleForDay ? "Request change" : "Set availability"}</Button></div>}
+        </section>
+
+        <section className="rounded-[24px] border border-slate-100 bg-white p-5 shadow-xs sm:p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div><h2 className="text-base font-black text-slate-900">Schedule updates</h2><p className="mt-1 text-sm text-slate-500">Approval and rejection information from the clinic.</p></div>
+            <Button type="button" variant="outline" size="sm" onClick={loadScheduleUpdates} disabled={scheduleUpdates.status === "loading"}><RefreshCw className={scheduleUpdates.status === "loading" ? "animate-spin" : ""} size={15} /> Refresh updates</Button>
+          </div>
+          {scheduleUpdates.status === "error" ? <div className="mt-4 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-800"><p>{scheduleUpdates.error}</p><Button type="button" variant="outline" size="sm" className="mt-3" onClick={loadScheduleUpdates}>Try again</Button></div> : null}
+          {scheduleUpdates.status === "loading" ? <p className="mt-4 text-sm text-slate-500">Loading schedule updates…</p> : null}
+          {scheduleUpdates.status === "ready" && scheduleUpdates.items.length === 0 ? <p className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">No approved or rejected schedule changes yet.</p> : null}
+          {scheduleUpdates.status === "ready" && scheduleUpdates.items.length ? <div className="mt-4 space-y-3">{scheduleUpdates.items.map((update) => {
+            const rejected = String(update.messageKey || "").includes("rejected");
+            const title = rejected ? text("Schedule change rejected") : text("Schedule change approved");
+            const body = rejected ? text("Your schedule change request was rejected.") : text("Your schedule change request was approved.");
+            return <article key={update.id} className={`rounded-2xl border px-4 py-3 ${rejected ? "border-rose-100 bg-rose-50" : "border-emerald-100 bg-emerald-50"}`}><p className={`text-sm font-bold ${rejected ? "text-rose-800" : "text-emerald-800"}`}>{title}</p><p className={`mt-1 text-sm ${rejected ? "text-rose-700" : "text-emerald-700"}`}>{body}</p><p className={`mt-2 text-xs ${rejected ? "text-rose-600" : "text-emerald-600"}`}>{formatUpdateDate(update.sentAt || update.created_at || update.createdAt)}</p></article>;
+          })}</div> : null}
         </section>
       </div>
 

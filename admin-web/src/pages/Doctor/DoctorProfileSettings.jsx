@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { AlertCircle, CheckCircle2, Sliders } from "lucide-react";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
@@ -11,8 +11,10 @@ import {
 } from "../Admin/Doctors/doctorUtils";
 import { doctorsApi } from "@/api/doctorsApi";
 import { doctorClinicsApi } from "@/api/doctorClinicsApi";
+import { lookupsApi } from "@/api/lookupsApi";
 import { DoctorProfileCompletionContext } from "@/context/DoctorProfileCompletionContext";
 import { DoctorClinicAssignmentContext } from "@/context/DoctorClinicAssignmentContext";
+import { getLookupDisplayName, useDoctorLocale } from "@/context/DoctorLocaleContext";
 
 const requiredProfileFields = [
   { name: "birthDate", label: "birth date" },
@@ -52,6 +54,14 @@ function formatDate(value) {
 function getErrorMessage(error, fallback) {
   const message = error?.response?.data?.message || error?.message || fallback;
   return Array.isArray(message) ? message.join(" ") : message;
+}
+
+function findLookupByStoredValue(lookups, value) {
+  return lookups.find((lookup) => lookup.value === value || lookup.labelEn === value || lookup.labelAr === value);
+}
+
+function getLookupLabel(lookup, locale) {
+  return getLookupDisplayName(lookup, locale) || formatEnumLabel(lookup?.value);
 }
 
 function normalizeDoctorProfile(profile, assignedClinic = null) {
@@ -108,6 +118,18 @@ function FieldError({ error }) {
 }
 
 function DoctorViewProfile({ doctor, onEditClick, completionStatus }) {
+  const { locale } = useDoctorLocale();
+  const [profileLookups, setProfileLookups] = useState([]);
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      lookupsApi.getActiveLookups({ category: "MEDICAL_SPECIALTY" }),
+      lookupsApi.getActiveLookups({ category: "MEDICAL_SUB_SPECIALTY" }),
+    ]).then((results) => { if (active) setProfileLookups(results.flat()); }).catch(() => {});
+    return () => { active = false; };
+  }, []);
+  const specializationLookup = findLookupByStoredValue(profileLookups, doctor?.specialization);
+  const subSpecializationLookup = findLookupByStoredValue(profileLookups, doctor?.subSpecialization);
   const fullName = doctor?.user?.full_name || "Doctor Name";
   const initials = fullName
     .replace(/^Dr\.?\s+/i, "")
@@ -170,11 +192,11 @@ function DoctorViewProfile({ doctor, onEditClick, completionStatus }) {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 rounded-md border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-bold tracking-wide text-[#1e61dc]">
               <span className="h-1.5 w-1.5 rounded-full bg-[#1e61dc]" />
-              {doctor?.specialization || "Specialist Practitioner"}
+              {doctor?.specialization ? getLookupLabel(specializationLookup || { value: doctor.specialization }, locale) : "Specialist Practitioner"}
             </div>
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">{fullName}</h1>
             <p className="text-sm font-medium text-slate-500">
-              {doctor?.subSpecialization || "Clinical Operations & Patient Services"}
+              {doctor?.subSpecialization ? getLookupLabel(subSpecializationLookup || { value: doctor.subSpecialization }, locale) : "Clinical Operations & Patient Services"}
             </p>
           </div>
         </div>
@@ -182,7 +204,6 @@ function DoctorViewProfile({ doctor, onEditClick, completionStatus }) {
           <ProfileMetric label="Rating" value={`★ ${formatRating(doctor?.averageRating)}`} />
           <ProfileMetric label="Clinic" value={doctor?.assignedClinic?.name || "Not assigned"} />
           <ProfileMetric label="Status" value={formatDoctorStatus(doctor?.status)} success />
-          <ProfileMetric label="Approval" value={doctor?.isApproved ? "Approved" : "Pending"} success={doctor?.isApproved} />
         </div>
       </div>
 
@@ -280,18 +301,64 @@ function Tariff({ label, value, primary = false }) {
 }
 
 function DoctorEditProfile({ initialData, onSaveSuccess, onCancel }) {
+  const { locale } = useDoctorLocale();
   const {
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: buildProfileDefaults(initialData),
     mode: "onTouched",
   });
   const values = useWatch({ control });
+  const specialization = values?.specialization || "";
+  const subSpecialization = values?.subSpecialization || "";
   const completionStatus = getCompletionStatus(values);
   const [saveError, setSaveError] = useState("");
+  const [lookupState, setLookupState] = useState({ status: "loading", specialties: [], subSpecialties: [], error: "" });
+
+  const loadLookups = useCallback(async () => {
+    setLookupState((current) => ({ ...current, status: "loading", error: "" }));
+    try {
+      const [specialties, subSpecialties] = await Promise.all([
+        lookupsApi.getActiveLookups({ category: "MEDICAL_SPECIALTY" }),
+        lookupsApi.getActiveLookups({ category: "MEDICAL_SUB_SPECIALTY" }),
+      ]);
+      setLookupState({
+        status: "ready",
+        specialties: Array.isArray(specialties) ? specialties : [],
+        subSpecialties: Array.isArray(subSpecialties) ? subSpecialties : [],
+        error: "",
+      });
+    } catch (error) {
+      setLookupState({ status: "error", specialties: [], subSpecialties: [], error: getErrorMessage(error, "Unable to load specialty options.") });
+    }
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(loadLookups, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadLookups]);
+
+  const selectedSpecialty = findLookupByStoredValue(lookupState.specialties, specialization);
+  const availableSubSpecialties = selectedSpecialty
+    ? lookupState.subSpecialties.filter((lookup) => Number(lookup.parentId) === Number(selectedSpecialty.id))
+    : [];
+  const selectedSubSpecialty = findLookupByStoredValue(availableSubSpecialties, subSpecialization);
+
+  useEffect(() => {
+    if (selectedSpecialty && specialization !== selectedSpecialty.value) {
+      setValue("specialization", selectedSpecialty.value, { shouldValidate: true });
+    }
+  }, [selectedSpecialty, setValue, specialization]);
+
+  useEffect(() => {
+    if (selectedSubSpecialty && subSpecialization !== selectedSubSpecialty.value) {
+      setValue("subSpecialization", selectedSubSpecialty.value, { shouldValidate: true });
+    }
+  }, [selectedSubSpecialty, setValue, subSpecialization]);
 
   async function saveProfile(data) {
     setSaveError("");
@@ -359,10 +426,18 @@ function DoctorEditProfile({ initialData, onSaveSuccess, onCancel }) {
       <ProfileFormSection title="Professional information" description="Required credentials and optional practice details.">
         <div className="grid grid-cols-1 gap-4 text-xs sm:grid-cols-2">
           <FormField label="Medical specialty" error={errors.specialization}>
-            <input {...register("specialization", { required: "Medical specialty is required" })} aria-invalid={Boolean(errors.specialization)} className={fieldClassName} />
+            <select {...register("specialization", { required: "Medical specialty is required", onChange: () => setValue("subSpecialization", "", { shouldValidate: true }) })} disabled={lookupState.status !== "ready"} aria-invalid={Boolean(errors.specialization)} className={fieldClassName}>
+              <option value="">{lookupState.status === "loading" ? "Loading specialties…" : "Select medical specialty"}</option>
+              {!selectedSpecialty && specialization ? <option value={specialization} disabled>{formatEnumLabel(specialization)} (not currently available)</option> : null}
+              {lookupState.specialties.map((lookup) => <option key={lookup.id} value={lookup.value}>{getLookupLabel(lookup, locale)}</option>)}
+            </select>
           </FormField>
           <FormField label="Sub-specialty" error={errors.subSpecialization}>
-            <input {...register("subSpecialization", { required: "Sub-specialty is required" })} aria-invalid={Boolean(errors.subSpecialization)} className={fieldClassName} />
+            <select {...register("subSpecialization", { required: "Sub-specialty is required" })} disabled={lookupState.status !== "ready" || !selectedSpecialty} aria-invalid={Boolean(errors.subSpecialization)} className={fieldClassName}>
+              <option value="">{lookupState.status === "loading" ? "Loading sub-specialties…" : selectedSpecialty ? "Select sub-specialty" : "Select a specialty first"}</option>
+              {!selectedSubSpecialty && subSpecialization ? <option value={subSpecialization} disabled>{formatEnumLabel(subSpecialization)} (not currently available)</option> : null}
+              {availableSubSpecialties.map((lookup) => <option key={lookup.id} value={lookup.value}>{getLookupLabel(lookup, locale)}</option>)}
+            </select>
           </FormField>
           <FormField label="Syndicate license number" error={errors.licenseNumber}>
             <input {...register("licenseNumber", { required: "License number is required" })} aria-invalid={Boolean(errors.licenseNumber)} className={fieldClassName} />
@@ -378,6 +453,7 @@ function DoctorEditProfile({ initialData, onSaveSuccess, onCancel }) {
           </FormField>
         </div>
         <div className="mt-4 space-y-4 text-xs">
+          {lookupState.status === "error" ? <div className="flex flex-wrap items-center gap-3 rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-rose-700"><p className="text-xs font-medium">{lookupState.error}</p><button type="button" onClick={loadLookups} className="text-xs font-bold underline">Retry</button></div> : null}
           <FormField label="Languages spoken" error={errors.languagesSpoken}>
             <input {...register("languagesSpoken")} placeholder="e.g. Arabic, English" aria-invalid={Boolean(errors.languagesSpoken)} className={fieldClassName} />
           </FormField>
@@ -434,6 +510,7 @@ function FormField({ label, error, children }) {
 }
 
 export default function DoctorProfileContainer() {
+  const { direction } = useDoctorLocale();
   const location = useLocation();
   const navigate = useNavigate();
   const { refreshDoctorShell } = useOutletContext();
@@ -500,7 +577,7 @@ export default function DoctorProfileContainer() {
   };
 
   return (
-    <div className="min-h-full w-full bg-[#f4f7fb] p-6 font-sans text-slate-900 antialiased sm:p-10 lg:p-12" dir="ltr">
+    <div className="min-h-full w-full bg-[#f4f7fb] p-6 font-sans text-slate-900 antialiased sm:p-10 lg:p-12" dir={direction}>
       <div className="mx-auto max-w-[1400px]">
         {clinicAssignmentContext?.isClinicAssigned === false && (
           <div className="mb-6 flex flex-col items-start justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:flex-row sm:items-center">

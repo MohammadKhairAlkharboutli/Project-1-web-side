@@ -39,7 +39,7 @@ import RatingReportDetails from "./pages/Admin/Ratings/RatingReportDetails";
 import AdminQueuePage from "./pages/Admin/Queue/AdminQueuePage";
 import DoctorPageLayout from "./pages/Doctor/DoctorPageLayout";
 import DoctorDashboard from "./pages/Doctor/Dashboard";
-import DoctorPortalAppointments from "./pages/Doctor/Appointments";
+import DoctorPortalAppointments from "./pages/Doctor/DoctorAppointmentsHub";
 import DoctorAppointmentDetails from "./pages/Doctor/DoctorAppointmentDetails";
 import DoctorPortalSchedule from "./pages/Doctor/Schedule";
 import DoctorProfileSettings from "./pages/Doctor/DoctorProfileSettings"; 

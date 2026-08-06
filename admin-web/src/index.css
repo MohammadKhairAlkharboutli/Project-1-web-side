@@ -132,3 +132,31 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 } */
+
+/* Make the native file chooser clearly actionable while preserving its accessibility. */
+input[type="file"]::file-selector-button {
+  margin-right: 0.75rem;
+  border: 0;
+  background: transparent;
+  color: #2563eb;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* The doctor portal owns its language direction.  Logical properties keep
+   tables, cards, forms, and navigation aligned without changing admin pages. */
+.doctor-portal[dir="rtl"] {
+  font-family: Tahoma, "Segoe UI", Arial, sans-serif;
+}
+
+.doctor-portal[dir="rtl"] input[type="email"],
+.doctor-portal[dir="rtl"] input[type="tel"],
+.doctor-portal[dir="rtl"] input[type="number"],
+.doctor-portal[dir="rtl"] input[type="date"],
+.doctor-portal[dir="rtl"] input[type="time"] {
+  direction: ltr;
+  text-align: start;
+}

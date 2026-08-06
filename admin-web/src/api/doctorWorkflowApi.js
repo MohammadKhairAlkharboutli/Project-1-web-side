@@ -29,6 +29,33 @@ export const doctorAppointmentsApi = {
     const { data } = await axiosClient.patch(`/appointments/${numericId(appointmentId)}/no-show`);
     return data;
   },
+
+  async getOperations(params = {}) {
+    const { data } = await axiosClient.get("/appointments/doctor/me/operations", { params });
+    return data;
+  },
+
+  async getOperationDays(clinicId) {
+    const { data } = await axiosClient.get("/appointments/doctor/me/operation-days", {
+      params: { clinicId: numericId(clinicId) },
+    });
+    return data;
+  },
+
+  async createOperation(payload) {
+    const { data } = await axiosClient.post("/appointments/operation", payload);
+    return data;
+  },
+
+  async startOperation(appointmentId) {
+    const { data } = await axiosClient.patch(`/appointments/operation/${numericId(appointmentId)}/start`, {});
+    return data;
+  },
+
+  async completeOperation(appointmentId) {
+    const { data } = await axiosClient.patch(`/appointments/operation/${numericId(appointmentId)}/complete`, {});
+    return data;
+  },
 };
 
 export const doctorQueueApi = {
@@ -38,7 +65,9 @@ export const doctorQueueApi = {
   },
 
   async callNext(clinicId) {
-    const { data } = await axiosClient.patch("/queues/doctor/call-next", null, {
+    // This endpoint has no payload. Send an empty JSON object rather than `null`:
+    // the backend's strict JSON parser rejects a literal `null` request body.
+    const { data } = await axiosClient.patch("/queues/doctor/call-next", {}, {
       params: { clinicId: numericId(clinicId) },
     });
     return data;
@@ -66,6 +95,11 @@ export const doctorClinicalApi = {
     return data;
   },
 
+  async updateMedicalProfile(appointmentId, payload) {
+    const { data } = await axiosClient.patch(`/medical-profiles/appointment/${numericId(appointmentId)}`, payload);
+    return data;
+  },
+
   async getMedicalHistories(appointmentId) {
     const { data } = await axiosClient.get(`/medical-histories/appointment/${numericId(appointmentId)}`);
     return data;
@@ -78,6 +112,14 @@ export const doctorClinicalApi = {
 
   async getAttachments(appointmentId) {
     const { data } = await axiosClient.get(`/medical-attachments/appointment/${numericId(appointmentId)}`);
+    return data;
+  },
+
+  async downloadAttachment(appointmentId, attachmentId) {
+    const { data } = await axiosClient.get(
+      `/medical-attachments/appointment/${numericId(appointmentId)}/${numericId(attachmentId)}`,
+      { responseType: "blob" },
+    );
     return data;
   },
 

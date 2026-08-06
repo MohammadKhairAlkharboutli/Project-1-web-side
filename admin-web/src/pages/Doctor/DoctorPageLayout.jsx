@@ -25,6 +25,7 @@ import {
 import { cn } from "@/lib/utils";
 import { authApi } from "@/api/authApi";
 import { doctorsApi } from "@/api/doctorsApi";
+import { DoctorLocaleProvider, useDoctorLocale } from "@/context/DoctorLocaleContext";
 
 const doctorNavItems = [
   { label: "Dashboard", path: "/doctor", icon: LayoutDashboard, end: true },
@@ -38,7 +39,16 @@ const doctorNavItems = [
 ];
 
 export default function DoctorPageLayout() {
+  return <DoctorLocaleProvider><DoctorPageLayoutContent /></DoctorLocaleProvider>;
+}
+
+function DoctorPageLayoutContent() {
   const navigate = useNavigate();
+  const { direction, locale } = useDoctorLocale();
+  const labels = locale === "ar" ? {
+    Dashboard: "لوحة التحكم", Appointments: "المواعيد", Queue: "الانتظار", Patients: "المرضى", Referrals: "الإحالات", Schedule: "الدوام", "Leaves & Time-Off": "الإجازات", Profile: "الملف الشخصي", Settings: "الإعدادات", "Log out": "تسجيل الخروج", Specialist: "اختصاصي",
+  } : {};
+  const label = (value) => labels[value] || value;
   const [doctor, setDoctor] = useState(null);
 
   const refreshDoctorShell = useCallback(async () => {
@@ -73,7 +83,7 @@ export default function DoctorPageLayout() {
   }, []);
   
   const doctorName = doctor?.user?.full_name || [doctor?.user?.firstName, doctor?.user?.lastName].filter(Boolean).join(" ") || "Doctor";
-  const doctorSpecialty = doctor?.specialization || "Specialist";
+  const doctorSpecialty = doctor?.specialization || label("Specialist");
 
   const initials =
     doctorName
@@ -96,7 +106,7 @@ export default function DoctorPageLayout() {
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#F1F5F9] text-slate-900 justify-center p-4 box-border">
+    <div className="doctor-portal flex h-screen w-screen overflow-hidden bg-[#F1F5F9] text-slate-900 justify-center p-4 box-border" dir={direction}>
       
       <div className="flex w-full max-w-[1440px] h-full bg-white shadow-xl rounded-3xl overflow-hidden border border-slate-200/60">
 
@@ -132,7 +142,7 @@ export default function DoctorPageLayout() {
                     {({ isActive }) => (
                       <>
                         <Icon size={18} className={isActive ? "text-blue-600" : "text-slate-400"} />
-                        <span>{item.label}</span>
+                        <span>{label(item.label)}</span>
                       </>
                     )}
                   </NavLink>
@@ -156,7 +166,7 @@ export default function DoctorPageLayout() {
               {({ isActive }) => (
                 <>
                   <Settings size={18} className={isActive ? "text-blue-600" : "text-slate-400"} />
-                  <span>Settings</span>
+                  <span>{label("Settings")}</span>
                 </>
               )}
             </NavLink>
@@ -168,7 +178,7 @@ export default function DoctorPageLayout() {
               className="w-full flex items-center justify-start gap-3.5 px-4 py-3 rounded-2xl text-xs font-bold text-rose-500 hover:bg-rose-50 hover:text-rose-600 transition-all"
             >
               <LogOut size={18} />
-              <span>Log out</span>
+              <span>{label("Log out")}</span>
             </Button>
           </div>
         </aside>
@@ -195,14 +205,14 @@ export default function DoctorPageLayout() {
                     <p className="text-[10px] text-blue-600 font-medium">{doctorSpecialty}</p>
                   </div>
                   <DropdownMenuItem onClick={() => navigate("/doctor/profile")} className="rounded-xl text-xs font-bold py-2.5">
-                    Profile
+                    {label("Profile")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/doctor/settings")} className="rounded-xl text-xs font-bold py-2.5">
-                    Settings
+                    {label("Settings")}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="my-1" />
                   <DropdownMenuItem onClick={handleLogout} className="rounded-xl text-xs font-bold py-2.5 text-rose-600 focus:text-rose-600 focus:bg-rose-50">
-                    Log out
+                    {label("Log out")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

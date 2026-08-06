@@ -9,6 +9,11 @@ function normalizeLookup(lookup) {
 }
 
 export const lookupsApi = {
+  async getActiveLookups(params = {}) {
+    const { data } = await axiosClient.get("/lookups", { params });
+    return (data ?? []).map(normalizeLookup);
+  },
+
   async getAdminLookups() {
     const { data } = await axiosClient.get("/lookups");
     return (data ?? []).map(normalizeLookup);
