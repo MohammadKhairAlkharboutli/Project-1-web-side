@@ -12,6 +12,11 @@ import {
   startOfMonth,
   startOfWeek,
 } from "date-fns";
+import { ar } from "date-fns/locale";
+
+function isArabicInterface() {
+  return typeof document !== "undefined" && document.documentElement.lang === "ar";
+}
 
 export const APPOINTMENT_STATUSES = [
   "pending",
@@ -129,7 +134,11 @@ export function parseAppointmentDateTime(dateValue, timeValue) {
 export function formatAppointmentDate(value) {
   const date = parseAppointmentDate(value);
 
-  return date ? format(date, "MMM d, yyyy") : "N/A";
+  return date
+    ? format(date, isArabicInterface() ? "d MMMM yyyy" : "MMM d, yyyy", {
+        locale: isArabicInterface() ? ar : undefined,
+      })
+    : "N/A";
 }
 
 export function formatAppointmentTime(value) {
@@ -151,7 +160,11 @@ export function formatDateTime(value) {
     return "N/A";
   }
 
-  return format(parseISO(String(value)), "MMM d, yyyy h:mm a");
+  return format(
+    parseISO(String(value)),
+    isArabicInterface() ? "d MMMM yyyy، h:mm a" : "MMM d, yyyy h:mm a",
+    { locale: isArabicInterface() ? ar : undefined },
+  );
 }
 
 export function getAppointmentTimePosition(appointment) {
