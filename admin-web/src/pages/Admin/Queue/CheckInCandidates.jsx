@@ -94,6 +94,7 @@ export default function CheckInCandidates({
                     <Button
                       type="button"
                       size="sm"
+                      className="min-w-28 bg-emerald-600 font-semibold text-white shadow-sm shadow-emerald-200 hover:bg-emerald-700 focus-visible:ring-emerald-500"
                       onClick={() => onCheckIn(appointment)}
                       disabled={checkingInId === appointment.id}
                     >

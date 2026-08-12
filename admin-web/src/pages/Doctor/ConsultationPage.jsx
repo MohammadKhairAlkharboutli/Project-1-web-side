@@ -17,6 +17,11 @@ import { useDoctorLocale } from "@/context/DoctorLocaleContext";
 const medicineSchema = z.object({
   medicineName: z.string().trim().min(1, "Medicine name is required."),
   dosage: z.string().trim().optional(), frequency: z.string().trim().optional(), startDate: z.string().optional(), endDate: z.string().optional(), notes: z.string().trim().optional(),
+}).superRefine((medicine, context) => {
+  const tomorrow = getTomorrowDate();
+  if (medicine.startDate && medicine.startDate < tomorrow) context.addIssue({ code: "custom", path: ["startDate"], message: "Start date must be after today." });
+  if (medicine.endDate && medicine.endDate < tomorrow) context.addIssue({ code: "custom", path: ["endDate"], message: "End date must be after today." });
+  if (medicine.startDate && medicine.endDate && medicine.endDate < medicine.startDate) context.addIssue({ code: "custom", path: ["endDate"], message: "End date cannot be before the start date." });
 });
 
 const consultationSchema = z.object({
@@ -45,6 +50,21 @@ function formatList(value) {
   return value || "Not recorded";
 }
 
+function getTomorrowDate() {
+  const tomorrow = new Date();
+  tomorrow.setHours(0, 0, 0, 0);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const month = String(tomorrow.getMonth() + 1).padStart(2, "0");
+  const day = String(tomorrow.getDate()).padStart(2, "0");
+  return `${tomorrow.getFullYear()}-${month}-${day}`;
+}
+
+function ActionNotice({ notice }) {
+  if (!notice) return null;
+  const isSuccess = notice.tone === "success";
+  return <p role={isSuccess ? "status" : "alert"} className={`rounded-2xl border px-4 py-3 text-sm ${isSuccess ? "border-emerald-100 bg-emerald-50 text-emerald-800" : "border-rose-100 bg-rose-50 text-rose-800"}`}>{notice.message}</p>;
+}
+
 export default function ConsultationPage() {
   const { appointmentId } = useParams();
   const navigate = useNavigate();
@@ -52,7 +72,8 @@ export default function ConsultationPage() {
   const [state, setState] = useState({ status: "loading", appointment: null, queueEntry: null, medicalProfile: null, histories: [], medicines: [], attachments: [], error: "" });
   const [destinations, setDestinations] = useState({ clinics: [], doctors: [] });
   const [referralDoctorsState, setReferralDoctorsState] = useState({ loading: false, error: "" });
-  const [notice, setNotice] = useState("");
+  const [clinicalNotice, setClinicalNotice] = useState(null);
+  const [referralNotice, setReferralNotice] = useState(null);
   const [saveProgress, setSaveProgress] = useState({ historyId: null, medicinesSaved: 0, attachmentsSaved: false, complete: false });
   const [completionLoading, setCompletionLoading] = useState(false);
   const [selectedAttachmentNames, setSelectedAttachmentNames] = useState([]);
@@ -61,6 +82,7 @@ export default function ConsultationPage() {
   const attachmentField = consultationForm.register("attachments");
   const { fields, append, remove } = useFieldArray({ control: consultationForm.control, name: "medicines" });
   const referralForm = useForm({ resolver: zodResolver(referralSchema), defaultValues: { type: "EXTERNAL", reason: "", toClinicId: "", toDoctorId: "" } });
+  const minimumPrescriptionDate = getTomorrowDate();
 
   const loadConsultation = useCallback(async () => {
     setState((current) => ({ ...current, status: "loading", error: "" }));
@@ -119,7 +141,38 @@ export default function ConsultationPage() {
   }
 
   async function submitConsultation(values) {
-    setNotice("");
+    setClinicalNotice(null);
+    const tomorrow = getTomorrowDate();
+    let hasInvalidPrescriptionDate = false;
+
+    values.medicines.forEach((medicine, index) => {
+      if (medicine.startDate && medicine.startDate < tomorrow) {
+        consultationForm.setError(`medicines.${index}.startDate`, {
+          type: "validate",
+          message: "Choose a date after today.",
+        });
+        hasInvalidPrescriptionDate = true;
+      }
+
+      if (medicine.endDate && medicine.endDate < tomorrow) {
+        consultationForm.setError(`medicines.${index}.endDate`, {
+          type: "validate",
+          message: "Choose a date after today.",
+        });
+        hasInvalidPrescriptionDate = true;
+      }
+
+      if (medicine.startDate && medicine.endDate && medicine.endDate < medicine.startDate) {
+        consultationForm.setError(`medicines.${index}.endDate`, {
+          type: "validate",
+          message: "End date cannot be before the start date.",
+        });
+        hasInvalidPrescriptionDate = true;
+      }
+    });
+
+    if (hasInvalidPrescriptionDate) return;
+
     try {
       let historyId = saveProgress.historyId || existingHistory?.id;
       if (!historyId) {
@@ -128,7 +181,24 @@ export default function ConsultationPage() {
         setSaveProgress((current) => ({ ...current, historyId }));
       }
       for (let index = saveProgress.medicinesSaved; index < values.medicines.length; index += 1) {
-        await doctorClinicalApi.createHistoryMedicine(historyId, values.medicines[index]);
+        const medicine = values.medicines[index];
+        const payload = {
+          medicineName: medicine.medicineName,
+          ...(medicine.dosage ? { dosage: medicine.dosage } : {}),
+          ...(medicine.frequency ? { frequency: medicine.frequency } : {}),
+          ...(medicine.startDate ? { startDate: medicine.startDate } : {}),
+          ...(medicine.endDate ? { endDate: medicine.endDate } : {}),
+          ...(medicine.notes ? { notes: medicine.notes } : {}),
+        };
+        try {
+          await doctorClinicalApi.createHistoryMedicine(historyId, payload);
+        } catch (requestError) {
+          consultationForm.setError(`medicines.${index}.medicineName`, {
+            type: "server",
+            message: `Could not save this prescription. ${getErrorMessage(requestError, "Check its details and try again.")}`,
+          });
+          return;
+        }
         setSaveProgress((current) => ({ ...current, medicinesSaved: index + 1 }));
       }
       if (!saveProgress.attachmentsSaved) {
@@ -137,33 +207,42 @@ export default function ConsultationPage() {
       }
       setSaveProgress((current) => ({ ...current, complete: true }));
       consultationForm.reset();
-      setNotice("Clinical record saved. You can now complete the consultation.");
+      setClinicalNotice({ tone: "success", message: "Clinical record saved. You can now complete the consultation." });
       await loadConsultation();
     } catch (requestError) {
-      setNotice(`Some data may already be saved. ${getErrorMessage(requestError, "Review the form and retry the remaining step.")}`);
+      setClinicalNotice({ tone: "error", message: `Some data may already be saved. ${getErrorMessage(requestError, "Review the form and retry the remaining step.")}` });
     }
+  }
+
+  function handleInvalidConsultation(errors) {
+    const hasPrescriptionError = Boolean(errors.medicines?.length);
+    if (hasPrescriptionError) {
+      return;
+    }
+    setClinicalNotice({ tone: "error", message: "Clinical record not saved. Complete the required fields highlighted below and try again." });
   }
 
   async function submitReferral(values) {
     if (!state.appointment?.patientId) return;
+    setReferralNotice(null);
     try {
       await referralsApi.createReferral({ patientId: Number(state.appointment.patientId), type: values.type, reason: values.reason.trim(), ...(values.type === "EXTERNAL" && values.toClinicId ? { toClinicId: Number(values.toClinicId) } : {}), ...(values.type === "EXTERNAL" && values.toDoctorId ? { toDoctorId: Number(values.toDoctorId) } : {}) });
       referralForm.reset();
-      setNotice("Referral created. It is live, but the current backend cannot attach it to this appointment yet.");
+      setReferralNotice({ tone: "success", message: "Referral sent successfully. It is now available in the patient's referral list." });
     } catch (requestError) {
-      setNotice(getErrorMessage(requestError, "The referral could not be created."));
+      setReferralNotice({ tone: "error", message: getErrorMessage(requestError, "The referral could not be created.") });
     }
   }
 
   async function completeConsultation() {
     if (!state.queueEntry || !clinicalSaved) return;
     setCompletionLoading(true);
-    setNotice("");
+    setClinicalNotice(null);
     try {
       await doctorQueueApi.completeConsultation(state.queueEntry.id);
       navigate("/doctor/queue", { replace: true });
     } catch (requestError) {
-      setNotice(getErrorMessage(requestError, "The consultation could not be completed."));
+      setClinicalNotice({ tone: "error", message: getErrorMessage(requestError, "The consultation could not be completed.") });
     } finally { setCompletionLoading(false); }
   }
 
@@ -172,15 +251,15 @@ export default function ConsultationPage() {
   if (!state.queueEntry) return <section className="mx-auto w-full max-w-4xl rounded-3xl border border-amber-200 bg-amber-50 p-8 text-amber-900"><h1 className="text-lg font-bold">Start this consultation from the queue</h1><p className="mt-2 text-sm">Only the doctor&apos;s active in-progress queue entry can open a live consultation.</p><Button className="mt-5" onClick={() => navigate("/doctor/queue")}>Open queue</Button></section>;
 
   return <div className="mx-auto w-full max-w-6xl space-y-6 pb-12"><header className="flex flex-col gap-4 rounded-3xl bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] p-6 text-white shadow-lg shadow-blue-500/20 sm:flex-row sm:items-center sm:justify-between sm:p-8"><div><button type="button" onClick={() => navigate("/doctor/queue")} className="inline-flex items-center gap-2 text-xs font-bold text-blue-100 hover:text-white"><ArrowLeft size={15} /> Back to queue</button><p className="mt-5 text-xs font-bold uppercase tracking-wider text-blue-100">Live consultation</p><h1 className="mt-1 text-2xl font-black tracking-tight">{getPatientName(state.appointment)}</h1><p className="mt-1 text-sm text-blue-100">{state.appointment.type || "Consultation"} · Appointment #{state.appointment.id}</p></div><Button disabled={!clinicalSaved || completionLoading} onClick={completeConsultation} className="bg-white text-blue-700 hover:bg-blue-50"><CheckCircle2 /> {completionLoading ? "Completing…" : "Complete consultation"}</Button></header>
-    {notice ? <p role="status" className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">{notice}</p> : null}
     <section className="grid gap-4 md:grid-cols-2">
       <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-sm font-black text-slate-900">Visit details</h2><dl className="mt-4 space-y-3 text-sm"><div><dt className="text-slate-400">Reason for visit</dt><dd className="font-medium text-slate-800">{state.appointment.reasonForVisit || "Not recorded"}</dd></div><div><dt className="text-slate-400">Symptoms</dt><dd className="font-medium text-slate-800">{state.appointment.symptoms || "Not recorded"}</dd></div></dl></article>
-      <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-start justify-between gap-3"><h2 className="text-sm font-black text-slate-900">Medical profile</h2>{state.appointment.patientId || state.appointment.patient?.id ? <Button type="button" variant="outline" size="sm" onClick={() => navigate(`/doctor/patients/${state.appointment.patientId || state.appointment.patient.id}?appointmentId=${appointmentId}&returnTo=consultation`)}>Open full medical file</Button> : null}</div><dl className="mt-4 space-y-3 text-sm"><div><dt className="text-slate-400">Allergies</dt><dd className="font-medium text-slate-800">{formatList(state.medicalProfile?.allergies)}</dd></div><div><dt className="text-slate-400">Chronic conditions</dt><dd className="font-medium text-slate-800">{formatList(state.medicalProfile?.chronicConditions)}</dd></div><div><dt className="text-slate-400">Current medications</dt><dd className="font-medium text-slate-800">{formatList(state.medicalProfile?.currentMedications)}</dd></div></dl></article>
+      <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-start justify-between gap-3"><div><h2 className="text-sm font-black text-slate-900">Medical profile</h2><p className="mt-1 text-xs text-slate-500">Review and update the patient&apos;s clinical profile.</p></div>{state.appointment.patientId || state.appointment.patient?.id ? <Button type="button" size="sm" className="shrink-0 bg-blue-600 text-white hover:bg-blue-700" onClick={() => navigate(`/doctor/patients/${state.appointment.patientId || state.appointment.patient.id}?appointmentId=${appointmentId}&returnTo=consultation`)}>Edit medical profile</Button> : null}</div><dl className="mt-4 space-y-3 text-sm"><div><dt className="text-slate-400">Allergies</dt><dd className="font-medium text-slate-800">{formatList(state.medicalProfile?.allergies)}</dd></div><div><dt className="text-slate-400">Chronic conditions</dt><dd className="font-medium text-slate-800">{formatList(state.medicalProfile?.chronicConditions)}</dd></div><div><dt className="text-slate-400">Current medications</dt><dd className="font-medium text-slate-800">{formatList(state.medicalProfile?.currentMedications)}</dd></div></dl></article>
     </section>
-    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"><Stethoscope size={19} /></span><div><h2 className="font-black text-slate-900">Clinical record</h2><p className="text-sm text-slate-500">Saved to the patient&apos;s medical history before this consultation is completed.</p></div></div>{clinicalSaved ? <div className="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50 p-5 text-sm text-emerald-900"><p className="font-bold">Clinical record saved</p><p className="mt-2">Diagnosis: {existingHistory?.diagnosis || "Saved in this session"}</p><p className="mt-1">Treatment plan: {existingHistory?.treatmentPlan || "Saved in this session"}</p></div> : <form className="mt-6 space-y-5" onSubmit={consultationForm.handleSubmit(submitConsultation)} noValidate><div className="grid gap-5 md:grid-cols-2"><label className="grid gap-1.5 text-sm font-semibold text-slate-700">Diagnosis<textarea rows={4} {...consultationForm.register("diagnosis")} className="rounded-xl border border-slate-200 p-3 font-normal outline-none focus:border-blue-500" />{consultationForm.formState.errors.diagnosis && <span className="text-xs text-rose-600">{consultationForm.formState.errors.diagnosis.message}</span>}</label><label className="grid gap-1.5 text-sm font-semibold text-slate-700">Treatment plan<textarea rows={4} {...consultationForm.register("treatmentPlan")} className="rounded-xl border border-slate-200 p-3 font-normal outline-none focus:border-blue-500" />{consultationForm.formState.errors.treatmentPlan && <span className="text-xs text-rose-600">{consultationForm.formState.errors.treatmentPlan.message}</span>}</label></div><label className="grid gap-1.5 text-sm font-semibold text-slate-700">Clinical notes<textarea rows={5} {...consultationForm.register("doctorNotes")} className="rounded-xl border border-slate-200 p-3 font-normal outline-none focus:border-blue-500" />{consultationForm.formState.errors.doctorNotes && <span className="text-xs text-rose-600">{consultationForm.formState.errors.doctorNotes.message}</span>}</label><div className="rounded-2xl border border-slate-200 p-4"><div className="flex items-center justify-between"><h3 className="font-bold text-slate-800">Prescriptions</h3><Button type="button" variant="outline" size="sm" onClick={() => append({ medicineName: "", dosage: "", frequency: "", startDate: "", endDate: "", notes: "" })}><Plus /> Add medicine</Button></div><div className="mt-4 space-y-4">{fields.length === 0 ? <p className="text-sm text-slate-500">No medicine prescribed.</p> : fields.map((field, index) => <div key={field.id} className="grid gap-3 rounded-xl bg-slate-50 p-4 md:grid-cols-3"><Input placeholder="Medicine name" {...consultationForm.register(`medicines.${index}.medicineName`)} /><Input placeholder="Dosage" {...consultationForm.register(`medicines.${index}.dosage`)} /><Input placeholder="Frequency" {...consultationForm.register(`medicines.${index}.frequency`)} /><Input type="date" {...consultationForm.register(`medicines.${index}.startDate`)} /><Input type="date" {...consultationForm.register(`medicines.${index}.endDate`)} /><div className="flex gap-2"><Input placeholder="Instructions" {...consultationForm.register(`medicines.${index}.notes`)} /><Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label="Remove medicine"><Trash2 /></Button></div>{consultationForm.formState.errors.medicines?.[index]?.medicineName && <p className="text-xs text-rose-600 md:col-span-3">{consultationForm.formState.errors.medicines[index].medicineName.message}</p>}</div>)}</div></div><div className="grid gap-1.5 text-sm font-semibold text-slate-700"><span>{text("Attachments")}</span><input id="consultation-attachments" type="file" multiple {...attachmentField} onChange={(event) => { attachmentField.onChange(event); setSelectedAttachmentNames(Array.from(event.target.files || []).map((file) => file.name)); }} className="sr-only" /><label htmlFor="consultation-attachments" className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 text-sm font-normal transition-colors hover:border-blue-400 hover:bg-blue-50"><span className="min-w-0 truncate text-slate-500">{selectedAttachmentNames.length ? selectedAttachmentNames.join(", ") : text("No file selected")}</span><span className="shrink-0 font-semibold text-blue-700">{text("Choose file")}</span></label></div><Button type="submit" disabled={consultationForm.formState.isSubmitting}>{consultationForm.formState.isSubmitting ? <LoaderCircle className="animate-spin" /> : <FilePlus2 />} Save clinical record</Button></form>}</section>
+    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"><Stethoscope size={19} /></span><div><h2 className="font-black text-slate-900">Clinical record</h2><p className="text-sm text-slate-500">Saved to the patient&apos;s medical history before this consultation is completed.</p></div></div>{clinicalNotice?.tone === "error" ? <div className="mt-5"><ActionNotice notice={clinicalNotice} /></div> : null}{clinicalSaved ? <div className="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50 p-5 text-sm text-emerald-900"><p className="font-bold">Clinical record saved</p><p className="mt-2">Diagnosis: {existingHistory?.diagnosis || "Saved in this session"}</p><p className="mt-1">Treatment plan: {existingHistory?.treatmentPlan || "Saved in this session"}</p><p className="mt-1">Clinical notes: {existingHistory?.doctorNotes || "Saved in this session"}</p></div> : <form className="mt-6 space-y-5" onSubmit={consultationForm.handleSubmit(submitConsultation, handleInvalidConsultation)} noValidate><div className="grid gap-5 md:grid-cols-2"><label className="grid gap-1.5 text-sm font-semibold text-slate-700">Diagnosis<textarea rows={4} {...consultationForm.register("diagnosis")} className="rounded-xl border border-slate-200 p-3 font-normal outline-none focus:border-blue-500" />{consultationForm.formState.errors.diagnosis && <span className="text-xs text-rose-600">{consultationForm.formState.errors.diagnosis.message}</span>}</label><label className="grid gap-1.5 text-sm font-semibold text-slate-700">Treatment plan<textarea rows={4} {...consultationForm.register("treatmentPlan")} className="rounded-xl border border-slate-200 p-3 font-normal outline-none focus:border-blue-500" />{consultationForm.formState.errors.treatmentPlan && <span className="text-xs text-rose-600">{consultationForm.formState.errors.treatmentPlan.message}</span>}</label></div><label className="grid gap-1.5 text-sm font-semibold text-slate-700">Clinical notes<textarea rows={5} {...consultationForm.register("doctorNotes")} className="rounded-xl border border-slate-200 p-3 font-normal outline-none focus:border-blue-500" />{consultationForm.formState.errors.doctorNotes && <span className="text-xs text-rose-600">{consultationForm.formState.errors.doctorNotes.message}</span>}</label><div className="rounded-2xl border border-slate-200 p-4"><div className="flex items-center justify-between"><div><h3 className="font-bold text-slate-800">Prescriptions</h3><p className="mt-1 text-xs text-slate-500">Dates must be later than today.</p></div><Button type="button" variant="outline" size="sm" onClick={() => append({ medicineName: "", dosage: "", frequency: "", startDate: "", endDate: "", notes: "" })}><Plus /> Add medicine</Button></div><div className="mt-4 space-y-4">{fields.length === 0 ? <p className="text-sm text-slate-500">No medicine prescribed.</p> : fields.map((field, index) => <div key={field.id} className="grid gap-3 rounded-xl bg-slate-50 p-4 md:grid-cols-3"><Input placeholder="Medicine name" {...consultationForm.register(`medicines.${index}.medicineName`)} /><Input placeholder="Dosage" {...consultationForm.register(`medicines.${index}.dosage`)} /><Input placeholder="Frequency" {...consultationForm.register(`medicines.${index}.frequency`)} /><label className="grid gap-1.5 text-xs font-semibold text-slate-700">Start date<Input type="date" min={minimumPrescriptionDate} aria-label={`Prescription ${index + 1} start date`} {...consultationForm.register(`medicines.${index}.startDate`)} />{consultationForm.formState.errors.medicines?.[index]?.startDate && <span className="font-normal text-rose-600">{consultationForm.formState.errors.medicines[index].startDate.message}</span>}</label><label className="grid gap-1.5 text-xs font-semibold text-slate-700">End date<Input type="date" min={minimumPrescriptionDate} aria-label={`Prescription ${index + 1} end date`} {...consultationForm.register(`medicines.${index}.endDate`)} />{consultationForm.formState.errors.medicines?.[index]?.endDate && <span className="font-normal text-rose-600">{consultationForm.formState.errors.medicines[index].endDate.message}</span>}</label><div className="grid gap-1.5"><span className="text-xs font-semibold text-slate-700">Instructions</span><div className="flex gap-2"><Input placeholder="Instructions" {...consultationForm.register(`medicines.${index}.notes`)} /><Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} aria-label="Remove medicine"><Trash2 /></Button></div></div>{consultationForm.formState.errors.medicines?.[index]?.medicineName && <p className="text-xs text-rose-600 md:col-span-3">{consultationForm.formState.errors.medicines[index].medicineName.message}</p>}</div>)}</div></div><div className="grid gap-1.5 text-sm font-semibold text-slate-700"><span>{text("Attachments")}</span><input id="consultation-attachments" type="file" multiple {...attachmentField} onChange={(event) => { attachmentField.onChange(event); setSelectedAttachmentNames(Array.from(event.target.files || []).map((file) => file.name)); }} className="sr-only" /><label htmlFor="consultation-attachments" className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 text-sm font-normal transition-colors hover:border-blue-400 hover:bg-blue-50"><span className="min-w-0 truncate text-slate-500">{selectedAttachmentNames.length ? selectedAttachmentNames.join(", ") : text("No file selected")}</span><span className="shrink-0 font-semibold text-blue-700">{text("Choose file")}</span></label></div><Button type="submit" disabled={consultationForm.formState.isSubmitting}>{consultationForm.formState.isSubmitting ? <LoaderCircle className="animate-spin" /> : <FilePlus2 />} Save clinical record</Button></form>}</section>
     <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
       <h2 className="font-black text-slate-900">Create referral</h2>
       <p className="mt-1 text-sm text-slate-500">This creates a live referral for the patient. The backend does not yet link it to this appointment.</p>
+      <div className="mt-4"><ActionNotice notice={referralNotice} /></div>
       <form className="mt-5 grid gap-4 md:grid-cols-2" onSubmit={referralForm.handleSubmit(submitReferral)} noValidate>
         <label className="grid gap-1.5 text-sm font-semibold text-slate-700">Type
           <NativeSelect value={referralType} onChange={(event) => selectReferralType(event.target.value)}>
