@@ -12,10 +12,6 @@ export default function DoctorProfileNav({ doctorId }) {
       to: `/admin/doctors/${doctorId}/schedules`,
     },
     {
-      label: "Clinics",
-      to: `/admin/doctors/${doctorId}/clinics`,
-    },
-    {
       label: "Appointments",
       to: `/admin/doctors/${doctorId}/appointments`,
     },

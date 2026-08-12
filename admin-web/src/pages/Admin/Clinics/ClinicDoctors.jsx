@@ -143,7 +143,7 @@ export default function ClinicDoctors() {
                   </Button>
 
                   <Button variant="outline" size="sm" asChild>
-                    <Link to={`/admin/doctors/${doctor.id}/schedules?clinicId=${clinic.id}`}>
+                    <Link to={`/admin/doctors/${doctor.id}/schedules`}>
                       <CalendarDays className="h-4 w-4" />
                       View schedule
                     </Link>

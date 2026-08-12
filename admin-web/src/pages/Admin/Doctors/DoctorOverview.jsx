@@ -13,6 +13,7 @@ import {
   formatEnumLabel,
   formatLanguagesSpoken,
 } from "./doctorUtils";
+import DoctorClinics from "./DoctorClinics";
 
 function formatDate(value) {
   if (!value) {
@@ -28,6 +29,13 @@ export default function DoctorOverview() {
 
   return (
     <div className="space-y-6">
+      <section
+        aria-labelledby="clinic-assignment-heading"
+        className="rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-50 via-white to-white p-6 shadow-lg shadow-blue-100/60"
+      >
+        <DoctorClinics />
+      </section>
+
       <div>
         <h2 className="text-xl font-semibold tracking-tight text-slate-900">
           Overview
@@ -116,15 +124,6 @@ export default function DoctorOverview() {
 
         <div className={profileCardShell}>
           <p className={profileCardLabel}>
-            Clinic
-          </p>
-          <p className={profileCardValue}>
-            {doctor.assignedClinic?.name || "Not assigned"}
-          </p>
-        </div>
-
-        <div className={profileCardShell}>
-          <p className={profileCardLabel}>
             Initial Visit Fee
           </p>
           <p className={profileCardValue}>
@@ -195,6 +194,7 @@ export default function DoctorOverview() {
           </p>
         </div>
       </div>
+
     </div>
   );
 }

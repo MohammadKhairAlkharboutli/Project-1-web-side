@@ -4,7 +4,6 @@ import DoctorsPage from "./pages/Admin/Doctors/DoctorsPage";
 import DoctorProfile from "./pages/Admin/Doctors/DoctorProfile";
 import DoctorOverview from "./pages/Admin/Doctors/DoctorOverview";
 import DoctorSchedule from "./pages/Admin/Doctors/DoctorSchedule";
-import DoctorClinics from "./pages/Admin/Doctors/DoctorClinics";
 import DoctorAppointments from "./pages/Admin/Doctors/DoctorAppointments";
 import AdminAppointmentsPage from "./pages/Admin/Appointments/AdminAppointmentsPage";
 import AppointmentDetails from "./pages/Admin/Appointments/AppointmentDetails";
@@ -68,7 +67,7 @@ function App() {
             <Route path=":doctorId" element={<DoctorProfile />}>
               <Route index element={<DoctorOverview />} />
               <Route path="schedules" element={<DoctorSchedule />} />
-              <Route path="clinics" element={<DoctorClinics />} />
+              <Route path="clinics" element={<Navigate to=".." relative="path" replace />} />
               <Route path="appointments" element={<DoctorAppointments />} />
             </Route>
           </Route>

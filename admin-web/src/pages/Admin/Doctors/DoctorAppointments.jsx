@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { useOutletContext, useSearchParams } from "react-router-dom";
+import { useOutletContext } from "react-router-dom";
 
 import { appointmentsApi } from "@/api/appointmentsApi";
 import DataTable from "@/components/shared/DataTable";
 import {
   filterAppointmentsByDate,
-  getUniqueAppointmentsById,
 } from "@/components/shared/Appointments/appointmentFilters";
 import { getDoctorAppointmentColumns } from "@/components/shared/Appointments/DoctorAppointmentColumns";
 import DoctorAppointmentsToolbar from "@/components/shared/Appointments/DoctorAppointmentsToolbar";
@@ -20,14 +19,11 @@ function getErrorMessage(error) {
 
 export default function DoctorAppointments() {
   const { doctor } = useOutletContext();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const clinicIdParam = searchParams.get("clinicId");
   const [doctorAppointments, setDoctorAppointments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [dateRange, setDateRange] = useState("all");
   const [exactDate, setExactDate] = useState("");
-  const [selectedClinicId, setSelectedClinicId] = useState(null);
 
   useEffect(() => {
     let isCurrent = true;
@@ -62,41 +58,13 @@ export default function DoctorAppointments() {
     };
   }, [doctor.id]);
 
-  const queryClinicId = useMemo(() => {
-    const hasMatchingClinic = doctorAppointments.some(
-      (appointment) => String(appointment.clinicId) === clinicIdParam,
-    );
-
-    return clinicIdParam && hasMatchingClinic ? clinicIdParam : "all";
-  }, [clinicIdParam, doctorAppointments]);
-
-  const activeClinicId = selectedClinicId ?? queryClinicId;
-
   const appointments = useMemo(() => {
-    const clinicFilteredAppointments =
-      activeClinicId === "all"
-        ? doctorAppointments
-        : doctorAppointments.filter(
-            (appointment) => String(appointment.clinicId) === activeClinicId,
-          );
-
     return filterAppointmentsByDate(
-      clinicFilteredAppointments,
+      doctorAppointments,
       dateRange,
       exactDate,
     );
-  }, [activeClinicId, dateRange, doctorAppointments, exactDate]);
-
-  function handleClinicChange(clinicId) {
-    setSelectedClinicId(clinicId);
-
-    if (clinicId === "all") {
-      setSearchParams({});
-      return;
-    }
-
-    setSearchParams({ clinicId });
-  }
+  }, [dateRange, doctorAppointments, exactDate]);
 
   function resetFilters(table, setGlobalFilter) {
     setGlobalFilter("");
@@ -104,8 +72,6 @@ export default function DoctorAppointments() {
     table.setPageIndex(0);
     setDateRange("all");
     setExactDate("");
-    setSelectedClinicId("all");
-    setSearchParams({});
   }
 
   return (
@@ -136,12 +102,6 @@ export default function DoctorAppointments() {
             setDateRange={setDateRange}
             exactDate={exactDate}
             setExactDate={setExactDate}
-            clinicId={activeClinicId}
-            setClinicId={handleClinicChange}
-            clinicOptions={getUniqueAppointmentsById(
-              doctorAppointments,
-              "clinicId",
-            )}
             onResetFilters={() =>
               resetFilters(toolbarProps.table, toolbarProps.setGlobalFilter)
             }

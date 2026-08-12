@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import {
-  CalendarDays,
-  ClipboardList,
   Eye,
   LoaderCircle,
   Plus,
@@ -159,11 +157,11 @@ export default function DoctorClinics() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-xl font-semibold tracking-tight text-slate-900">
-            Clinic
+          <h2 id="clinic-assignment-heading" className="text-2xl font-bold tracking-tight text-slate-900">
+            Clinic assignment
           </h2>
           <p className="mt-1 text-sm text-slate-600">
-            The clinic this doctor is assigned to.
+            Manage the clinic this doctor is assigned to.
           </p>
         </div>
 
@@ -213,26 +211,13 @@ export default function DoctorClinics() {
             <ClinicCard
               key={clinic.id}
               clinic={clinic}
+              className="border-blue-200 p-6 shadow-md shadow-blue-100/70"
               actions={
                 <>
                   <Button variant="outline" size="sm" asChild>
                     <Link to={`/admin/clinics/${clinic.id}`}>
                       <Eye className="h-4 w-4" />
                       View clinic
-                    </Link>
-                  </Button>
-
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to={`/admin/doctors/${doctor.id}/schedules?clinicId=${clinic.id}`}>
-                      <CalendarDays className="h-4 w-4" />
-                      View schedule
-                    </Link>
-                  </Button>
-
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to={`/admin/doctors/${doctor.id}/appointments?clinicId=${clinic.id}`}>
-                      <ClipboardList className="h-4 w-4" />
-                      View appointments
                     </Link>
                   </Button>
 

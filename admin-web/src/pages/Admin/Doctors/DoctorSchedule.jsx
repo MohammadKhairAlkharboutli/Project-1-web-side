@@ -1,13 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { useOutletContext, useSearchParams } from "react-router-dom";
+import { useOutletContext } from "react-router-dom";
 
-import { doctorClinicsApi } from "@/api/doctorClinicsApi";
 import { doctorSchedulesApi } from "@/api/doctorSchedulesApi";
 import DoctorWeeklySchedule from "@/components/shared/DoctorWeeklySchedule/DoctorWeeklySchedule";
-import {
-  NativeSelect,
-  NativeSelectOption,
-} from "@/components/ui/native-select";
 
 function getErrorMessage(error) {
   const message =
@@ -20,28 +15,32 @@ function getErrorMessage(error) {
 
 export default function DoctorSchedule() {
   const { doctor } = useOutletContext();
-  const [searchParams] = useSearchParams();
   const [scheduleSlots, setScheduleSlots] = useState([]);
-  const [clinics, setClinics] = useState([]);
-  const [selectedClinicIdOverride, setSelectedClinicIdOverride] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [loadAttempt, setLoadAttempt] = useState(0);
-  const requestedClinicId = searchParams.get("clinicId");
+  const assignedClinic = doctor.assignedClinic;
 
   useEffect(() => {
     let isCurrent = true;
 
     async function loadSchedule() {
+      if (!assignedClinic) {
+        if (isCurrent) {
+          setScheduleSlots([]);
+          setLoadError("");
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      setIsLoading(true);
+
       try {
-        const [slots, assignedClinics] = await Promise.all([
-          doctorSchedulesApi.getAdminDoctorSchedule(doctor.id),
-          doctorClinicsApi.getClinicsForDoctor(doctor.id),
-        ]);
+        const slots = await doctorSchedulesApi.getAdminDoctorSchedule(doctor.id);
 
         if (isCurrent) {
           setScheduleSlots(slots);
-          setClinics(assignedClinics);
           setLoadError("");
         }
       } catch (error) {
@@ -60,64 +59,33 @@ export default function DoctorSchedule() {
     return () => {
       isCurrent = false;
     };
-  }, [doctor.id, loadAttempt]);
+  }, [assignedClinic, doctor.id, loadAttempt]);
 
-  const selectedClinicId = clinics.some(
-    (clinic) => String(clinic.id) === selectedClinicIdOverride,
-  )
-    ? selectedClinicIdOverride
-    : clinics.some((clinic) => String(clinic.id) === requestedClinicId)
-      ? requestedClinicId
-      : String(clinics[0]?.id ?? "");
-
-  const selectedClinic = useMemo(
-    () => clinics.find((clinic) => String(clinic.id) === selectedClinicId),
-    [clinics, selectedClinicId],
-  );
-
-  const selectedClinicSchedule = useMemo(
+  const clinicSchedule = useMemo(
     () =>
       scheduleSlots.filter(
-        (slot) => String(slot.clinicId ?? slot.clinic?.id) === selectedClinicId,
+        (slot) =>
+          String(slot.clinicId ?? slot.clinic?.id) === String(assignedClinic?.id),
       ),
-    [scheduleSlots, selectedClinicId],
+    [assignedClinic?.id, scheduleSlots],
   );
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight text-slate-900">
-            Schedule
-          </h2>
-          <p className="mt-1 text-sm text-slate-600">
-            Weekly clinic schedule for this doctor.
-          </p>
-        </div>
-
-        <label className="grid gap-1.5 text-sm font-medium text-slate-700">
-          Clinic
-          <NativeSelect
-            className="w-full sm:w-64"
-            value={selectedClinicId}
-            onChange={(event) => setSelectedClinicIdOverride(event.target.value)}
-            aria-label="Select clinic schedule"
-            disabled={isLoading || clinics.length === 0}
-          >
-            {clinics.length === 0 ? (
-              <NativeSelectOption value="">No assigned clinics</NativeSelectOption>
-            ) : (
-              clinics.map((clinic) => (
-                <NativeSelectOption key={clinic.id} value={String(clinic.id)}>
-                  {clinic.name}
-                </NativeSelectOption>
-              ))
-            )}
-          </NativeSelect>
-        </label>
+      <div>
+        <h2 className="text-xl font-semibold tracking-tight text-slate-900">
+          Schedule
+        </h2>
+        <p className="mt-1 text-sm text-slate-600">
+          Weekly schedule for this doctor at {assignedClinic?.name || "their assigned clinic"}.
+        </p>
       </div>
 
-      {loadError ? (
+      {!assignedClinic ? (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          This doctor is not assigned to a clinic yet. Assign a clinic from the Overview before managing their schedule.
+        </div>
+      ) : loadError ? (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert">
           <p>{loadError}</p>
           <button
@@ -133,11 +101,11 @@ export default function DoctorSchedule() {
         </div>
       ) : (
         <DoctorWeeklySchedule
-          slots={selectedClinicSchedule}
+          slots={clinicSchedule}
           emptyMessage={
             isLoading
               ? "Loading schedule..."
-              : `No schedule for ${selectedClinic?.name || "this clinic"}.`
+              : `No schedule for ${assignedClinic.name}.`
           }
         />
       )}

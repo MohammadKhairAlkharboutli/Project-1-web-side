@@ -18,9 +18,6 @@ export default function DoctorAppointmentsToolbar({
   setDateRange,
   exactDate,
   setExactDate,
-  clinicId,
-  setClinicId,
-  clinicOptions = [],
   onResetFilters,
 }) {
   return (
@@ -33,22 +30,6 @@ export default function DoctorAppointmentsToolbar({
       />
 
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-        <NativeSelect
-          className="w-full sm:w-44"
-          value={clinicId}
-          onChange={(event) => setClinicId(event.target.value)}
-        >
-          <NativeSelectOption value="all">All clinics</NativeSelectOption>
-          {clinicOptions.map((appointment) => (
-            <NativeSelectOption
-              key={appointment.clinicId}
-              value={String(appointment.clinicId)}
-            >
-              {appointment.clinic?.name || "Unknown Clinic"}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
-
         <NativeSelect
           className="w-full sm:w-40"
           value={table.getColumn("status")?.getFilterValue() ?? "all"}
