@@ -26,13 +26,14 @@ export function getPatientColumns(onViewPatient) {
       },
       cell: ({ row }) => {
         const patient = row.original;
+        const user = patient.user || {};
 
         return (
           <div className="space-y-1">
             <p className="font-medium text-slate-900">
               {getPatientDisplayName(patient)}
             </p>
-            <p className="text-sm text-slate-500">{patient.user.email}</p>
+            <p className="text-sm text-slate-500">{user.email || "No email"}</p>
           </div>
         );
       },
@@ -43,12 +44,12 @@ export function getPatientColumns(onViewPatient) {
     },
     {
       id: "gender",
-      accessorFn: (patient) => formatEnumLabel(patient.user.gender),
+      accessorFn: (patient) => formatEnumLabel(patient.user?.gender),
       header: "Gender",
     },
     {
       id: "age",
-      accessorFn: (patient) => patient.user.age,
+      accessorFn: (patient) => patient.user?.age,
       header: "Age",
     },
     {
@@ -62,10 +63,10 @@ export function getPatientColumns(onViewPatient) {
     },
     {
       id: "status",
-      accessorFn: (patient) => patient.user.status,
+      accessorFn: (patient) => patient.user?.status,
       header: "Status",
       cell: ({ row }) => {
-        const status = row.original.user.status;
+        const status = row.original.user?.status;
 
         return (
           <Badge variant={status === "ACTIVE" ? "default" : "secondary"}>

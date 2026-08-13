@@ -67,7 +67,11 @@ export default function RatingReportDetails() {
 
     async function loadReport() {
       try {
-        const response = await ratingsApi.getAdminReports();
+        const response = await ratingsApi.getAdminReports({
+          page: 1,
+          limit: 100,
+          search: reportId,
+        });
         const matchingReport = response.data.find(
           (item) => String(item.id) === reportId,
         );

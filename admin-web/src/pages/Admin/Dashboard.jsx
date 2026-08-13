@@ -25,7 +25,7 @@ import {
   UserPlus,
 } from "lucide-react";
 
-import axiosClient from "@/api/axiosClient";
+import { adminDashboardApi } from "@/api/adminDashboardApi";
 import {
   ChartContainer,
   ChartTooltip,
@@ -69,88 +69,6 @@ const statusLabels = {
   in_progress: "In progress",
 };
 
-const fallbackDashboardData = {
-  summary: {
-    totalPatients: 1248,
-    newPatientsThisMonth: 86,
-    activeDoctors: 42,
-    pendingScheduleRequests: 9,
-    todaysAppointments: 64,
-    liveQueueNow: 18,
-    clinicsNeedingAttention: 2,
-    monthlyRevenue: 48650,
-    heldPayments: 7420,
-  },
-  trendsByRange: {
-    "7d": [
-      { period: "Jul 20", totalAppointments: 38, completedAppointments: 31, missedOrCancelledAppointments: 4, completedRevenue: 3750 },
-      { period: "Jul 21", totalAppointments: 44, completedAppointments: 36, missedOrCancelledAppointments: 5, completedRevenue: 4320 },
-      { period: "Jul 22", totalAppointments: 41, completedAppointments: 33, missedOrCancelledAppointments: 4, completedRevenue: 3980 },
-      { period: "Jul 23", totalAppointments: 49, completedAppointments: 42, missedOrCancelledAppointments: 3, completedRevenue: 5220 },
-      { period: "Jul 24", totalAppointments: 57, completedAppointments: 46, missedOrCancelledAppointments: 7, completedRevenue: 5840 },
-      { period: "Jul 25", totalAppointments: 35, completedAppointments: 29, missedOrCancelledAppointments: 3, completedRevenue: 3410 },
-      { period: "Jul 26", totalAppointments: 64, completedAppointments: 39, missedOrCancelledAppointments: 4, completedRevenue: 4680 },
-    ],
-    "30d": [
-      { period: "Jun 27", totalAppointments: 31, completedAppointments: 26, missedOrCancelledAppointments: 3, completedRevenue: 2860 },
-      { period: "Jun 30", totalAppointments: 36, completedAppointments: 29, missedOrCancelledAppointments: 4, completedRevenue: 3190 },
-      { period: "Jul 03", totalAppointments: 42, completedAppointments: 34, missedOrCancelledAppointments: 5, completedRevenue: 4070 },
-      { period: "Jul 06", totalAppointments: 47, completedAppointments: 39, missedOrCancelledAppointments: 4, completedRevenue: 4610 },
-      { period: "Jul 09", totalAppointments: 52, completedAppointments: 43, missedOrCancelledAppointments: 6, completedRevenue: 5380 },
-      { period: "Jul 12", totalAppointments: 45, completedAppointments: 38, missedOrCancelledAppointments: 4, completedRevenue: 4820 },
-      { period: "Jul 15", totalAppointments: 56, completedAppointments: 48, missedOrCancelledAppointments: 5, completedRevenue: 6210 },
-      { period: "Jul 18", totalAppointments: 50, completedAppointments: 41, missedOrCancelledAppointments: 6, completedRevenue: 5170 },
-      { period: "Jul 21", totalAppointments: 44, completedAppointments: 36, missedOrCancelledAppointments: 5, completedRevenue: 4320 },
-      { period: "Jul 24", totalAppointments: 57, completedAppointments: 46, missedOrCancelledAppointments: 7, completedRevenue: 5840 },
-      { period: "Jul 26", totalAppointments: 64, completedAppointments: 39, missedOrCancelledAppointments: 4, completedRevenue: 4680 },
-    ],
-    "12m": [
-      { period: "Aug", totalAppointments: 690, completedAppointments: 612, missedOrCancelledAppointments: 54, completedRevenue: 64100 },
-      { period: "Sep", totalAppointments: 724, completedAppointments: 640, missedOrCancelledAppointments: 61, completedRevenue: 68240 },
-      { period: "Oct", totalAppointments: 771, completedAppointments: 691, missedOrCancelledAppointments: 58, completedRevenue: 73420 },
-      { period: "Nov", totalAppointments: 742, completedAppointments: 662, missedOrCancelledAppointments: 63, completedRevenue: 70580 },
-      { period: "Dec", totalAppointments: 798, completedAppointments: 721, missedOrCancelledAppointments: 55, completedRevenue: 78100 },
-      { period: "Jan", totalAppointments: 822, completedAppointments: 744, missedOrCancelledAppointments: 59, completedRevenue: 82400 },
-      { period: "Feb", totalAppointments: 790, completedAppointments: 706, missedOrCancelledAppointments: 66, completedRevenue: 79150 },
-      { period: "Mar", totalAppointments: 846, completedAppointments: 769, missedOrCancelledAppointments: 57, completedRevenue: 86280 },
-      { period: "Apr", totalAppointments: 881, completedAppointments: 803, missedOrCancelledAppointments: 61, completedRevenue: 91420 },
-      { period: "May", totalAppointments: 902, completedAppointments: 826, missedOrCancelledAppointments: 64, completedRevenue: 94680 },
-      { period: "Jun", totalAppointments: 874, completedAppointments: 792, missedOrCancelledAppointments: 68, completedRevenue: 89920 },
-      { period: "Jul", totalAppointments: 932, completedAppointments: 811, missedOrCancelledAppointments: 71, completedRevenue: 96800 },
-    ],
-  },
-  appointmentStatusBreakdownByRange: {
-    "7d": [
-      { status: "confirmed", count: 75 },
-      { status: "completed", count: 256 },
-      { status: "cancelled", count: 22 },
-      { status: "no_show", count: 8 },
-      { status: "in_progress", count: 6 },
-    ],
-    "30d": [
-      { status: "confirmed", count: 182 },
-      { status: "completed", count: 421 },
-      { status: "cancelled", count: 38 },
-      { status: "no_show", count: 21 },
-      { status: "in_progress", count: 9 },
-    ],
-    "12m": [
-      { status: "confirmed", count: 518 },
-      { status: "completed", count: 8777 },
-      { status: "cancelled", count: 612 },
-      { status: "no_show", count: 310 },
-      { status: "in_progress", count: 18 },
-    ],
-  },
-  topRatedDoctors: [
-    { doctorId: 3, doctorName: "Dr. Emily Davis", specialization: "Neurology", averageRating: 4.9, ratingCount: 186, status: "active" },
-    { doctorId: 1, doctorName: "Dr. Sarah Jenkins", specialization: "Cardiology", averageRating: 4.8, ratingCount: 243, status: "active" },
-    { doctorId: 5, doctorName: "Dr. Aisha Khan", specialization: "Dermatology", averageRating: 4.7, ratingCount: 171, status: "active" },
-    { doctorId: 2, doctorName: "Dr. Robert Chen", specialization: "Pediatrics", averageRating: 4.6, ratingCount: 154, status: "active" },
-    { doctorId: 6, doctorName: "Dr. Noah Anderson", specialization: "Radiology", averageRating: 4.4, ratingCount: 92, status: "inactive" },
-  ],
-};
-
 const quickActions = [
   { label: "Manage Doctors", to: "/admin/doctors", icon: Stethoscope },
   { label: "Manage Clinics", to: "/admin/clinics", icon: Hospital },
@@ -178,25 +96,6 @@ const chartConfig = {
     color: "#0f766e",
   },
 };
-
-function normalizeDashboardData(payload) {
-  if (!payload) {
-    return fallbackDashboardData;
-  }
-
-  return {
-    summary: payload.summary ?? fallbackDashboardData.summary,
-    trendsByRange: {
-      ...fallbackDashboardData.trendsByRange,
-      current: payload.trends,
-    },
-    appointmentStatusBreakdownByRange: {
-      ...fallbackDashboardData.appointmentStatusBreakdownByRange,
-      current: payload.appointmentStatusBreakdown,
-    },
-    topRatedDoctors: payload.topRatedDoctors ?? fallbackDashboardData.topRatedDoctors,
-  };
-}
 
 function formatNumber(value) {
   return Number(value || 0).toLocaleString();
@@ -226,6 +125,47 @@ function getStatusLabel(status) {
   return String(status)
     .replace(/_/g, " ")
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function getErrorMessage(error) {
+  const message =
+    error?.response?.data?.message ||
+    error?.message ||
+    "We could not load the dashboard. Please try again.";
+
+  return Array.isArray(message) ? message.join(" ") : message;
+}
+
+function DashboardLoadingState() {
+  return (
+    <div className="space-y-6" aria-live="polite" aria-busy="true">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 8 }, (_, index) => (
+          <div
+            key={index}
+            className="h-36 animate-pulse rounded-2xl border border-slate-200 bg-slate-100"
+          />
+        ))}
+      </div>
+      <div className="h-80 animate-pulse rounded-2xl border border-slate-200 bg-slate-100" />
+      <p className="text-center text-sm text-slate-500">Loading dashboard data...</p>
+    </div>
+  );
+}
+
+function DashboardErrorState({ message, onRetry }) {
+  return (
+    <div
+      className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-900"
+      role="alert"
+    >
+      <h2 className="text-lg font-semibold">Dashboard data is unavailable</h2>
+      <p className="mt-2 text-sm text-red-700">{message}</p>
+      <Button className="mt-4" variant="outline" onClick={onRetry}>
+        Try again
+      </Button>
+    </div>
+  );
 }
 
 function StatCard({ card }) {
@@ -292,6 +232,14 @@ function SegmentedControl({ options, value, onChange, label }) {
 
 function DashboardTrendChart({ data, view }) {
   const isRevenueView = view === "revenue";
+
+  if (!data.length) {
+    return (
+      <div className="flex h-80 items-center justify-center rounded-xl bg-slate-50 text-sm text-slate-500">
+        No appointment or revenue activity in this range.
+      </div>
+    );
+  }
 
   return (
     <ChartContainer config={chartConfig} className="h-80 w-full">
@@ -375,6 +323,14 @@ function DashboardTrendChart({ data, view }) {
 function AppointmentStatusDonut({ data }) {
   const total = data.reduce((sum, item) => sum + Number(item.count || 0), 0);
 
+  if (!data.length || total === 0) {
+    return (
+      <div className="flex h-72 items-center justify-center p-5 text-center text-sm text-slate-500">
+        No appointment statuses recorded in this range.
+      </div>
+    );
+  }
+
   return (
     <div className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_180px] lg:items-center">
       <ChartContainer config={{}} className="mx-auto h-64 w-full max-w-sm">
@@ -448,6 +404,14 @@ function AppointmentStatusDonut({ data }) {
 }
 
 function TopRatedDoctorsTable({ doctors }) {
+  if (!doctors.length) {
+    return (
+      <div className="p-5 text-sm text-slate-500">
+        No visible doctor ratings yet.
+      </div>
+    );
+  }
+
   return (
     <div className="p-5">
       <Table>
@@ -465,7 +429,7 @@ function TopRatedDoctorsTable({ doctors }) {
             <TableRow key={doctor.doctorId}>
               <TableCell>
                 <Link to={`/admin/doctors/${doctor.doctorId}`} className="font-medium text-slate-900 hover:text-blue-700">
-                  {doctor.doctorName}
+                  {doctor.fullName || "Unknown doctor"}
                 </Link>
               </TableCell>
               <TableCell className="text-slate-600">{doctor.specialization || "N/A"}</TableCell>
@@ -492,26 +456,27 @@ function TopRatedDoctorsTable({ doctors }) {
 export default function Dashboard() {
   const [range, setRange] = useState("30d");
   const [chartView, setChartView] = useState("appointments");
-  const [dashboardData, setDashboardData] = useState(fallbackDashboardData);
+  const [dashboardData, setDashboardData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadDashboardData() {
       setIsLoading(true);
+      setLoadError("");
 
       try {
-        const response = await axiosClient.get("/admin/dashboard", {
-          params: { range },
-        });
+        const data = await adminDashboardApi.getDashboard(range);
 
         if (isMounted) {
-          setDashboardData(normalizeDashboardData(response.data));
+          setDashboardData(data);
         }
-      } catch {
+      } catch (error) {
         if (isMounted) {
-          setDashboardData(fallbackDashboardData);
+          setLoadError(getErrorMessage(error));
         }
       } finally {
         if (isMounted) {
@@ -525,15 +490,19 @@ export default function Dashboard() {
     return () => {
       isMounted = false;
     };
-  }, [range]);
+  }, [loadAttempt, range]);
 
-  const trends = dashboardData.trendsByRange.current ?? dashboardData.trendsByRange[range] ?? [];
-  const appointmentStatusBreakdown =
-    dashboardData.appointmentStatusBreakdownByRange.current ??
-    dashboardData.appointmentStatusBreakdownByRange[range] ??
-    [];
+  const hasCurrentDashboardData = dashboardData?.range === range;
+  const trends = hasCurrentDashboardData ? dashboardData.trends : [];
+  const appointmentStatusBreakdown = hasCurrentDashboardData
+    ? dashboardData.appointmentStatusBreakdown
+    : [];
 
   const summaryCards = useMemo(() => {
+    if (!hasCurrentDashboardData) {
+      return [];
+    }
+
     const summary = dashboardData.summary;
 
     return [
@@ -594,11 +563,15 @@ export default function Dashboard() {
         icon: CircleDollarSign,
       },
     ];
-  }, [dashboardData.summary]);
+  }, [dashboardData, hasCurrentDashboardData]);
 
-  const topRatedDoctors = [...(dashboardData.topRatedDoctors ?? [])].sort(
+  const topRatedDoctors = [...(hasCurrentDashboardData ? dashboardData.topRatedDoctors : [])].sort(
     (first, second) => Number(second.averageRating || 0) - Number(first.averageRating || 0),
   );
+
+  function retryLoad() {
+    setLoadAttempt((attempt) => attempt + 1);
+  }
 
   return (
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-6">
@@ -620,13 +593,33 @@ export default function Dashboard() {
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {summaryCards.map((card) => (
-          <StatCard key={card.label} card={card} />
-        ))}
-      </div>
+      {!hasCurrentDashboardData ? (
+        isLoading ? (
+          <DashboardLoadingState />
+        ) : (
+          <DashboardErrorState message={loadError} onRetry={retryLoad} />
+        )
+      ) : (
+        <>
+          {loadError ? (
+            <div
+              className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between"
+              role="alert"
+            >
+              <span>{loadError} Showing the most recently loaded dashboard data.</span>
+              <Button variant="outline" size="sm" onClick={retryLoad}>
+                Try again
+              </Button>
+            </div>
+          ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {summaryCards.map((card) => (
+              <StatCard key={card.label} card={card} />
+            ))}
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <Section
           title="Appointments And Revenue"
           description="Trend view follows the selected dashboard range."
@@ -640,13 +633,12 @@ export default function Dashboard() {
           }
         >
           <div className="px-3 pb-4 pt-3">
+            <DashboardTrendChart data={trends} view={chartView} />
             {isLoading ? (
-              <div className="flex h-80 items-center justify-center rounded-xl bg-slate-50 text-sm text-slate-500">
-                Loading dashboard data...
-              </div>
-            ) : (
-              <DashboardTrendChart data={trends} view={chartView} />
-            )}
+              <p className="mt-2 text-right text-xs text-slate-500" role="status">
+                Refreshing dashboard data...
+              </p>
+            ) : null}
           </div>
         </Section>
 
@@ -674,9 +666,9 @@ export default function Dashboard() {
             })}
           </div>
         </Section>
-      </div>
+          </div>
 
-      <div className="grid gap-6 xl:grid-cols-[430px_minmax(0,1fr)]">
+          <div className="grid gap-6 xl:grid-cols-[430px_minmax(0,1fr)]">
         <Section
           title="Appointment Status"
           description="Status distribution for the selected range."
@@ -699,7 +691,9 @@ export default function Dashboard() {
         >
           <TopRatedDoctorsTable doctors={topRatedDoctors} />
         </Section>
-      </div>
+          </div>
+        </>
+      )}
     </section>
   );
 }

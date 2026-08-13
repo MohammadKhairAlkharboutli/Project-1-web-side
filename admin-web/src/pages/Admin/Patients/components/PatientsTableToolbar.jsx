@@ -6,30 +6,26 @@ import {
 } from "@/components/ui/native-select";
 
 export default function PatientsTableToolbar({
-  table,
-  globalFilter,
-  setGlobalFilter,
+  search,
+  setSearch,
+  status,
+  setStatus,
   onResetFilters,
 }) {
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <Input
         placeholder="Search patients..."
-        value={globalFilter}
-        onChange={(event) => setGlobalFilter(event.target.value)}
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
         className="max-w-sm"
       />
 
       <div className="flex flex-wrap gap-2">
         <NativeSelect
           className="w-[160px]"
-          value={table.getColumn("status")?.getFilterValue() ?? "all"}
-          onChange={(event) => {
-            const value = event.target.value;
-            table
-              .getColumn("status")
-              ?.setFilterValue(value === "all" ? undefined : value);
-          }}
+          value={status}
+          onChange={(event) => setStatus(event.target.value)}
         >
           <NativeSelectOption value="all">All statuses</NativeSelectOption>
           <NativeSelectOption value="ACTIVE">Active</NativeSelectOption>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { ratingsApi } from "@/api/ratingsApi";
 import DataTable from "@/components/shared/DataTable";
@@ -12,11 +12,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 import { getRatingReportColumns } from "./components/RatingReportColumns";
 import RatingReportsToolbar from "./components/RatingReportsToolbar";
-
-const INITIAL_REPORT_FILTERS = [{ id: "status", value: "pending" }];
 
 function getErrorMessage(error, fallback) {
   const message = error?.response?.data?.message || error?.message || fallback;
@@ -24,7 +23,12 @@ function getErrorMessage(error, fallback) {
 }
 
 export default function RatingReportsPage() {
-  const [allReports, setAllReports] = useState([]);
+  const [reports, setReports] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [search, setSearchState] = useState("");
+  const [statusFilter, setStatusFilter] = useState("pending");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -33,16 +37,27 @@ export default function RatingReportsPage() {
   const [resolvingReportId, setResolvingReportId] = useState(null);
   const [reportResolution, setReportResolution] = useState(null);
   const [reasonFilter, setReasonFilter] = useState("all");
+  const debouncedSearch = useDebouncedValue(search);
 
   useEffect(() => {
     let isCurrent = true;
 
     async function loadReports() {
+      setIsLoading(true);
+      setLoadError("");
+
       try {
-        const response = await ratingsApi.getAdminReports();
+        const response = await ratingsApi.getAdminReports({
+          page,
+          limit,
+          ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
+          ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+          ...(reasonFilter !== "all" ? { reason: reasonFilter } : {}),
+        });
 
         if (isCurrent) {
-          setAllReports(response.data);
+          setReports(response.data);
+          setTotal(response.total);
           setLoadError("");
         }
       } catch (error) {
@@ -61,15 +76,7 @@ export default function RatingReportsPage() {
     return () => {
       isCurrent = false;
     };
-  }, [loadAttempt]);
-
-  const reports = useMemo(
-    () =>
-      allReports.filter(
-        (report) => reasonFilter === "all" || report.reason === reasonFilter,
-      ),
-    [allReports, reasonFilter],
-  );
+  }, [debouncedSearch, limit, loadAttempt, page, reasonFilter, statusFilter]);
 
   async function resolveReport(report, action) {
     setResolvingReportId(report.id);
@@ -78,10 +85,16 @@ export default function RatingReportsPage() {
 
     try {
       const updatedReport = await ratingsApi.resolveReport(report.id, action);
-      setAllReports((currentReports) =>
+      setReports((currentReports) =>
         currentReports.map((item) =>
           String(item.id) === String(updatedReport.id)
-            ? { ...item, ...updatedReport, rating: updatedReport.rating ?? item.rating }
+            ? {
+                ...item,
+                ...updatedReport,
+                rating: updatedReport.rating
+                  ? { ...item.rating, ...updatedReport.rating }
+                  : item.rating,
+              }
             : item,
         ),
       );
@@ -91,6 +104,7 @@ export default function RatingReportsPage() {
           ? "Report resolved and rating hidden successfully."
           : "Report dismissed successfully.",
       );
+      setLoadAttempt((attempt) => attempt + 1);
     } catch (error) {
       setActionError(getErrorMessage(error, "We could not resolve this report."));
     } finally {
@@ -103,12 +117,28 @@ export default function RatingReportsPage() {
     setReportResolution({ report, action });
   }
 
-  function resetFilters(table, setGlobalFilter) {
-    setGlobalFilter("");
-    table.resetColumnFilters();
+  function setSearch(value) {
+    setSearchState(value);
+    setPage(1);
+  }
+
+  function setStatus(value) {
+    setStatusFilter(value);
+    setPage(1);
+  }
+
+  function setReason(value) {
+    setReasonFilter(value);
+    setPage(1);
+  }
+
+  function resetFilters(table) {
+    setSearchState("");
+    setStatusFilter("pending");
+    setReasonFilter("all");
     table.resetSorting();
     table.setPageIndex(0);
-    setReasonFilter("all");
+    setPage(1);
   }
 
   function retryLoad() {
@@ -133,6 +163,20 @@ export default function RatingReportsPage() {
           resolvingReportId,
         })}
         data={reports}
+        globalFilter={search}
+        onGlobalFilterChange={setSearch}
+        serverFiltering
+        sorting={false}
+        serverPagination={{
+          page,
+          limit,
+          total,
+          onPageChange: setPage,
+          onPageSizeChange: (nextLimit) => {
+            setLimit(nextLimit);
+            setPage(1);
+          },
+        }}
         emptyMessage={
           isLoading
             ? "Loading rating reports..."
@@ -140,15 +184,14 @@ export default function RatingReportsPage() {
               ? "Rating reports could not be loaded."
               : "No rating reports found."
         }
-        initialColumnFilters={INITIAL_REPORT_FILTERS}
         toolbar={(toolbarProps) => (
           <RatingReportsToolbar
             {...toolbarProps}
+            statusFilter={statusFilter}
+            setStatusFilter={setStatus}
             reasonFilter={reasonFilter}
-            setReasonFilter={setReasonFilter}
-            onResetFilters={() =>
-              resetFilters(toolbarProps.table, toolbarProps.setGlobalFilter)
-            }
+            setReasonFilter={setReason}
+            onResetFilters={() => resetFilters(toolbarProps.table)}
           />
         )}
       />

@@ -1,12 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { ratingsApi } from "@/api/ratingsApi";
 import DataTable from "@/components/shared/DataTable";
-import {
-  ratingMatchesDoctorFilter,
-  ratingMatchesPatientFilter,
-} from "@/components/shared/Ratings/ratingUtils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,6 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 import { getRatingColumns } from "./components/RatingColumns";
 import RatingDetails from "./RatingDetails";
@@ -29,7 +26,11 @@ function getErrorMessage(error, fallback) {
 
 export default function RatingsPage() {
   const [searchParams] = useSearchParams();
-  const [allRatings, setAllRatings] = useState([]);
+  const [ratings, setRatings] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [search, setSearchState] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -44,17 +45,31 @@ export default function RatingsPage() {
     searchParams.get("patientId") || "",
   );
   const [scoreFilter, setScoreFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [selectedRating, setSelectedRating] = useState(null);
+  const debouncedSearch = useDebouncedValue(search);
 
   useEffect(() => {
     let isCurrent = true;
 
     async function loadRatings() {
+      setIsLoading(true);
+      setLoadError("");
+
       try {
-        const response = await ratingsApi.getAdminRatings();
+        const response = await ratingsApi.getAdminRatings({
+          page,
+          limit,
+          ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
+          ...(doctorFilter ? { doctorId: doctorFilter } : {}),
+          ...(patientFilter ? { patientId: patientFilter } : {}),
+          ...(scoreFilter !== "all" ? { score: scoreFilter } : {}),
+          ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+        });
 
         if (isCurrent) {
-          setAllRatings(response.data);
+          setRatings(response.data);
+          setTotal(response.total);
           setLoadError("");
         }
       } catch (error) {
@@ -73,20 +88,16 @@ export default function RatingsPage() {
     return () => {
       isCurrent = false;
     };
-  }, [loadAttempt]);
-
-  const ratings = useMemo(
-    () =>
-      allRatings.filter((rating) => {
-        const matchesDoctor = ratingMatchesDoctorFilter(rating, doctorFilter);
-        const matchesPatient = ratingMatchesPatientFilter(rating, patientFilter);
-        const matchesScore =
-          scoreFilter === "all" || String(rating.score) === scoreFilter;
-
-        return matchesDoctor && matchesPatient && matchesScore;
-      }),
-    [allRatings, doctorFilter, patientFilter, scoreFilter],
-  );
+  }, [
+    debouncedSearch,
+    doctorFilter,
+    limit,
+    loadAttempt,
+    page,
+    patientFilter,
+    scoreFilter,
+    statusFilter,
+  ]);
 
   async function hideRating(rating) {
     setHidingRatingId(rating.id);
@@ -95,18 +106,21 @@ export default function RatingsPage() {
 
     try {
       const updatedRating = await ratingsApi.updateRatingStatus(rating.id, "hidden");
-      setAllRatings((currentRatings) =>
+      setRatings((currentRatings) =>
         currentRatings.map((item) =>
-          String(item.id) === String(updatedRating.id) ? updatedRating : item,
+          String(item.id) === String(updatedRating.id)
+            ? { ...item, ...updatedRating }
+            : item,
         ),
       );
       setSelectedRating((currentRating) =>
         currentRating && String(currentRating.id) === String(updatedRating.id)
-          ? updatedRating
+          ? { ...currentRating, ...updatedRating }
           : currentRating,
       );
       setRatingToHide(null);
       setActionNotice("Rating was hidden successfully.");
+      setLoadAttempt((attempt) => attempt + 1);
     } catch (error) {
       setActionError(getErrorMessage(error, "We could not hide this rating."));
     } finally {
@@ -119,14 +133,40 @@ export default function RatingsPage() {
     setRatingToHide(rating);
   }
 
-  function resetFilters(table, setGlobalFilter) {
-    setGlobalFilter("");
-    table.resetColumnFilters();
-    table.resetSorting();
-    table.setPageIndex(0);
+  function setSearch(value) {
+    setSearchState(value);
+    setPage(1);
+  }
+
+  function setDoctorFilterValue(value) {
+    setDoctorFilter(value);
+    setPage(1);
+  }
+
+  function setPatientFilterValue(value) {
+    setPatientFilter(value);
+    setPage(1);
+  }
+
+  function setScoreFilterValue(value) {
+    setScoreFilter(value);
+    setPage(1);
+  }
+
+  function setStatusFilterValue(value) {
+    setStatusFilter(value);
+    setPage(1);
+  }
+
+  function resetFilters(table) {
+    setSearchState("");
     setDoctorFilter("");
     setPatientFilter("");
     setScoreFilter("all");
+    setStatusFilter("all");
+    table.resetSorting();
+    table.setPageIndex(0);
+    setPage(1);
   }
 
   function retryLoad() {
@@ -152,6 +192,20 @@ export default function RatingsPage() {
           hidingRatingId,
         })}
         data={ratings}
+        globalFilter={search}
+        onGlobalFilterChange={setSearch}
+        serverFiltering
+        sorting={false}
+        serverPagination={{
+          page,
+          limit,
+          total,
+          onPageChange: setPage,
+          onPageSizeChange: (nextLimit) => {
+            setLimit(nextLimit);
+            setPage(1);
+          },
+        }}
         emptyMessage={
           isLoading
             ? "Loading ratings..."
@@ -163,14 +217,14 @@ export default function RatingsPage() {
           <RatingsToolbar
             {...toolbarProps}
             doctorFilter={doctorFilter}
-            setDoctorFilter={setDoctorFilter}
+            setDoctorFilter={setDoctorFilterValue}
             patientFilter={patientFilter}
-            setPatientFilter={setPatientFilter}
+            setPatientFilter={setPatientFilterValue}
             scoreFilter={scoreFilter}
-            setScoreFilter={setScoreFilter}
-            onResetFilters={() =>
-              resetFilters(toolbarProps.table, toolbarProps.setGlobalFilter)
-            }
+            setScoreFilter={setScoreFilterValue}
+            statusFilter={statusFilter}
+            setStatusFilter={setStatusFilterValue}
+            onResetFilters={() => resetFilters(toolbarProps.table)}
           />
         )}
       />

@@ -1,6 +1,68 @@
 import axiosClient from "./axiosClient";
 
+function asNumber(value, fallback = null) {
+  if (value === null || value === undefined || value === "") {
+    return fallback;
+  }
+
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function getFullName(user) {
+  if (user?.full_name || user?.fullName) {
+    return String(user.full_name ?? user.fullName).trim();
+  }
+
+  return [user?.firstName, user?.fatherName, user?.lastName]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function normalizeAdminDoctor(doctor) {
+  const user = doctor?.user ?? null;
+  const fullName = getFullName(user);
+
+  return {
+    ...doctor,
+    id: asNumber(doctor?.id),
+    user: user
+      ? {
+          ...user,
+          fullName,
+          full_name: fullName,
+        }
+      : null,
+    experienceYears: asNumber(
+      doctor?.experienceYears ?? doctor?.experience_years,
+    ),
+    averageRating: asNumber(doctor?.averageRating ?? doctor?.average_rating),
+    initialVisitFee: doctor?.initialVisitFee ?? doctor?.initial_visit_fee ?? null,
+    returnVisitFee: doctor?.returnVisitFee ?? doctor?.return_visit_fee ?? null,
+    languagesSpoken: Array.isArray(doctor?.languagesSpoken)
+      ? doctor.languagesSpoken
+      : Array.isArray(doctor?.languages_spoken)
+        ? doctor.languages_spoken
+        : [],
+  };
+}
+
 export const doctorsApi = {
+  async getAdminDoctors(filters = {}) {
+    const { data } = await axiosClient.get("/admin/doctors", {
+      params: filters,
+    });
+
+    return {
+      data: Array.isArray(data?.data)
+        ? data.data.map(normalizeAdminDoctor)
+        : [],
+      total: asNumber(data?.total, 0),
+      page: asNumber(data?.page, asNumber(filters.page, 1)),
+      limit: asNumber(data?.limit, asNumber(filters.limit, 10)),
+    };
+  },
+
   async getOwnProfile() {
     const { data } = await axiosClient.get("/doctors/me");
     return data;

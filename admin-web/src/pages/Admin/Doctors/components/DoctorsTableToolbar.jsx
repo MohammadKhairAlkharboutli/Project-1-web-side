@@ -6,41 +6,62 @@ import {
 } from "@/components/ui/native-select";
 
 export default function DoctorsTableToolbar({
-  table,
-  globalFilter,
-  setGlobalFilter,
-  specializationOptions,
+  search,
+  setSearch,
+  status,
+  setStatus,
+  clinicId,
+  setClinicId,
+  clinics,
+  isLoadingClinics,
+  specialization,
+  setSpecialization,
   onResetFilters,
 }) {
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <Input
         placeholder="Search doctors..."
-        value={globalFilter}
-        onChange={(event) => setGlobalFilter(event.target.value)}
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
         className="max-w-sm"
       />
 
       <div className="flex flex-wrap gap-2">
         <NativeSelect
-          className="w-[180px]"
-          value={table.getColumn("specialization")?.getFilterValue() ?? "all"}
-          onChange={(event) => {
-            const value = event.target.value;
-            table
-              .getColumn("specialization")
-              ?.setFilterValue(value === "all" ? undefined : value);
-          }}
+          className="w-[150px]"
+          value={status}
+          onChange={(event) => setStatus(event.target.value)}
+        >
+          <NativeSelectOption value="all">All statuses</NativeSelectOption>
+          <NativeSelectOption value="active">Active</NativeSelectOption>
+          <NativeSelectOption value="inactive">Inactive</NativeSelectOption>
+          <NativeSelectOption value="on_vacation">On vacation</NativeSelectOption>
+        </NativeSelect>
+
+        <NativeSelect
+          className="w-[200px]"
+          value={clinicId}
+          onChange={(event) => setClinicId(event.target.value)}
+          disabled={isLoadingClinics}
         >
           <NativeSelectOption value="all">
-            All specializations
+            {isLoadingClinics ? "Loading clinics..." : "All clinics"}
           </NativeSelectOption>
-          {specializationOptions.map((specialization) => (
-            <NativeSelectOption key={specialization} value={specialization}>
-              {specialization}
+          {clinics.map((clinic) => (
+            <NativeSelectOption key={clinic.id} value={String(clinic.id)}>
+              {clinic.name}
             </NativeSelectOption>
           ))}
         </NativeSelect>
+
+        <Input
+          placeholder="Specialization..."
+          value={specialization}
+          onChange={(event) => setSpecialization(event.target.value)}
+          className="w-[180px]"
+          aria-label="Filter by specialization"
+        />
 
         <Button type="button" variant="outline" onClick={onResetFilters}>
           Reset filters

@@ -59,6 +59,7 @@ export default function MedicalAttachmentsTable({
   attachments = [],
   emptyMessage = "No medical attachments.",
   onDownload,
+  downloadingAttachmentId,
 }) {
   if (!attachments.length) {
     return (
@@ -102,12 +103,14 @@ export default function MedicalAttachmentsTable({
                   type="button"
                   variant="outline"
                   size="sm"
-                  disabled={!onDownload}
-                  title={onDownload ? "Download attachment" : "Download will be enabled when the attachment API is connected."}
+                  disabled={!onDownload || downloadingAttachmentId === attachment.id}
+                  title={onDownload ? "Download attachment" : "Download is unavailable."}
                   onClick={() => onDownload?.(attachment)}
                 >
                   <Download className="h-3.5 w-3.5" />
-                  Download
+                  {downloadingAttachmentId === attachment.id
+                    ? "Downloading..."
+                    : "Download"}
                 </Button>
               </TableCell>
             </TableRow>

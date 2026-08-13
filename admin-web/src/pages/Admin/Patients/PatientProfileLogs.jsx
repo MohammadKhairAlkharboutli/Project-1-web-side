@@ -1,22 +1,21 @@
-import { useMemo } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 
+import { adminPatientsApi } from "@/api/adminPatientsApi";
 import { sharedEmptyStateShell } from "@/components/shared/styles";
+import { Button } from "@/components/ui/button";
 
-import { patients } from "../PatientData";
 import MedicalProfileLogEvent from "./components/MedicalProfileLogEvent";
 
 function getLogTimestamp(log) {
-  const rawValue = log?.createdAt || log?.created_at;
-  const date = rawValue ? new Date(rawValue) : null;
-
+  const date = log?.createdAt ? new Date(log.createdAt) : null;
   return date && !Number.isNaN(date.getTime()) ? date.getTime() : 0;
 }
 
 function getGroupKey(log) {
   return [
-    log?.createdAt || log?.created_at || "",
-    log?.changedBy?.id || log?.userId || "",
+    log?.createdAt || "",
+    log?.changedBy?.id || "",
     log?.appointmentId || "",
     log?.changeReason || "",
   ].join("|");
@@ -26,11 +25,6 @@ function groupProfileLogs(logs) {
   const groups = logs.reduce((groupMap, log) => {
     const groupKey = getGroupKey(log);
     const existingGroup = groupMap.get(groupKey);
-    const changedBy = log.changedBy || {
-      id: log.user?.id || log.userId,
-      role: log.user?.role,
-      fullName: log.user?.fullName,
-    };
 
     if (existingGroup) {
       existingGroup.logs.push(log);
@@ -39,8 +33,8 @@ function groupProfileLogs(logs) {
 
     groupMap.set(groupKey, {
       id: groupKey,
-      createdAt: log.createdAt || log.created_at,
-      changedBy,
+      createdAt: log.createdAt,
+      changedBy: log.changedBy,
       appointmentId: log.appointmentId,
       changeReason: log.changeReason,
       logs: [log],
@@ -55,17 +49,57 @@ function groupProfileLogs(logs) {
   );
 }
 
+function isNotFoundError(error) {
+  return error?.response?.status === 404;
+}
+
+function getErrorMessage(error) {
+  const message = error?.response?.data?.message || error?.message;
+  return Array.isArray(message)
+    ? message.join(" ")
+    : message || "We could not load the medical profile changes. Please try again.";
+}
+
 export default function PatientProfileLogs() {
-  const { patientId } = useParams();
-  const patient = patients.find((item) => String(item.id) === patientId);
+  const { patient } = useOutletContext();
+  const [logs, setLogs] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
-  const groupedLogs = useMemo(() => {
-    return groupProfileLogs(patient?.medicalProfileLogs || []);
-  }, [patient]);
+  useEffect(() => {
+    let isCurrent = true;
 
-  if (!patient) {
-    return null;
-  }
+    async function loadLogs() {
+      setIsLoading(true);
+      setLoadError("");
+      setLogs([]);
+
+      try {
+        const data = await adminPatientsApi.getMedicalProfileLogs(patient.id);
+
+        if (isCurrent) {
+          setLogs(data);
+        }
+      } catch (error) {
+        if (isCurrent && !isNotFoundError(error)) {
+          setLoadError(getErrorMessage(error));
+        }
+      } finally {
+        if (isCurrent) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadLogs();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [loadAttempt, patient.id]);
+
+  const groupedLogs = useMemo(() => groupProfileLogs(logs), [logs]);
 
   return (
     <div className="space-y-6">
@@ -74,11 +108,32 @@ export default function PatientProfileLogs() {
           Medical Profile Change Log
         </h2>
         <p className="mt-1 text-sm text-slate-600">
-          Tracks changes made to the patient's permanent medical profile.
+          Tracks changes made to the patient&apos;s permanent medical profile.
         </p>
       </div>
 
-      {groupedLogs.length > 0 ? (
+      {isLoading ? (
+        <div className={`${sharedEmptyStateShell} p-5`}>
+          <p className="text-sm font-medium text-slate-700">
+            Loading medical profile changes...
+          </p>
+        </div>
+      ) : loadError ? (
+        <div
+          className="flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 sm:flex-row sm:items-center sm:justify-between"
+          role="alert"
+        >
+          <span>{loadError}</span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setLoadAttempt((attempt) => attempt + 1)}
+          >
+            Try again
+          </Button>
+        </div>
+      ) : groupedLogs.length > 0 ? (
         <div className="space-y-4">
           {groupedLogs.map((event) => (
             <MedicalProfileLogEvent key={event.id} event={event} />

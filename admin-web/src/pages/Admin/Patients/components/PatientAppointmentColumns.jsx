@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Ban, Eye } from "lucide-react";
+import { Eye } from "lucide-react";
 
 import AppointmentPriorityBadge from "@/components/shared/Appointments/AppointmentPriorityBadge";
 import AppointmentStatusBadge from "@/components/shared/Appointments/AppointmentStatusBadge";
@@ -89,10 +89,6 @@ export function getPatientAppointmentColumns() {
               <Eye className="h-4 w-4" />
               Details
             </Link>
-          </Button>
-          <Button variant="destructive" size="sm" disabled>
-            <Ban className="h-4 w-4" />
-            Cancel
           </Button>
         </div>
       ),

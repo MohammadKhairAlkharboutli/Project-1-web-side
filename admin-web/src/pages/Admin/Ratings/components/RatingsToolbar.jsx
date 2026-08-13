@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/native-select";
 
 export default function RatingsToolbar({
-  table,
   globalFilter,
   setGlobalFilter,
   doctorFilter,
@@ -21,6 +20,8 @@ export default function RatingsToolbar({
   setPatientFilter,
   scoreFilter,
   setScoreFilter,
+  statusFilter,
+  setStatusFilter,
   onResetFilters,
 }) {
   return (
@@ -50,12 +51,9 @@ export default function RatingsToolbar({
 
         <NativeSelect
           className="w-full sm:w-40"
-          value={table.getColumn("status")?.getFilterValue() ?? "all"}
+          value={statusFilter}
           onChange={(event) => {
-            const value = event.target.value;
-            table
-              .getColumn("status")
-              ?.setFilterValue(value === "all" ? undefined : value);
+            setStatusFilter(event.target.value);
           }}
         >
           {RATING_STATUS_OPTIONS.map((option) => (

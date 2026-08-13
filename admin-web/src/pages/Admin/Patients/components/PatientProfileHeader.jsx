@@ -16,6 +16,9 @@ import {
 } from "../patientUtils";
 
 export default function PatientProfileHeader({ patient }) {
+  const user = patient.user || {};
+  const ageLabel = Number.isFinite(user.age) ? `${user.age} years old` : "Age not recorded";
+
   return (
     <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
       <div className="flex items-start gap-4">
@@ -30,26 +33,26 @@ export default function PatientProfileHeader({ patient }) {
                 {getPatientDisplayName(patient)}
               </h1>
               <Badge
-                variant={patient.user.status === "ACTIVE" ? "default" : "secondary"}
+                variant={user.status === "ACTIVE" ? "default" : "secondary"}
               >
-                {formatPatientStatus(patient.user.status)}
+                {formatPatientStatus(user.status)}
               </Badge>
             </div>
 
             <p className="text-sm text-slate-600">
-              {formatEnumLabel(patient.user.gender)} | {patient.user.age} years old
+              {formatEnumLabel(user.gender)} | {ageLabel}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-600">
             <div className="flex items-center gap-2">
               <Mail className="h-4 w-4 text-slate-400" />
-              <span>{patient.user.email}</span>
+              <span>{user.email || "No email"}</span>
             </div>
 
             <div className="flex items-center gap-2">
               <Phone className="h-4 w-4 text-slate-400" />
-              <span>{patient.user.phone}</span>
+              <span>{user.phone || "No phone"}</span>
             </div>
           </div>
 

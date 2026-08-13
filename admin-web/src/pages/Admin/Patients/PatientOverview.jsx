@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useOutletContext } from "react-router-dom";
 
 import {
   profileCardLabel,
@@ -6,22 +6,14 @@ import {
   profileCardValue,
 } from "@/components/shared/styles";
 
-import { patients } from "../PatientData";
 import {
-  formatAppointmentsCount,
-  formatAverageRating,
   formatEnumLabel,
+  formatOptionalValue,
   formatPatientStatus,
-  formatRatingsCount,
 } from "./patientUtils";
 
 export default function PatientOverview() {
-  const { patientId } = useParams();
-  const patient = patients.find((item) => String(item.id) === patientId);
-
-  if (!patient) {
-    return null;
-  }
+  const { patient } = useOutletContext();
 
   return (
     <div className="space-y-6">
@@ -49,7 +41,7 @@ export default function PatientOverview() {
             Occupation
           </p>
           <p className={profileCardValue}>
-            {patient.occupation}
+            {formatOptionalValue(patient.occupation)}
           </p>
         </div>
 
@@ -67,7 +59,7 @@ export default function PatientOverview() {
             No Show Count
           </p>
           <p className={profileCardValue}>
-            {patient.noShowCount}
+            {formatOptionalValue(patient.noShowCount)}
           </p>
         </div>
 
@@ -76,14 +68,14 @@ export default function PatientOverview() {
             Date of Birth
           </p>
           <p className={profileCardValue}>
-            {patient.user.birthDate}
+            {formatOptionalValue(patient.user?.birthDate)}
           </p>
         </div>
 
         <div className={profileCardShell}>
           <p className={profileCardLabel}>Age</p>
           <p className={profileCardValue}>
-            {patient.user.age}
+            {formatOptionalValue(patient.user?.age)}
           </p>
         </div>
 
@@ -92,16 +84,7 @@ export default function PatientOverview() {
             Gender
           </p>
           <p className={profileCardValue}>
-            {formatEnumLabel(patient.user.gender)}
-          </p>
-        </div>
-
-        <div className={profileCardShell}>
-          <p className={profileCardLabel}>
-            Preferred Language
-          </p>
-          <p className={profileCardValue}>
-            {patient.user.preferredLanguage}
+            {formatEnumLabel(patient.user?.gender)}
           </p>
         </div>
 
@@ -110,7 +93,7 @@ export default function PatientOverview() {
             Email
           </p>
           <p className={profileCardValue}>
-            {patient.user.email}
+            {formatOptionalValue(patient.user?.email)}
           </p>
         </div>
 
@@ -119,7 +102,7 @@ export default function PatientOverview() {
             Phone
           </p>
           <p className={profileCardValue}>
-            {patient.user.phone}
+            {formatOptionalValue(patient.user?.phone)}
           </p>
         </div>
 
@@ -128,7 +111,7 @@ export default function PatientOverview() {
             Emergency Contact Name
           </p>
           <p className={profileCardValue}>
-            {patient.emergencyContactName}
+            {formatOptionalValue(patient.emergencyContactName)}
           </p>
         </div>
 
@@ -137,34 +120,7 @@ export default function PatientOverview() {
             Emergency Contact Phone
           </p>
           <p className={profileCardValue}>
-            {patient.emergencyContactPhone}
-          </p>
-        </div>
-
-        <div className={`${profileCardShell} md:col-span-2 xl:col-span-3`}>
-          <p className={profileCardLabel}>
-            Address
-          </p>
-          <p className={profileCardValue}>
-            {patient.user.address}
-          </p>
-        </div>
-
-        <div className={profileCardShell}>
-          <p className={profileCardLabel}>
-            Appointments
-          </p>
-          <p className={profileCardValue}>
-            {formatAppointmentsCount(patient.appointments)}
-          </p>
-        </div>
-
-        <div className={profileCardShell}>
-          <p className={profileCardLabel}>
-            Ratings
-          </p>
-          <p className={profileCardValue}>
-            {formatRatingsCount(patient.ratings)} ({formatAverageRating(patient.ratings)} avg)
+            {formatOptionalValue(patient.emergencyContactPhone)}
           </p>
         </div>
       </div>

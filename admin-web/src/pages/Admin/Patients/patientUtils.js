@@ -1,6 +1,6 @@
 export function getPatientDisplayName(patient) {
-  if (patient?.user?.full_name) {
-    return patient.user.full_name;
+  if (patient?.user?.fullName || patient?.user?.full_name) {
+    return patient.user.fullName ?? patient.user.full_name;
   }
 
   return (
@@ -47,23 +47,9 @@ export function formatEnumLabel(value) {
 }
 
 export function formatOptionalValue(value) {
-  return value || "N/A";
-}
-
-export function formatAppointmentsCount(appointments) {
-  return Array.isArray(appointments) ? appointments.length : 0;
-}
-
-export function formatRatingsCount(ratings) {
-  return Array.isArray(ratings) ? ratings.length : 0;
-}
-
-export function formatAverageRating(ratings) {
-  if (!Array.isArray(ratings) || ratings.length === 0) {
-    return "N/A";
+  if (Array.isArray(value)) {
+    return value.length ? value.join(", ") : "N/A";
   }
 
-  const total = ratings.reduce((sum, rating) => sum + (rating.score || 0), 0);
-
-  return (total / ratings.length).toFixed(1);
+  return value === null || value === undefined || value === "" ? "N/A" : value;
 }

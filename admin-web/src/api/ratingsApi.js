@@ -28,16 +28,26 @@ function normalizeReport(report) {
   };
 }
 
+function normalizePaginatedResponse(data, filters, normalizeItem) {
+  return {
+    data: Array.isArray(data?.data) ? data.data.map(normalizeItem) : [],
+    total: Number.isFinite(Number(data?.total)) ? Number(data.total) : 0,
+    page: Number.isFinite(Number(data?.page))
+      ? Number(data.page)
+      : Number(filters.page) || 1,
+    limit: Number.isFinite(Number(data?.limit))
+      ? Number(data.limit)
+      : Number(filters.limit) || 10,
+  };
+}
+
 export const ratingsApi = {
   async getAdminRatings(filters = {}) {
     const { data } = await axiosClient.get("/ratings/admin/all", {
-      params: { limit: 100, ...filters },
+      params: filters,
     });
 
-    return {
-      ...data,
-      data: (data.data ?? []).map(normalizeRating),
-    };
+    return normalizePaginatedResponse(data, filters, normalizeRating);
   },
 
   async updateRatingStatus(ratingId, status) {
@@ -50,13 +60,10 @@ export const ratingsApi = {
 
   async getAdminReports(filters = {}) {
     const { data } = await axiosClient.get("/ratings/admin/reports", {
-      params: { limit: 100, ...filters },
+      params: filters,
     });
 
-    return {
-      ...data,
-      data: (data.data ?? []).map(normalizeReport),
-    };
+    return normalizePaginatedResponse(data, filters, normalizeReport);
   },
 
   async resolveReport(reportId, action) {

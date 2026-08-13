@@ -15,6 +15,10 @@ function formatOptionalValue(value) {
 }
 
 function getDoctorName(doctorProfile) {
+  if (doctorProfile?.fullName || doctorProfile?.full_name) {
+    return doctorProfile.fullName ?? doctorProfile.full_name;
+  }
+
   if (doctorProfile?.user?.full_name) {
     return doctorProfile.user.full_name;
   }
@@ -77,19 +81,23 @@ export default function PatientMedicalHistoryCard({ history, medicines = [] }) {
             <h3 className="text-base font-semibold tracking-tight text-slate-900">
               {getAppointmentDateLabel(appointment)}
             </h3>
-            <AppointmentStatusBadge
-              status={normalizeAppointmentStatus(appointment?.status)}
-            />
+            {appointment?.status ? (
+              <AppointmentStatusBadge
+                status={normalizeAppointmentStatus(appointment.status)}
+              />
+            ) : null}
           </div>
 
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600">
-            <span>
-              <span className="font-medium text-slate-900">Time:</span>{" "}
-              {getAppointmentTimeLabel(appointment)}
-            </span>
+            {appointment?.startTime || appointment?.endTime ? (
+              <span>
+                <span className="font-medium text-slate-900">Time:</span>{" "}
+                {getAppointmentTimeLabel(appointment)}
+              </span>
+            ) : null}
             <span>
               <span className="font-medium text-slate-900">Doctor:</span>{" "}
-              {getDoctorName(history?.doctorProfile)}
+              {getDoctorName(history?.doctor ?? history?.doctorProfile)}
             </span>
           </div>
         </div>

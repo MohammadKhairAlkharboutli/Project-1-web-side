@@ -10,9 +10,10 @@ import {
 } from "@/components/ui/native-select";
 
 export default function RatingReportsToolbar({
-  table,
   globalFilter,
   setGlobalFilter,
+  statusFilter,
+  setStatusFilter,
   reasonFilter,
   setReasonFilter,
   onResetFilters,
@@ -29,12 +30,9 @@ export default function RatingReportsToolbar({
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <NativeSelect
           className="w-full sm:w-48"
-          value={table.getColumn("status")?.getFilterValue() ?? "all"}
+          value={statusFilter}
           onChange={(event) => {
-            const value = event.target.value;
-            table
-              .getColumn("status")
-              ?.setFilterValue(value === "all" ? undefined : value);
+            setStatusFilter(event.target.value);
           }}
         >
           {REPORT_STATUS_OPTIONS.map((option) => (
