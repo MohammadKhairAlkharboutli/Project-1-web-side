@@ -53,7 +53,7 @@ const Sidebar = () => {
   const [isCollapsed, setIsCollapsed]= useState(false)
   return (
 
-    <aside className={`flex min-h-screen flex-col overflow-hidden border-r border-slate-200 bg-white p-5 text-slate-800 transition-[width] duration-300 ease-in-out
+    <aside className={`flex min-h-screen flex-col overflow-hidden border-r border-slate-200 bg-white p-4 text-slate-800 transition-[width] duration-300 ease-in-out sm:p-5
                 ${isCollapsed ? 'w-20' : 'w-64'}`} >
 
         <div className={`flex items-center justify-between gap-2`}>       {/* ----------logo area------------ */}
@@ -92,7 +92,7 @@ const Sidebar = () => {
                 </button>
 
 
-        <nav className='mt-8 flex flex-col gap-1.5'>        {/* Here we have the items.*/}
+        <nav className='mt-6 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto pr-1'>
 
             {sidebarItems.map((item)=>(
                 <SidebarItem key={item.path} item={item} isCollapsed={isCollapsed}/>
@@ -100,7 +100,7 @@ const Sidebar = () => {
         </nav>
 
          {/* Bottom small text */}
-        <div className={`mt-auto overflow-hidden rounded-lg bg-slate-50 text-xs text-slate-500 transition-all duration-300 ease-in-out ${
+        <div className={`mt-4 overflow-hidden rounded-lg bg-slate-50 text-xs text-slate-500 transition-all duration-300 ease-in-out ${
             isCollapsed ? "max-h-0 p-0 opacity-0" : "max-h-20 p-3 opacity-100"
         }`}>
         Clinic management system

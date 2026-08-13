@@ -1,5 +1,3 @@
-import { ArrowUpDown } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -14,17 +12,7 @@ export function getDoctorColumns(onViewDoctor) {
     {
       id: "doctorName",
       accessorFn: (doctor) => getDoctorDisplayName(doctor),
-      header: ({ column }) => {
-        return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Doctor
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
-        );
-      },
+      header: "Doctor",
       cell: ({ row }) => {
         const doctor = row.original;
 
@@ -81,9 +69,14 @@ export function getDoctorColumns(onViewDoctor) {
       header: "Status",
       cell: ({ row }) => {
         const status = row.original.status;
+        const statusStyle = status === "ACTIVE"
+          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+          : status === "ON_LEAVE"
+            ? "border-amber-200 bg-amber-50 text-amber-800"
+            : "border-slate-200 bg-slate-100 text-slate-600";
 
         return (
-          <Badge variant={status === "ACTIVE" ? "default" : "secondary"}>
+          <Badge variant="outline" className={statusStyle}>
             {formatDoctorStatus(status)}
           </Badge>
         );

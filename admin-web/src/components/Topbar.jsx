@@ -1,40 +1,41 @@
-import { useLocation } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
-import { ChevronDown, User, LogOut } from "lucide-react";
-import Dropdown from "./old-UI/Dropdown";
-import DropdownItem from "./old-UI/DropdownItem";
-import { authApi } from "../api/authApi";
+import { useLocation, useNavigate } from "react-router-dom";
+import { ChevronDown, LogOut, User } from "lucide-react";
+
+import { authApi } from "@/api/authApi";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAdminAccount } from "@/context/AdminAccountContext";
+
+const adminPageTitles = [
+  ["/admin/doctor-invitations", "Doctor Invitations"],
+  ["/admin/schedule-change-requests", "Schedule Changes"],
+  ["/admin/system-policies", "System Policies"],
+  ["/admin/data-lookups", "Data Lookups"],
+  ["/admin/rating-reports", "Rating Reports"],
+  ["/admin/appointments", "Appointments"],
+  ["/admin/ratings", "Ratings"],
+  ["/admin/queue", "Queue"],
+  ["/admin/doctors", "Doctors"],
+  ["/admin/patients", "Patients"],
+  ["/admin/secretaries", "Secretaries"],
+  ["/admin/clinics", "Clinics"],
+  ["/admin/profile", "My Profile"],
+];
 
 function getPageTitle(pathname) {
   if (pathname === "/admin") {
     return "Dashboard";
   }
 
-  if (pathname.startsWith("/admin/doctors")) {
-    return "Doctors";
-  }
-
-  if (pathname.startsWith("/admin/patients")) {
-    return "Patients";
-  }
-
-  if (pathname.startsWith("/admin/secretaries")) {
-    return "Secretaries";
-  }
-
-  if (pathname.startsWith("/admin/clinics")) {
-    return "Clinics";
-  }
-
-  if (pathname.startsWith("/admin/profile")) {
-    return "My Profile";
-  }
-
-  return "";
+  return adminPageTitles.find(([path]) => pathname.startsWith(path))?.[1] || "Admin";
 }
 
-const Topbar = () => {
+export default function Topbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { account, avatarUrl } = useAdminAccount();
@@ -51,61 +52,52 @@ const Topbar = () => {
   async function handleLogout() {
     try {
       await authApi.logout();
-    } catch (error) {
-      console.log("error with logout: ", error);
     } finally {
       navigate("/login", { replace: true });
     }
   }
 
   return (
-    <div className="flex h-16 items-center justify-between border-b bg-white px-6">
-      <div>
-        <h2 className="text-lg font-semibold">{title}</h2>
-      </div>
+    <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6">
+      <h1 className="min-w-0 truncate text-lg font-semibold tracking-tight text-slate-900">
+        {title}
+      </h1>
 
-      <div className="flex items-center gap-3">
-        <Dropdown
-          align="right"
-          width="w-44"
-          trigger={
-            <button
-              type="button"
-              className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition hover:bg-slate-100"
-            >
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="h-9 w-9 rounded-full object-cover ring-1 ring-slate-200" />
-              ) : (
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-primary)] text-sm font-semibold text-white">
-                  {initials}
-                </div>
-              )}
-
-              <span className="hidden text-sm font-medium text-slate-700 sm:inline">
-                {adminName}
-              </span>
-
-              <ChevronDown size={16} className="text-slate-400" />
-            </button>
-          }
-        >
-          <DropdownItem onClick={() => navigate("/admin/profile")}>
-            <span className="flex items-center gap-2">
-              <User size={16} />
-              Profile
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+          >
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt=""
+                className="h-9 w-9 rounded-full object-cover ring-1 ring-slate-200"
+              />
+            ) : (
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-primary)] text-sm font-semibold text-white">
+                {initials}
+              </div>
+            )}
+            <span className="hidden max-w-44 truncate text-sm font-medium text-slate-700 sm:inline">
+              {adminName}
             </span>
-          </DropdownItem>
-
-          <DropdownItem onClick={handleLogout}>
-            <span className="flex items-center gap-2">
-              <LogOut size={16} />
-              Logout
-            </span>
-          </DropdownItem>
-        </Dropdown>
-      </div>
-    </div>
+            <ChevronDown className="h-4 w-4 text-slate-400" aria-hidden="true" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuItem onSelect={() => navigate("/admin/profile")}>
+            <User className="h-4 w-4" />
+            Profile
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem variant="destructive" onSelect={handleLogout}>
+            <LogOut className="h-4 w-4" />
+            Log out
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </header>
   );
-};
-
-export default Topbar;
+}

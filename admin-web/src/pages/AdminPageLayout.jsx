@@ -1,28 +1,23 @@
-import { Outlet } from 'react-router-dom'
-import Sidebar from '../components/Sidebar'
-import Topbar from '../components/Topbar'
-import Foot from '../components/Foot'
-import { AdminAccountProvider } from '../context/AdminAccountContext'
-const AdminPageLayout = () => {
+import { Outlet } from "react-router-dom";
+
+import Sidebar from "../components/Sidebar";
+import Topbar from "../components/Topbar";
+import Foot from "../components/Foot";
+import { AdminAccountProvider } from "../context/AdminAccountContext";
+
+export default function AdminPageLayout() {
   return (
     <AdminAccountProvider>
-    <div className='flex min-h-screen bg-gray-200' >
-        <Sidebar></Sidebar>
-
-        <div className='flex min-h-screen flex-1 flex-col '> {/** Here we have the part after the sidebar where it is Top mean footer. */}
-
-            <Topbar></Topbar>
-                <main className='flex-1 p-6'>
-                    <Outlet></Outlet>
-                </main>
-            <Foot></Foot>
+      <div className="flex min-h-screen bg-slate-100">
+        <Sidebar />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <Topbar />
+          <main className="flex-1 p-4 sm:p-6 lg:p-8">
+            <Outlet />
+          </main>
+          <Foot />
         </div>
-
-
-
-    </div>
+      </div>
     </AdminAccountProvider>
-  )
+  );
 }
-
-export default AdminPageLayout

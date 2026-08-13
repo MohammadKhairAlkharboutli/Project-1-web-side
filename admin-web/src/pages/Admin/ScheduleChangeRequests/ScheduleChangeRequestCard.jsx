@@ -39,10 +39,11 @@ export default function ScheduleChangeRequestCard({
     <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div className="flex flex-col gap-4 border-b border-slate-200 bg-slate-50/80 p-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="space-y-3">
-          <div>
+          <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-base font-semibold text-slate-900">
               Proposed schedule replacement
             </h2>
+            <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800">Pending approval</span>
           </div>
 
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600">
@@ -95,6 +96,7 @@ export default function ScheduleChangeRequestCard({
       </div>
 
       <div className="p-4">
+        <p className="mb-4 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm text-amber-900">The doctor&apos;s current availability remains active until this request is approved.</p>
         <div className="mb-3 flex items-center justify-between gap-3">
           <p className="text-sm font-semibold text-slate-900">
             Requested {dayName} slots

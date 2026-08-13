@@ -8,9 +8,6 @@ import PatientsTableToolbar from "./components/PatientsTableToolbar";
 
 export default function PatientsPage() {
   const navigate = useNavigate();
-  const occupationOptions = Array.from(
-    new Set(patients.map((patient) => patient.occupation).filter(Boolean))
-  ).sort((left, right) => left.localeCompare(right));
   const columns = getPatientColumns((patient) =>
     navigate(`/admin/patients/${patient.id}`)
   );
@@ -40,7 +37,6 @@ export default function PatientsPage() {
             table={table}
             globalFilter={globalFilter}
             setGlobalFilter={setGlobalFilter}
-            occupationOptions={occupationOptions}
             onResetFilters={() => resetFilters(table, setGlobalFilter)}
           />
         )}

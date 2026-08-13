@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Mail, Phone, PowerOff, Star } from "lucide-react";
+import { Mail, Phone, Star } from "lucide-react";
 
 import {
   profileHeaderDetailsLabel,
@@ -16,7 +16,13 @@ import {
   getDoctorInitials,
 } from "../doctorUtils";
 
-export default function DoctorProfileHeader({ doctor, onDeactivateDoctor }) {
+export default function DoctorProfileHeader({ doctor }) {
+  const statusStyle = doctor.status === "ACTIVE"
+    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+    : doctor.status === "ON_LEAVE"
+      ? "border-amber-200 bg-amber-50 text-amber-800"
+      : "border-slate-200 bg-slate-100 text-slate-600";
+
   return (
     <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
       <div className="flex items-start gap-4">
@@ -30,7 +36,7 @@ export default function DoctorProfileHeader({ doctor, onDeactivateDoctor }) {
               <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
                 {getDoctorDisplayName(doctor)}
               </h1>
-              <Badge variant={doctor.status === "ACTIVE" ? "default" : "secondary"}>
+              <Badge variant="outline" className={statusStyle}>
                 {formatDoctorStatus(doctor.status)}
               </Badge>
             </div>
@@ -64,13 +70,6 @@ export default function DoctorProfileHeader({ doctor, onDeactivateDoctor }) {
       </div>
 
       <div className="flex flex-col gap-3 md:items-end">
-        {doctor.status !== "INACTIVE" && (
-          <Button variant="destructive" onClick={onDeactivateDoctor}>
-            <PowerOff className="h-4 w-4" />
-            Deactivate doctor
-          </Button>
-        )}
-
         <div
           className={`${profileHeaderDetailsShell} sm:grid-cols-2 md:min-w-72 md:grid-cols-2`}
         >
@@ -96,7 +95,7 @@ export default function DoctorProfileHeader({ doctor, onDeactivateDoctor }) {
 
           <div>
             <p className={profileHeaderDetailsLabel}>
-            Clinic
+              Assigned clinic
           </p>
           <p className={profileHeaderDetailsValue}>
               {doctor.assignedClinic?.name || "Not assigned"}

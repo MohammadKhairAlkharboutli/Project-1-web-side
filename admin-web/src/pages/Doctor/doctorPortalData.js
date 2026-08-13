@@ -1,5 +1,3 @@
-import { mockDoctorWeeklyScheduleSlots } from "@/components/shared/DoctorWeeklySchedule/mockScheduleData";
-
 import { doctors } from "../Admin/DoctorData";
 import { getMockDoctorAppointments } from "./doctorMockWorkflow";
 
@@ -11,8 +9,4 @@ export function getCurrentDoctor() {
 
 export function getCurrentDoctorAppointments() {
   return getMockDoctorAppointments();
-}
-
-export function getCurrentDoctorScheduleSlots() {
-  return mockDoctorWeeklyScheduleSlots;
 }

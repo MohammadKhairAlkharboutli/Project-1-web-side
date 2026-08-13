@@ -9,7 +9,6 @@ export default function PatientsTableToolbar({
   table,
   globalFilter,
   setGlobalFilter,
-  occupationOptions,
   onResetFilters,
 }) {
   return (
@@ -36,25 +35,6 @@ export default function PatientsTableToolbar({
           <NativeSelectOption value="ACTIVE">Active</NativeSelectOption>
           <NativeSelectOption value="INACTIVE">Inactive</NativeSelectOption>
         </NativeSelect>
-
-        <NativeSelect
-          className="w-[180px]"
-          value={table.getColumn("occupation")?.getFilterValue() ?? "all"}
-          onChange={(event) => {
-            const value = event.target.value;
-            table
-              .getColumn("occupation")
-              ?.setFilterValue(value === "all" ? undefined : value);
-          }}
-        >
-          <NativeSelectOption value="all">All occupations</NativeSelectOption>
-          {occupationOptions.map((occupation) => (
-            <NativeSelectOption key={occupation} value={occupation}>
-              {occupation}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
-
         <Button type="button" variant="outline" onClick={onResetFilters}>
           Reset filters
         </Button>

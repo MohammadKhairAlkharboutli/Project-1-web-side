@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { doctorsApi } from "@/api/doctorsApi";
 import DataTable from "@/components/shared/DataTable";
@@ -75,31 +75,35 @@ export default function DoctorsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Doctors</h1>
           <p className="text-muted-foreground">
-            Review doctor profiles and the backend-aligned details shown in the admin UI.
+            Review accepted doctor accounts, their clinical profiles, and clinic assignments.
           </p>
         </div>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={doctors}
-        emptyMessage={
-          isLoading
-            ? "Loading doctors..."
-            : loadError
-              ? "Doctors could not be loaded."
-              : "No doctors found."
-        }
-        toolbar={({ table, globalFilter, setGlobalFilter }) => (
-          <DoctorsTableToolbar
-            table={table}
-            globalFilter={globalFilter}
-            setGlobalFilter={setGlobalFilter}
-            specializationOptions={specializationOptions}
-            onResetFilters={() => resetFilters(table, setGlobalFilter)}
-          />
-        )}
-      />
+      {!isLoading && !loadError && doctors.length === 0 ? (
+        <section className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-14 text-center">
+          <h2 className="text-lg font-semibold text-slate-800">No doctors yet</h2>
+          <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">Invite a doctor first. They will appear here after accepting the invitation and creating their account.</p>
+          <Button className="mt-5" asChild>
+            <Link to="/admin/doctor-invitations">Open doctor invitations</Link>
+          </Button>
+        </section>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={doctors}
+          emptyMessage={isLoading ? "Loading doctors..." : "Doctors could not be loaded."}
+          toolbar={({ table, globalFilter, setGlobalFilter }) => (
+            <DoctorsTableToolbar
+              table={table}
+              globalFilter={globalFilter}
+              setGlobalFilter={setGlobalFilter}
+              specializationOptions={specializationOptions}
+              onResetFilters={() => resetFilters(table, setGlobalFilter)}
+            />
+          )}
+        />
+      )}
 
       {loadError ? (
         <div

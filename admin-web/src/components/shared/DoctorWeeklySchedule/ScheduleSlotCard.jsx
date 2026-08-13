@@ -21,6 +21,12 @@ const slotTypeStyles = {
     badge: "border-amber-200 bg-amber-100 text-amber-800",
     label: "Emergency",
   },
+  OPERATION: {
+    card: "border-violet-200 bg-violet-50/70 shadow-sm",
+    accent: "bg-violet-500",
+    badge: "border-violet-200 bg-violet-100 text-violet-800",
+    label: "Operation",
+  },
 };
 
 function formatSlotTime(value) {
@@ -28,7 +34,15 @@ function formatSlotTime(value) {
     return "";
   }
 
-  return String(value).slice(0, 5);
+  const normalized = String(value).slice(0, 5);
+  const [hourValue, minute] = normalized.split(":");
+  const hour = Number(hourValue);
+
+  if (!Number.isInteger(hour) || hour < 0 || hour > 23 || !/^\d{2}$/.test(minute || "")) {
+    return normalized;
+  }
+
+  return `${hour % 12 || 12}:${minute} ${hour < 12 ? "AM" : "PM"}`;
 }
 
 function formatTimeRange(startTime, endTime) {
@@ -62,13 +76,13 @@ export default function ScheduleSlotCard({ slot }) {
         aria-hidden="true"
       />
 
-      <div className="flex items-start justify-between gap-2 pl-2">
+      <div className="space-y-2 pl-2">
         <p className="text-sm font-semibold leading-5 text-slate-900">
           {formatTimeRange(slot.startTime, slot.endTime)}
         </p>
         <Badge
           variant="outline"
-          className={cn("h-5 shrink-0 rounded-full px-2", typeStyle.badge)}
+          className={cn("h-auto min-h-5 max-w-full whitespace-normal rounded-full px-2 py-0.5", typeStyle.badge)}
         >
           {typeStyle.label}
         </Badge>

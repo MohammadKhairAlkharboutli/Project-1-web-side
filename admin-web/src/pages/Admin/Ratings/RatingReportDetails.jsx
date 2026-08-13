@@ -17,6 +17,16 @@ import {
   getRatingPatientName,
   getReportReasonLabel,
 } from "@/components/shared/Ratings/ratingUtils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 
 import RatingDetails from "./RatingDetails";
@@ -47,7 +57,9 @@ export default function RatingReportDetails() {
   const [loadError, setLoadError] = useState("");
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [actionError, setActionError] = useState("");
+  const [actionNotice, setActionNotice] = useState("");
   const [isResolving, setIsResolving] = useState(false);
+  const [resolutionAction, setResolutionAction] = useState(null);
   const [isRatingDetailsOpen, setIsRatingDetailsOpen] = useState(false);
 
   useEffect(() => {
@@ -92,6 +104,7 @@ export default function RatingReportDetails() {
 
     setIsResolving(true);
     setActionError("");
+    setActionNotice("");
 
     try {
       const updatedReport = await ratingsApi.resolveReport(report.id, action);
@@ -103,6 +116,12 @@ export default function RatingReportDetails() {
             ? { ...currentReport.rating, ...updatedReport.rating, status: "hidden" }
             : updatedReport.rating ?? currentReport?.rating,
       }));
+      setResolutionAction(null);
+      setActionNotice(
+        action === "accept"
+          ? "Report resolved and rating hidden successfully."
+          : "Report dismissed successfully.",
+      );
     } catch (error) {
       setActionError(
         getErrorMessage(error, "We could not resolve this rating report."),
@@ -165,7 +184,13 @@ export default function RatingReportDetails() {
             <RatingReportStatusBadge status={report.status} />
           </div>
 
-          {actionError ? (
+          {actionNotice ? (
+            <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800" role="status">
+              {actionNotice}
+            </p>
+          ) : null}
+
+          {actionError && !resolutionAction ? (
             <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
               {actionError}
             </p>
@@ -231,10 +256,10 @@ export default function RatingReportDetails() {
 
           {isPending ? (
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={() => resolveReport("accept")} disabled={isResolving}>
+              <Button variant="outline" onClick={() => { setActionError(""); setResolutionAction("accept"); }} disabled={isResolving}>
                 {isResolving ? "Resolving..." : "Accept report"}
               </Button>
-              <Button variant="outline" onClick={() => resolveReport("dismiss")} disabled={isResolving}>
+              <Button variant="outline" onClick={() => { setActionError(""); setResolutionAction("dismiss"); }} disabled={isResolving}>
                 Dismiss report
               </Button>
             </div>
@@ -247,6 +272,50 @@ export default function RatingReportDetails() {
         open={isRatingDetailsOpen}
         onOpenChange={setIsRatingDetailsOpen}
       />
+
+      <AlertDialog
+        open={Boolean(resolutionAction)}
+        onOpenChange={(open) => {
+          if (!open && !isResolving) {
+            setResolutionAction(null);
+            setActionError("");
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {resolutionAction === "accept"
+                ? "Accept report and hide rating?"
+                : "Dismiss report?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {resolutionAction === "accept"
+                ? "The reported rating will be hidden and this report will be marked resolved."
+                : "This report will be marked resolved and the rating will remain visible."}
+            </AlertDialogDescription>
+            {actionError ? (
+              <p className="text-sm text-red-700" role="alert">{actionError}</p>
+            ) : null}
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isResolving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isResolving}
+              onClick={(event) => {
+                event.preventDefault();
+                resolveReport(resolutionAction);
+              }}
+            >
+              {isResolving
+                ? "Resolving..."
+                : resolutionAction === "accept"
+                  ? "Accept report"
+                  : "Dismiss report"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }

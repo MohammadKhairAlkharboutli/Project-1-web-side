@@ -81,7 +81,10 @@ export default function ClinicProfile() {
 
     try {
       await clinicsApi.closeClinic(clinic.id);
-      navigate("/admin/clinics", { replace: true });
+      navigate("/admin/clinics", {
+        replace: true,
+        state: { notice: `${clinic.name} was closed successfully.` },
+      });
     } catch (error) {
       setCloseError(
         getErrorMessage(error, "We could not close this clinic. Please try again."),
@@ -158,10 +161,10 @@ export default function ClinicProfile() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Deactivate clinic?</AlertDialogTitle>
+            <AlertDialogTitle>Close clinic?</AlertDialogTitle>
             <AlertDialogDescription>
-              This closes {clinic.name} and removes it from the active clinic list.
-              The backend will prevent closing it while doctors are still assigned.
+              This will close {clinic.name} and remove it from the active clinic
+              list. It cannot be closed while doctors are still assigned to it.
             </AlertDialogDescription>
             {closeError ? (
               <p className="text-sm text-red-700" role="alert">
@@ -172,7 +175,7 @@ export default function ClinicProfile() {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isClosing}>Cancel</AlertDialogCancel>
             <Button variant="destructive" onClick={closeClinic} disabled={isClosing}>
-              {isClosing ? "Closing..." : "Deactivate clinic"}
+              {isClosing ? "Closing..." : "Close clinic"}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

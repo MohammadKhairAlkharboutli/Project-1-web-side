@@ -23,22 +23,6 @@ export default function DoctorsTableToolbar({
 
       <div className="flex flex-wrap gap-2">
         <NativeSelect
-          className="w-[160px]"
-          value={table.getColumn("status")?.getFilterValue() ?? "all"}
-          onChange={(event) => {
-            const value = event.target.value;
-            table
-              .getColumn("status")
-              ?.setFilterValue(value === "all" ? undefined : value);
-          }}
-        >
-          <NativeSelectOption value="all">All statuses</NativeSelectOption>
-          <NativeSelectOption value="ACTIVE">Active</NativeSelectOption>
-          <NativeSelectOption value="INACTIVE">Inactive</NativeSelectOption>
-          <NativeSelectOption value="ON_LEAVE">On Leave</NativeSelectOption>
-        </NativeSelect>
-
-        <NativeSelect
           className="w-[180px]"
           value={table.getColumn("specialization")?.getFilterValue() ?? "all"}
           onChange={(event) => {

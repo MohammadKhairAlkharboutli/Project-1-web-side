@@ -45,6 +45,7 @@ export default function DataLookupsPage() {
   const [loadError, setLoadError] = useState("");
   const [formError, setFormError] = useState("");
   const [actionError, setActionError] = useState("");
+  const [actionNotice, setActionNotice] = useState("");
 
   const loadLookups = useCallback(async () => {
     setIsLoading(true);
@@ -128,6 +129,7 @@ export default function DataLookupsPage() {
 
   function requestStatusChange(lookup, nextActive) {
     setActionError("");
+    setActionNotice("");
     if (nextActive) {
       updateLookupStatus(lookup);
       return;
@@ -139,10 +141,12 @@ export default function DataLookupsPage() {
   async function updateLookupStatus(lookup) {
     setIsUpdatingStatus(true);
     setActionError("");
+    setActionNotice("");
     try {
       const updated = await lookupsApi.toggleLookupStatus(lookup.id);
       setLookups((current) => current.map((item) => item.id === updated.id ? updated : item));
       setLookupToDeactivate(null);
+      setActionNotice(`${updated.labelEn || "Data lookup"} was ${updated.isActive ? "activated" : "deactivated"} successfully.`);
     } catch (error) {
       setActionError(getErrorMessage(error, "Unable to update lookup status."));
     } finally {
@@ -154,10 +158,12 @@ export default function DataLookupsPage() {
     if (!lookupToDelete) return;
     setIsSaving(true);
     setActionError("");
+    setActionNotice("");
     try {
       await lookupsApi.deleteLookup(lookupToDelete.id);
       setLookups((current) => current.filter((lookup) => lookup.id !== lookupToDelete.id));
       setLookupToDelete(null);
+      setActionNotice("Data lookup was deleted successfully.");
     } catch (error) {
       setActionError(getErrorMessage(error, "Unable to delete this data lookup."));
     } finally {
@@ -231,7 +237,8 @@ export default function DataLookupsPage() {
         </p>
       </section>
 
-      {actionError && <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{actionError}</div>}
+      {actionNotice && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800" role="status">{actionNotice}</div>}
+      {actionError && !lookupToDeactivate && !lookupToDelete && <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">{actionError}</div>}
 
       {loadError ? (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">

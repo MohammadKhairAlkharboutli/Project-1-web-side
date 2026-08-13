@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
 
 import { clinicsApi } from "@/api/clinicsApi";
@@ -21,11 +21,19 @@ function getErrorMessage(error) {
 
 export default function ClinicsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [clinicFormOpen, setClinicFormOpen] = useState(false);
   const [clinics, setClinics] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [loadAttempt, setLoadAttempt] = useState(0);
+  const [actionNotice] = useState(location.state?.notice || "");
+
+  useEffect(() => {
+    if (location.state?.notice) {
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.pathname, location.state?.notice, navigate]);
 
   useEffect(() => {
     let isCurrent = true;
@@ -123,6 +131,15 @@ export default function ClinicsPage() {
           />
         )}
       />
+
+      {actionNotice ? (
+        <div
+          className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"
+          role="status"
+        >
+          {actionNotice}
+        </div>
+      ) : null}
 
       {loadError ? (
         <div
