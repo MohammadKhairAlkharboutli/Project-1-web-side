@@ -1,4 +1,5 @@
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   NativeSelect,
   NativeSelectOption,
@@ -9,9 +10,10 @@ export default function ClinicsTableToolbar({
   globalFilter,
   setGlobalFilter,
   locationOptions,
+  onResetFilters,
 }) {
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <Input
         placeholder="Search clinics..."
         value={globalFilter}
@@ -19,20 +21,7 @@ export default function ClinicsTableToolbar({
         className="max-w-sm"
       />
 
-      <div className="flex gap-2">
-        <NativeSelect
-          className="w-[160px]"
-          value={table.getColumn("status")?.getFilterValue() ?? "active"}
-          onChange={(event) => {
-            const value = event.target.value;
-            table
-              .getColumn("status")
-              ?.setFilterValue(value);
-          }}
-        >
-          <NativeSelectOption value="active">Active</NativeSelectOption>
-        </NativeSelect>
-
+      <div className="flex flex-wrap gap-2">
         <NativeSelect
           className="w-[180px]"
           value={table.getColumn("location")?.getFilterValue() ?? "all"}
@@ -50,6 +39,10 @@ export default function ClinicsTableToolbar({
             </NativeSelectOption>
           ))}
         </NativeSelect>
+
+        <Button type="button" variant="outline" onClick={onResetFilters}>
+          Reset filters
+        </Button>
       </div>
     </div>
   );

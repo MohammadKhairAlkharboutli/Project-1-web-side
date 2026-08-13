@@ -367,6 +367,7 @@ export default function AdminQueuePage() {
           data={displayedQueueItems}
           emptyMessage={queueEmptyMessage}
           pagination={false}
+          sorting={false}
           rowClassName="h-16"
         />
       </section>

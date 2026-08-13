@@ -11,12 +11,6 @@ export const LOOKUP_CATEGORIES = [
   { value: "MEDICAL_SUB_SPECIALTY", label: "Medical sub-specialty" },
 ];
 
-export const LOOKUP_STATUS_OPTIONS = [
-  { value: "all", label: "All statuses" },
-  { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
-];
-
 const CATEGORY_LABELS = LOOKUP_CATEGORIES.reduce((labels, category) => {
   labels[category.value] = category.label;
   return labels;
@@ -51,7 +45,7 @@ export function getLookupParent(lookup, lookups) {
   return lookups.find((item) => String(item.id) === String(lookup.parentId)) || null;
 }
 
-export function getEligibleParentLookups(category, lookups, currentLookupId) {
+export function getEligibleParentLookups(category, lookups, currentLookupId, currentParentId) {
   const parentCategory = getParentCategoryForCategory(category);
 
   if (!parentCategory) {
@@ -61,7 +55,8 @@ export function getEligibleParentLookups(category, lookups, currentLookupId) {
   return lookups.filter(
     (lookup) =>
       lookup.category === parentCategory &&
-      String(lookup.id) !== String(currentLookupId),
+      String(lookup.id) !== String(currentLookupId) &&
+      (lookup.isActive || String(lookup.id) === String(currentParentId)),
   );
 }
 

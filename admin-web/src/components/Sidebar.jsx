@@ -1,11 +1,12 @@
 import { NavLink } from 'react-router-dom'
-import { CalendarClock, CalendarDays, Database, Flag, Hospital, ListOrdered, Scale, Star, ChevronRight, ChevronLeft, LayoutDashboard, Stethoscope, Users, UserRoundCog } from 'lucide-react'
+import { CalendarClock, CalendarDays, Database, Flag, Hospital, ListOrdered, Scale, Star, ChevronRight, ChevronLeft, LayoutDashboard, MailPlus, Stethoscope, Users, UserRoundCog } from 'lucide-react'
 import { useState } from 'react'
 
 const sidebarItems=[          
     //just for the icons I can just switch them out for real icons later
     {label:"Dashboard" , path:"/admin" , icon:LayoutDashboard },
     {label:"Doctors" , path:"/admin/doctors" , icon:Stethoscope},
+    {label:"Doctor Invitations" , path:"/admin/doctor-invitations" , icon:MailPlus},
     {label:"Patients" , path:"/admin/patients" , icon: Users},
     {label:"Appointments" , path:"/admin/appointments" , icon:CalendarDays },
     {label:"Queue" , path:"/admin/queue" , icon:ListOrdered },

@@ -82,6 +82,7 @@ export default function RatingReportsPage() {
   function resetFilters(table, setGlobalFilter) {
     setGlobalFilter("");
     table.resetColumnFilters();
+    table.resetSorting();
     table.setPageIndex(0);
     setReasonFilter("all");
   }

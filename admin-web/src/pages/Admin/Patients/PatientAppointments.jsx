@@ -63,6 +63,7 @@ export default function PatientAppointments() {
   function resetFilters(table, setGlobalFilter) {
     setGlobalFilter("");
     table.resetColumnFilters();
+    table.resetSorting();
     table.setPageIndex(0);
     setDateRange("all");
     setExactDate("");

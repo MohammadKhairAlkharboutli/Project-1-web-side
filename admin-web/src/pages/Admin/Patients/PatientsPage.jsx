@@ -15,6 +15,13 @@ export default function PatientsPage() {
     navigate(`/admin/patients/${patient.id}`)
   );
 
+  function resetFilters(table, setGlobalFilter) {
+    setGlobalFilter("");
+    table.resetColumnFilters();
+    table.resetSorting();
+    table.setPageIndex(0);
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -34,6 +41,7 @@ export default function PatientsPage() {
             globalFilter={globalFilter}
             setGlobalFilter={setGlobalFilter}
             occupationOptions={occupationOptions}
+            onResetFilters={() => resetFilters(table, setGlobalFilter)}
           />
         )}
       />

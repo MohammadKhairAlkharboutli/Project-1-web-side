@@ -1,4 +1,5 @@
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   NativeSelect,
   NativeSelectOption,
@@ -8,9 +9,10 @@ export default function SecretariesTableToolbar({
   table,
   globalFilter,
   setGlobalFilter,
+  onResetFilters,
 }) {
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <Input
         placeholder="Search secretaries..."
         value={globalFilter}
@@ -18,7 +20,7 @@ export default function SecretariesTableToolbar({
         className="max-w-sm"
       />
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <NativeSelect
           className="w-[160px]"
           value={table.getColumn("status")?.getFilterValue() ?? "all"}
@@ -61,6 +63,10 @@ export default function SecretariesTableToolbar({
             Greenfield Clinic
           </NativeSelectOption>
         </NativeSelect>
+
+        <Button type="button" variant="outline" onClick={onResetFilters}>
+          Reset filters
+        </Button>
       </div>
     </div>
   );

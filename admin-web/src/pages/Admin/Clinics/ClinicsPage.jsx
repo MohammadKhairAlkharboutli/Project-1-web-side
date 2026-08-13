@@ -63,6 +63,12 @@ export default function ClinicsPage() {
     navigate(`/admin/clinics/${clinic.id}`),
   );
 
+  function resetFilters(table, setGlobalFilter) {
+    setGlobalFilter("");
+    table.resetColumnFilters();
+    table.resetSorting();
+  }
+
   async function addClinic(formData) {
     const clinic = await clinicsApi.createClinic(formData);
 
@@ -113,6 +119,7 @@ export default function ClinicsPage() {
             globalFilter={globalFilter}
             setGlobalFilter={setGlobalFilter}
             locationOptions={locationOptions}
+            onResetFilters={() => resetFilters(table, setGlobalFilter)}
           />
         )}
       />

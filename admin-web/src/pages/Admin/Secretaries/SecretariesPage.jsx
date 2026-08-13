@@ -12,6 +12,13 @@ export default function SecretariesPage() {
     navigate(`/admin/secretaries/${secretary.id}`)
   );
 
+  function resetFilters(table, setGlobalFilter) {
+    setGlobalFilter("");
+    table.resetColumnFilters();
+    table.resetSorting();
+    table.setPageIndex(0);
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -31,6 +38,7 @@ export default function SecretariesPage() {
             table={table}
             globalFilter={globalFilter}
             setGlobalFilter={setGlobalFilter}
+            onResetFilters={() => resetFilters(table, setGlobalFilter)}
           />
         )}
       />

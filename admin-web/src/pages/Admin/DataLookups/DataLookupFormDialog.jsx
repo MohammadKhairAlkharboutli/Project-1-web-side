@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMemo } from "react";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,6 @@ import {
   NativeSelect,
   NativeSelectOption,
 } from "@/components/ui/native-select";
-import { Switch } from "@/components/ui/switch";
 
 import {
   getEligibleParentLookups,
@@ -32,7 +31,6 @@ const EMPTY_FORM = {
   labelEn: "",
   labelAr: "",
   parentId: "",
-  isActive: true,
 };
 
 const lookupCategoryValues = LOOKUP_CATEGORIES.map((category) => category.value);
@@ -45,7 +43,6 @@ const dataLookupFormSchema = z.object({
   labelEn: z.string().trim().min(1, "English label is required."),
   labelAr: z.string().trim().min(1, "Arabic label is required."),
   parentId: z.string(),
-  isActive: z.boolean(),
 });
 
 export default function DataLookupFormDialog({
@@ -87,7 +84,6 @@ function getInitialForm(lookup) {
     labelEn: lookup.labelEn,
     labelAr: lookup.labelAr,
     parentId: lookup.parentId ? String(lookup.parentId) : "",
-    isActive: Boolean(lookup.isActive),
   };
 }
 
@@ -123,8 +119,8 @@ function DataLookupFormContent({
   const categoryField = register("category");
 
   const parentOptions = useMemo(
-    () => getEligibleParentLookups(category, lookups, lookup?.id),
-    [category, lookup?.id, lookups],
+    () => getEligibleParentLookups(category, lookups, lookup?.id, lookup?.parentId),
+    [category, lookup?.id, lookup?.parentId, lookups],
   );
 
   const hasParentOptions = parentOptions.length > 0;
@@ -219,28 +215,11 @@ function DataLookupFormContent({
               <span className="text-xs font-normal text-slate-500">
                 Parent options come from{" "}
                 {getLookupCategoryLabel(parentOptions[0].category)}.
+                Inactive values cannot be selected for new relationships.
               </span>
             )}
           </label>
 
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-            <div>
-              <p className="text-sm font-medium text-slate-700">Active</p>
-              <p className="text-xs text-slate-500">
-                Active options appear in normal forms.
-              </p>
-            </div>
-            <Controller
-              control={control}
-              name="isActive"
-              render={({ field }) => (
-                <Switch
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              )}
-            />
-          </div>
         </div>
 
         <DialogFooter>

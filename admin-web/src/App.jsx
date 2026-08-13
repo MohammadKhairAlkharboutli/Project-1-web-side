@@ -1,6 +1,7 @@
 import { Navigate, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Admin/Dashboard";
 import DoctorsPage from "./pages/Admin/Doctors/DoctorsPage";
+import DoctorInvitationsPage from "./pages/Admin/DoctorInvitations/DoctorInvitationsPage";
 import DoctorProfile from "./pages/Admin/Doctors/DoctorProfile";
 import DoctorOverview from "./pages/Admin/Doctors/DoctorOverview";
 import DoctorSchedule from "./pages/Admin/Doctors/DoctorSchedule";
@@ -106,6 +107,7 @@ function App() {
           <Route path="system-policies" element={<SystemPoliciesPage />} />
           <Route path="profile" element={<AdminProfilePage />} />
           <Route path="settings" element={<Navigate to="/admin/profile" replace />} />
+          <Route path="doctor-invitations" element={<DoctorInvitationsPage />} />
           </Route>
         </Route>
 

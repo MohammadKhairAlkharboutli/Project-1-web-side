@@ -25,7 +25,7 @@ function getErrorMessage(error, fallback) {
   return Array.isArray(message) ? message.join(" ") : message;
 }
 
-export default function DoctorInviteDialog({ open, onOpenChange }) {
+export default function DoctorInviteDialog({ open, onOpenChange, onInvitationSent }) {
   const {
     register,
     handleSubmit,
@@ -56,6 +56,7 @@ export default function DoctorInviteDialog({ open, onOpenChange }) {
       const invitation = await doctorInvitationsApi.create(email);
       setSuccessMessage(`Invitation sent to ${invitation.email}.`);
       reset();
+      onInvitationSent?.();
     } catch (error) {
       setRequestError(
         getErrorMessage(error, "We could not send the doctor invitation."),
