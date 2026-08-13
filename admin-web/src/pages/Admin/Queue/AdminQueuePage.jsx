@@ -85,11 +85,12 @@ export default function AdminQueuePage() {
           status: "confirmed",
           from: today,
           to: today,
+          limit: 100,
         }),
       ]);
 
       setQueueItems(Array.isArray(queueData) ? queueData : []);
-      setAppointments(Array.isArray(appointmentData) ? appointmentData : []);
+      setAppointments(appointmentData.data);
     } catch (error) {
       setQueueError(getErrorMessage(error, "Could not load the queue desk."));
     } finally {

@@ -11,9 +11,10 @@ import {
 } from "./appointmentUtils";
 
 export default function DoctorAppointmentsToolbar({
-  table,
-  globalFilter,
-  setGlobalFilter,
+  search,
+  setSearch,
+  status,
+  setStatus,
   dateRange,
   setDateRange,
   exactDate,
@@ -24,21 +25,16 @@ export default function DoctorAppointmentsToolbar({
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <Input
         placeholder="Search appointments..."
-        value={globalFilter}
-        onChange={(event) => setGlobalFilter(event.target.value)}
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
         className="max-w-sm"
       />
 
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <NativeSelect
           className="w-full sm:w-40"
-          value={table.getColumn("status")?.getFilterValue() ?? "all"}
-          onChange={(event) => {
-            const value = event.target.value;
-            table
-              .getColumn("status")
-              ?.setFilterValue(value === "all" ? undefined : value);
-          }}
+          value={status}
+          onChange={(event) => setStatus(event.target.value)}
         >
           {APPOINTMENT_STATUS_OPTIONS.map((option) => (
             <NativeSelectOption key={option.value} value={option.value}>

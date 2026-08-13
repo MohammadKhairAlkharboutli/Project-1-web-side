@@ -1,79 +1,32 @@
-import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 
-import { appointmentsApi } from "@/api/appointmentsApi";
 import DataTable from "@/components/shared/DataTable";
-import {
-  filterAppointmentsByDate,
-} from "@/components/shared/Appointments/appointmentFilters";
 import { getDoctorAppointmentColumns } from "@/components/shared/Appointments/DoctorAppointmentColumns";
 import DoctorAppointmentsToolbar from "@/components/shared/Appointments/DoctorAppointmentsToolbar";
-function getErrorMessage(error) {
-  const message =
-    error?.response?.data?.message ||
-    error?.message ||
-    "We could not load this doctor's appointments.";
-
-  return Array.isArray(message) ? message.join(" ") : message;
-}
+import { useAdminAppointments } from "@/hooks/useAdminAppointments";
 
 export default function DoctorAppointments() {
   const { doctor } = useOutletContext();
-  const [doctorAppointments, setDoctorAppointments] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
-  const [dateRange, setDateRange] = useState("all");
-  const [exactDate, setExactDate] = useState("");
-
-  useEffect(() => {
-    let isCurrent = true;
-
-    async function loadAppointments() {
-      setIsLoading(true);
-      setLoadError("");
-
-      try {
-        const data = await appointmentsApi.getAdminAppointments({
-          doctorId: doctor.id,
-        });
-
-        if (isCurrent) {
-          setDoctorAppointments(data);
-        }
-      } catch (error) {
-        if (isCurrent) {
-          setLoadError(getErrorMessage(error));
-        }
-      } finally {
-        if (isCurrent) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    loadAppointments();
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [doctor.id]);
-
-  const appointments = useMemo(() => {
-    return filterAppointmentsByDate(
-      doctorAppointments,
-      dateRange,
-      exactDate,
-    );
-  }, [dateRange, doctorAppointments, exactDate]);
-
-  function resetFilters(table, setGlobalFilter) {
-    setGlobalFilter("");
-    table.resetColumnFilters();
-    table.resetSorting();
-    table.setPageIndex(0);
-    setDateRange("all");
-    setExactDate("");
-  }
+  const {
+    appointments,
+    total,
+    page,
+    limit,
+    search,
+    status,
+    dateRange,
+    exactDate,
+    isLoading,
+    loadError,
+    setPage,
+    setPageSize,
+    setSearch,
+    setStatus,
+    setDateRange,
+    setExactDate,
+    resetFilters,
+    retryLoad,
+  } = useAdminAppointments({ doctorId: doctor.id });
 
   return (
     <div className="space-y-6">
@@ -89,6 +42,17 @@ export default function DoctorAppointments() {
       <DataTable
         columns={getDoctorAppointmentColumns()}
         data={appointments}
+        globalFilter={search}
+        onGlobalFilterChange={setSearch}
+        serverFiltering
+        sorting={false}
+        serverPagination={{
+          page,
+          limit,
+          total,
+          onPageChange: setPage,
+          onPageSizeChange: setPageSize,
+        }}
         emptyMessage={
           isLoading
             ? "Loading appointments..."
@@ -96,24 +60,28 @@ export default function DoctorAppointments() {
               ? "Appointments could not be loaded."
               : "No appointments found for this doctor."
         }
-        toolbar={(toolbarProps) => (
+        toolbar={() => (
           <DoctorAppointmentsToolbar
-            {...toolbarProps}
+            search={search}
+            setSearch={setSearch}
+            status={status}
+            setStatus={setStatus}
             dateRange={dateRange}
             setDateRange={setDateRange}
             exactDate={exactDate}
             setExactDate={setExactDate}
-            onResetFilters={() =>
-              resetFilters(toolbarProps.table, toolbarProps.setGlobalFilter)
-            }
+            onResetFilters={resetFilters}
           />
         )}
       />
 
       {loadError ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
-          {loadError}
-        </p>
+        <div className="flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 sm:flex-row sm:items-center sm:justify-between" role="alert">
+          <span>{loadError}</span>
+          <button type="button" className="font-medium underline" onClick={retryLoad}>
+            Try again
+          </button>
+        </div>
       ) : null}
     </div>
   );

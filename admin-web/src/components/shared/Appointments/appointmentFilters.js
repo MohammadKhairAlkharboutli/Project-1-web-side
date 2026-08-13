@@ -1,4 +1,9 @@
-import { appointmentMatchesDateRange } from "./appointmentUtils";
+import { format, startOfDay, subDays } from "date-fns";
+
+import {
+  appointmentMatchesDateRange,
+  getDateRangeBounds,
+} from "./appointmentUtils";
 
 export function filterAppointmentsByDate(appointments, dateRange, exactDate) {
   return appointments.filter((appointment) => {
@@ -23,4 +28,27 @@ export function getUniqueAppointmentsById(appointments, idKey) {
     seenIds.add(id);
     return true;
   });
+}
+
+export function getAppointmentDateQuery(dateRange, exactDate) {
+  if (exactDate) {
+    return { from: exactDate, to: exactDate };
+  }
+
+  const today = startOfDay(new Date());
+
+  if (dateRange === "upcoming") {
+    return { from: format(today, "yyyy-MM-dd") };
+  }
+
+  if (dateRange === "past") {
+    return { to: format(subDays(today, 1), "yyyy-MM-dd") };
+  }
+
+  const { from, to } = getDateRangeBounds(dateRange);
+
+  return {
+    ...(from ? { from: format(from, "yyyy-MM-dd") } : {}),
+    ...(to ? { to: format(to, "yyyy-MM-dd") } : {}),
+  };
 }

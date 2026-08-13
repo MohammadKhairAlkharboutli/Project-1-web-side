@@ -1,101 +1,65 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
-import { appointmentsApi } from "@/api/appointmentsApi";
 import DataTable from "@/components/shared/DataTable";
-import {
-  filterAppointmentsByDate,
-  getUniqueAppointmentsById,
-} from "@/components/shared/Appointments/appointmentFilters";
+import { getUniqueAppointmentsById } from "@/components/shared/Appointments/appointmentFilters";
+import { useAdminAppointments } from "@/hooks/useAdminAppointments";
 
 import { getAdminAppointmentColumns } from "./components/AdminAppointmentColumns";
 import AdminAppointmentsToolbar from "./components/AdminAppointmentsToolbar";
 
-function getErrorMessage(error) {
-  const message =
-    error?.response?.data?.message ||
-    error?.message ||
-    "We could not load the appointments. Please try again.";
-
-  return Array.isArray(message) ? message.join(" ") : message;
-}
-
 export default function AdminAppointmentsPage() {
-  const [allAppointments, setAllAppointments] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
-  const [loadAttempt, setLoadAttempt] = useState(0);
-  const [dateRange, setDateRange] = useState("all");
-  const [exactDate, setExactDate] = useState("");
   const [selectedDoctorId, setSelectedDoctorId] = useState("all");
   const [selectedPatientId, setSelectedPatientId] = useState("all");
   const [selectedClinicId, setSelectedClinicId] = useState("all");
+  const baseFilters = useMemo(
+    () => ({
+      ...(selectedDoctorId !== "all" ? { doctorId: selectedDoctorId } : {}),
+      ...(selectedPatientId !== "all" ? { patientId: selectedPatientId } : {}),
+      ...(selectedClinicId !== "all" ? { clinicId: selectedClinicId } : {}),
+    }),
+    [selectedClinicId, selectedDoctorId, selectedPatientId],
+  );
+  const {
+    appointments,
+    total,
+    page,
+    limit,
+    search,
+    status,
+    dateRange,
+    exactDate,
+    isLoading,
+    loadError,
+    setPage,
+    setPageSize,
+    setSearch,
+    setStatus,
+    setDateRange,
+    setExactDate,
+    resetFilters: resetAppointmentFilters,
+    retryLoad,
+  } = useAdminAppointments(baseFilters);
 
-  useEffect(() => {
-    let isCurrent = true;
+  function updateDoctorFilter(value) {
+    setSelectedDoctorId(value);
+    setPage(1);
+  }
 
-    async function loadAppointments() {
-      try {
-        const data = await appointmentsApi.getAdminAppointments();
+  function updatePatientFilter(value) {
+    setSelectedPatientId(value);
+    setPage(1);
+  }
 
-        if (isCurrent) {
-          setAllAppointments(data);
-          setLoadError("");
-        }
-      } catch (error) {
-        if (isCurrent) {
-          setLoadError(getErrorMessage(error));
-        }
-      } finally {
-        if (isCurrent) {
-          setIsLoading(false);
-        }
-      }
-    }
+  function updateClinicFilter(value) {
+    setSelectedClinicId(value);
+    setPage(1);
+  }
 
-    loadAppointments();
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [loadAttempt]);
-
-  const appointments = useMemo(() => {
-    const entityFilteredAppointments = allAppointments.filter((appointment) => {
-      const matchesDoctor =
-        selectedDoctorId === "all" ||
-        String(appointment.doctorId) === selectedDoctorId;
-      const matchesPatient =
-        selectedPatientId === "all" ||
-        String(appointment.patientId) === selectedPatientId;
-      const matchesClinic =
-        selectedClinicId === "all" ||
-        String(appointment.clinicId) === selectedClinicId;
-
-      return matchesDoctor && matchesPatient && matchesClinic;
-    });
-
-    return filterAppointmentsByDate(
-      entityFilteredAppointments,
-      dateRange,
-      exactDate,
-    );
-  }, [allAppointments, dateRange, exactDate, selectedClinicId, selectedDoctorId, selectedPatientId]);
-
-  function resetFilters(table, setGlobalFilter) {
-    setGlobalFilter("");
-    table.resetColumnFilters();
-    table.resetSorting();
-    table.setPageIndex(0);
-    setDateRange("all");
-    setExactDate("");
+  function resetFilters() {
+    resetAppointmentFilters();
     setSelectedDoctorId("all");
     setSelectedPatientId("all");
     setSelectedClinicId("all");
-  }
-
-  function retryLoad() {
-    setIsLoading(true);
-    setLoadAttempt((attempt) => attempt + 1);
   }
 
   return (
@@ -112,6 +76,17 @@ export default function AdminAppointmentsPage() {
       <DataTable
         columns={getAdminAppointmentColumns()}
         data={appointments}
+        globalFilter={search}
+        onGlobalFilterChange={setSearch}
+        serverFiltering
+        sorting={false}
+        serverPagination={{
+          page,
+          limit,
+          total,
+          onPageChange: setPage,
+          onPageSizeChange: setPageSize,
+        }}
         emptyMessage={
           isLoading
             ? "Loading appointments..."
@@ -119,25 +94,26 @@ export default function AdminAppointmentsPage() {
               ? "Appointments could not be loaded."
               : "No appointments found."
         }
-        toolbar={(toolbarProps) => (
+        toolbar={() => (
           <AdminAppointmentsToolbar
-            {...toolbarProps}
+            search={search}
+            setSearch={setSearch}
+            status={status}
+            setStatus={setStatus}
             dateRange={dateRange}
             setDateRange={setDateRange}
             exactDate={exactDate}
             setExactDate={setExactDate}
             doctorId={selectedDoctorId}
-            setDoctorId={setSelectedDoctorId}
+            setDoctorId={updateDoctorFilter}
             patientId={selectedPatientId}
-            setPatientId={setSelectedPatientId}
+            setPatientId={updatePatientFilter}
             clinicId={selectedClinicId}
-            setClinicId={setSelectedClinicId}
-            doctorOptions={getUniqueAppointmentsById(allAppointments, "doctorId")}
-            patientOptions={getUniqueAppointmentsById(allAppointments, "patientId")}
-            clinicOptions={getUniqueAppointmentsById(allAppointments, "clinicId")}
-            onResetFilters={() =>
-              resetFilters(toolbarProps.table, toolbarProps.setGlobalFilter)
-            }
+            setClinicId={updateClinicFilter}
+            doctorOptions={getUniqueAppointmentsById(appointments, "doctorId")}
+            patientOptions={getUniqueAppointmentsById(appointments, "patientId")}
+            clinicOptions={getUniqueAppointmentsById(appointments, "clinicId")}
+            onResetFilters={resetFilters}
           />
         )}
       />

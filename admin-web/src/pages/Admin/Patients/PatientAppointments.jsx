@@ -1,78 +1,33 @@
-import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 
-import { appointmentsApi } from "@/api/appointmentsApi";
 import DataTable from "@/components/shared/DataTable";
-import { filterAppointmentsByDate } from "@/components/shared/Appointments/appointmentFilters";
+import { useAdminAppointments } from "@/hooks/useAdminAppointments";
 
 import { getPatientAppointmentColumns } from "./components/PatientAppointmentColumns";
 import PatientAppointmentsToolbar from "./components/PatientAppointmentsToolbar";
 
-function getErrorMessage(error) {
-  const message =
-    error?.response?.data?.message ||
-    error?.message ||
-    "We could not load this patient's appointments.";
-
-  return Array.isArray(message) ? message.join(" ") : message;
-}
-
 export default function PatientAppointments() {
   const { patientId } = useParams();
-  const [patientAppointments, setPatientAppointments] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
-  const [loadAttempt, setLoadAttempt] = useState(0);
-  const [dateRange, setDateRange] = useState("all");
-  const [exactDate, setExactDate] = useState("");
-
-  useEffect(() => {
-    let isCurrent = true;
-
-    async function loadAppointments() {
-      try {
-        const data = await appointmentsApi.getAdminAppointments({ patientId });
-
-        if (isCurrent) {
-          setPatientAppointments(data);
-          setLoadError("");
-        }
-      } catch (error) {
-        if (isCurrent) {
-          setLoadError(getErrorMessage(error));
-        }
-      } finally {
-        if (isCurrent) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    loadAppointments();
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [loadAttempt, patientId]);
-
-  const appointments = useMemo(
-    () => filterAppointmentsByDate(patientAppointments, dateRange, exactDate),
-    [dateRange, exactDate, patientAppointments],
-  );
-
-  function resetFilters(table, setGlobalFilter) {
-    setGlobalFilter("");
-    table.resetColumnFilters();
-    table.resetSorting();
-    table.setPageIndex(0);
-    setDateRange("all");
-    setExactDate("");
-  }
-
-  function retryLoad() {
-    setIsLoading(true);
-    setLoadAttempt((attempt) => attempt + 1);
-  }
+  const {
+    appointments,
+    total,
+    page,
+    limit,
+    search,
+    status,
+    dateRange,
+    exactDate,
+    isLoading,
+    loadError,
+    setPage,
+    setPageSize,
+    setSearch,
+    setStatus,
+    setDateRange,
+    setExactDate,
+    resetFilters,
+    retryLoad,
+  } = useAdminAppointments({ patientId });
 
   return (
     <div className="space-y-6">
@@ -88,6 +43,17 @@ export default function PatientAppointments() {
       <DataTable
         columns={getPatientAppointmentColumns()}
         data={appointments}
+        globalFilter={search}
+        onGlobalFilterChange={setSearch}
+        serverFiltering
+        sorting={false}
+        serverPagination={{
+          page,
+          limit,
+          total,
+          onPageChange: setPage,
+          onPageSizeChange: setPageSize,
+        }}
         emptyMessage={
           isLoading
             ? "Loading appointments..."
@@ -95,16 +61,17 @@ export default function PatientAppointments() {
               ? "Appointments could not be loaded."
               : "No appointments found for this patient."
         }
-        toolbar={(toolbarProps) => (
+        toolbar={() => (
           <PatientAppointmentsToolbar
-            {...toolbarProps}
+            search={search}
+            setSearch={setSearch}
+            status={status}
+            setStatus={setStatus}
             dateRange={dateRange}
             setDateRange={setDateRange}
             exactDate={exactDate}
             setExactDate={setExactDate}
-            onResetFilters={() =>
-              resetFilters(toolbarProps.table, toolbarProps.setGlobalFilter)
-            }
+            onResetFilters={resetFilters}
           />
         )}
       />

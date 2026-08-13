@@ -38,16 +38,60 @@ export default function DataTable({
   rowClassName,
   pagination: paginationEnabled = true,
   sorting: sortingEnabled = true,
+  serverPagination,
+  globalFilter: controlledGlobalFilter,
+  onGlobalFilterChange,
+  serverFiltering = false,
 }) {
   const [sorting, setSorting] = useState([]);
-  const [globalFilter, setGlobalFilter] = useState("");
+  const [localGlobalFilter, setLocalGlobalFilter] = useState("");
   const normalizedPageSizeOptions = Array.from(
     new Set([...pageSizeOptions, initialPageSize])
   ).sort((a, b) => a - b);
-  const [pagination, setPagination] = useState({
+  const [localPagination, setLocalPagination] = useState({
     pageIndex: 0,
     pageSize: initialPageSize,
   });
+  const isServerPaginated = Boolean(serverPagination);
+  const pagination = isServerPaginated
+    ? {
+        pageIndex: Math.max((serverPagination.page ?? 1) - 1, 0),
+        pageSize: serverPagination.limit ?? initialPageSize,
+      }
+    : localPagination;
+  const globalFilter = controlledGlobalFilter ?? localGlobalFilter;
+
+  function setGlobalFilter(value) {
+    if (onGlobalFilterChange) {
+      onGlobalFilterChange(value);
+      return;
+    }
+
+    setLocalGlobalFilter(value);
+  }
+
+  function setPagination(updater) {
+    if (!isServerPaginated) {
+      setLocalPagination(updater);
+      return;
+    }
+
+    const nextPagination =
+      typeof updater === "function" ? updater(pagination) : updater;
+
+    if (nextPagination.pageSize !== pagination.pageSize) {
+      serverPagination.onPageSizeChange?.(nextPagination.pageSize);
+      return;
+    }
+
+    if (nextPagination.pageIndex !== pagination.pageIndex) {
+      serverPagination.onPageChange?.(nextPagination.pageIndex + 1);
+    }
+  }
+
+  const serverPageCount = isServerPaginated
+    ? Math.ceil((serverPagination.total ?? 0) / pagination.pageSize)
+    : undefined;
 
   const table = useReactTable({
     data,
@@ -65,17 +109,24 @@ export default function DataTable({
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
     onPaginationChange: setPagination,
+    manualPagination: isServerPaginated,
+    pageCount: serverPageCount,
+    autoResetPageIndex: !isServerPaginated,
 
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: sortingEnabled ? getSortedRowModel() : undefined,
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: paginationEnabled
+    getFilteredRowModel: serverFiltering ? undefined : getFilteredRowModel(),
+    getPaginationRowModel: paginationEnabled && !isServerPaginated
       ? getPaginationRowModel()
       : undefined,
   });
 
-  const totalResultCount = table.getPreFilteredRowModel().rows.length;
-  const filteredResultCount = table.getFilteredRowModel().rows.length;
+  const totalResultCount = isServerPaginated
+    ? serverPagination.total ?? 0
+    : table.getPreFilteredRowModel().rows.length;
+  const filteredResultCount = isServerPaginated
+    ? serverPagination.total ?? 0
+    : table.getFilteredRowModel().rows.length;
   const pageCount = table.getPageCount();
   const currentPage = pageCount ? table.getState().pagination.pageIndex + 1 : 0;
   const pageRows = table.getRowModel().rows.length;

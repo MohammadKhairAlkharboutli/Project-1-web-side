@@ -6,7 +6,12 @@ export const appointmentsApi = {
       params: filters,
     });
 
-    return data;
+    return {
+      data: Array.isArray(data?.data) ? data.data : [],
+      total: Number(data?.total ?? 0),
+      page: Number(data?.page ?? filters.page ?? 1),
+      limit: Number(data?.limit ?? filters.limit ?? 10),
+    };
   },
 
   async getAppointment(appointmentId) {
