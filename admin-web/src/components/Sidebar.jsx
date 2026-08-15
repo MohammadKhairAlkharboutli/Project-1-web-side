@@ -1,6 +1,9 @@
 import { NavLink } from 'react-router-dom'
 import { CalendarClock, CalendarDays, Database, Flag, Hospital, ListOrdered, Scale, Star, ChevronRight, ChevronLeft, LayoutDashboard, MailPlus, Stethoscope, Users, UserRoundCog } from 'lucide-react'
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+
+import { doctorSchedulesApi } from '@/api/doctorSchedulesApi'
+import { ratingsApi } from '@/api/ratingsApi'
 
 const sidebarItems=[          
     //just for the icons I can just switch them out for real icons later
@@ -19,7 +22,7 @@ const sidebarItems=[
     {label:"Clinics" , path:"/admin/clinics" , icon:Hospital }
 ]
 
-const SidebarItem = ({item, isCollapsed}) => {
+const SidebarItem = ({item, isCollapsed, hasAttention}) => {
     const Icon = item.icon;
     return(
 
@@ -27,7 +30,7 @@ const SidebarItem = ({item, isCollapsed}) => {
                 end={item.path==="/admin"} 
                 title={isCollapsed ? item.label : ""}
                 className={({ isActive }) =>
-                            `flex items-center overflow-hidden rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 ease-in-out ${
+                            `relative flex items-center overflow-hidden rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 ease-in-out ${
                                 isCollapsed ? "justify-center gap-0" : "gap-3"
                             } ${
                             isActive
@@ -43,6 +46,12 @@ const SidebarItem = ({item, isCollapsed}) => {
             >
                 {item.label}
             </span>
+            {hasAttention ? (
+                <span
+                    aria-label="Attention required"
+                    className={`absolute h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white ${isCollapsed ? "right-2 top-2" : "right-3 top-1/2 -translate-y-1/2"}`}
+                />
+            ) : null}
         </NavLink>
         
     )
@@ -51,6 +60,47 @@ const SidebarItem = ({item, isCollapsed}) => {
 const Sidebar = () => {
 
   const [isCollapsed, setIsCollapsed]= useState(false)
+  const [attention, setAttention] = useState({
+    ratingReports: false,
+    scheduleRequests: false,
+  })
+
+  const refreshAttention = useCallback(async () => {
+    const [scheduleRequestsResult, ratingReportsResult] = await Promise.allSettled([
+      doctorSchedulesApi.getPendingScheduleRequests(),
+      ratingsApi.getAdminReports({ status: "PENDING", page: 1, limit: 1 }),
+    ])
+
+    setAttention((current) => ({
+      scheduleRequests: scheduleRequestsResult.status === "fulfilled"
+        ? Array.isArray(scheduleRequestsResult.value) && scheduleRequestsResult.value.length > 0
+        : current.scheduleRequests,
+      ratingReports: ratingReportsResult.status === "fulfilled"
+        ? Number(ratingReportsResult.value.total) > 0
+        : current.ratingReports,
+    }))
+  }, [])
+
+  useEffect(() => {
+    const initialRefresh = window.setTimeout(refreshAttention, 0)
+    const refreshInterval = window.setInterval(refreshAttention, 60_000)
+    const refreshOnFocus = () => {
+      if (document.visibilityState === "visible") {
+        refreshAttention()
+      }
+    }
+
+    window.addEventListener("focus", refreshOnFocus)
+    document.addEventListener("visibilitychange", refreshOnFocus)
+
+    return () => {
+      window.clearTimeout(initialRefresh)
+      window.clearInterval(refreshInterval)
+      window.removeEventListener("focus", refreshOnFocus)
+      document.removeEventListener("visibilitychange", refreshOnFocus)
+    }
+  }, [refreshAttention])
+
   return (
 
     <aside className={`flex min-h-screen flex-col overflow-hidden border-r border-slate-200 bg-white p-4 text-slate-800 transition-[width] duration-300 ease-in-out sm:p-5
@@ -94,9 +144,13 @@ const Sidebar = () => {
 
         <nav className='mt-6 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto pr-1'>
 
-            {sidebarItems.map((item)=>(
-                <SidebarItem key={item.path} item={item} isCollapsed={isCollapsed}/>
-            ))}
+            {sidebarItems.map((item)=> {
+                const hasAttention =
+                    (item.path === "/admin/rating-reports" && attention.ratingReports)
+                    || (item.path === "/admin/schedule-change-requests" && attention.scheduleRequests)
+
+                return <SidebarItem key={item.path} item={item} isCollapsed={isCollapsed} hasAttention={hasAttention}/>
+            })}
         </nav>
 
          {/* Bottom small text */}

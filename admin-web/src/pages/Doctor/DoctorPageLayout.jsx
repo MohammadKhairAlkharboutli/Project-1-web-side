@@ -25,8 +25,11 @@ import {
 import { cn } from "@/lib/utils";
 import { authApi } from "@/api/authApi";
 import { doctorsApi } from "@/api/doctorsApi";
+import { notificationsApi } from "@/api/notificationsApi";
+import { referralsApi } from "@/api/referralsApi";
 import { userAvatarApi } from "@/api/userAvatarApi";
 import { DoctorLocaleProvider, useDoctorLocale } from "@/context/DoctorLocaleContext";
+import { hasUnseenDoctorScheduleUpdate } from "@/lib/doctorAttention";
 
 const doctorNavItems = [
   { label: "Dashboard", path: "/doctor", icon: LayoutDashboard, end: true },
@@ -52,6 +55,10 @@ function DoctorPageLayoutContent() {
   const label = (value) => labels[value] || value;
   const [doctor, setDoctor] = useState(null);
   const [avatarUrl, setAvatarUrl] = useState(null);
+  const [attention, setAttention] = useState({
+    receivedReferrals: false,
+    scheduleUpdates: false,
+  });
   const avatarObjectUrlRef = useRef(null);
 
   const clearAvatarUrl = useCallback(() => {
@@ -97,6 +104,28 @@ function DoctorPageLayoutContent() {
     }
   }, [clearAvatarUrl, loadAvatar]);
 
+  const refreshDoctorAttention = useCallback(async () => {
+    const userId = doctor?.user?.id;
+
+    if (!userId) {
+      return;
+    }
+
+    const [receivedReferralsResult, notificationsResult] = await Promise.allSettled([
+      referralsApi.getReceivedReferrals({ page: 1, limit: 1, status: "PENDING" }),
+      notificationsApi.getMyNotifications(),
+    ]);
+
+    setAttention((current) => ({
+      receivedReferrals: receivedReferralsResult.status === "fulfilled"
+        ? Number(receivedReferralsResult.value?.meta?.total) > 0
+        : current.receivedReferrals,
+      scheduleUpdates: notificationsResult.status === "fulfilled"
+        ? hasUnseenDoctorScheduleUpdate(notificationsResult.value, userId)
+        : current.scheduleUpdates,
+    }));
+  }, [doctor?.user?.id]);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -127,6 +156,30 @@ function DoctorPageLayoutContent() {
       }
     };
   }, [avatarObjectUrlRef, clearAvatarUrl, loadAvatar]);
+
+  useEffect(() => {
+    if (!doctor?.user?.id) {
+      return undefined;
+    }
+
+    const initialRefresh = window.setTimeout(refreshDoctorAttention, 0);
+    const refreshInterval = window.setInterval(refreshDoctorAttention, 60_000);
+    const refreshOnFocus = () => {
+      if (document.visibilityState === "visible") {
+        refreshDoctorAttention();
+      }
+    };
+
+    window.addEventListener("focus", refreshOnFocus);
+    document.addEventListener("visibilitychange", refreshOnFocus);
+
+    return () => {
+      window.clearTimeout(initialRefresh);
+      window.clearInterval(refreshInterval);
+      window.removeEventListener("focus", refreshOnFocus);
+      document.removeEventListener("visibilitychange", refreshOnFocus);
+    };
+  }, [doctor?.user?.id, refreshDoctorAttention]);
 
   const uploadAvatar = useCallback(async (file) => {
     const updatedUser = await userAvatarApi.upload(file);
@@ -182,6 +235,9 @@ function DoctorPageLayoutContent() {
             <nav className="space-y-1">
               {doctorNavItems.map((item) => {
                 const Icon = item.icon;
+                const hasAttention =
+                  (item.path === "/doctor/referrals" && attention.receivedReferrals)
+                  || (item.path === "/doctor/schedule" && attention.scheduleUpdates);
                 return (
                   <NavLink
                     key={item.path}
@@ -189,7 +245,7 @@ function DoctorPageLayoutContent() {
                     end={item.end}
                     className={({ isActive }) =>
                       cn(
-                        "flex items-center gap-3.5 px-4 py-3 rounded-2xl text-xs font-bold transition-all relative",
+                        "relative flex items-center gap-3.5 px-4 py-3 rounded-2xl text-xs font-bold transition-all",
                         isActive
                           ? "bg-blue-50 text-blue-600 border border-blue-100/80 shadow-xs"
                           : "text-slate-500 hover:bg-slate-50 hover:text-slate-900",
@@ -200,6 +256,12 @@ function DoctorPageLayoutContent() {
                       <>
                         <Icon size={18} className={isActive ? "text-blue-600" : "text-slate-400"} />
                         <span>{label(item.label)}</span>
+                        {hasAttention ? (
+                          <span
+                            aria-label="Attention required"
+                            className="absolute right-3 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-rose-500 ring-2 ring-white"
+                          />
+                        ) : null}
                       </>
                     )}
                   </NavLink>
@@ -279,6 +341,9 @@ function DoctorPageLayoutContent() {
           <main className="flex-1 p-8 sm:p-10 max-w-7xl w-full mx-auto bg-white overflow-y-auto">
             <Outlet context={{
               refreshDoctorShell,
+              refreshDoctorAttention,
+              doctorUserId: doctor?.user?.id ?? null,
+              hasReceivedReferralAttention: attention.receivedReferrals,
               avatarUrl,
               uploadAvatar,
               removeAvatar,

@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
+import { useOutletContext } from "react-router-dom";
 import { z } from "zod";
 import {
   AlertCircle,
@@ -18,6 +19,7 @@ import { doctorSchedulesApi } from "@/api/doctorSchedulesApi";
 import { notificationsApi } from "@/api/notificationsApi";
 import { DoctorClinicAssignmentContext } from "@/context/DoctorClinicAssignmentContext";
 import { useDoctorLocale } from "@/context/DoctorLocaleContext";
+import { markDoctorScheduleUpdatesSeen } from "@/lib/doctorAttention";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -108,6 +110,7 @@ function formatUpdateDate(value) {
 
 export default function DoctorSchedule() {
   const { text } = useDoctorLocale();
+  const { doctorUserId, refreshDoctorAttention } = useOutletContext();
   const { assignedClinic } = useContext(DoctorClinicAssignmentContext) || {};
   const [scheduleSlots, setScheduleSlots] = useState([]);
   const [loadState, setLoadState] = useState("loading");
@@ -147,10 +150,12 @@ export default function DoctorSchedule() {
         .filter((notification) => SCHEDULE_UPDATE_KEYS.has(notification.messageKey))
         .slice(0, 5);
       setScheduleUpdates({ status: "ready", items: updates, error: "" });
+      markDoctorScheduleUpdatesSeen(doctorUserId);
+      refreshDoctorAttention?.();
     } catch (error) {
       setScheduleUpdates({ status: "error", items: [], error: getErrorMessage(error, "Unable to load schedule updates.") });
     }
-  }, []);
+  }, [doctorUserId, refreshDoctorAttention]);
 
   const refreshScheduleData = useCallback(async () => {
     await Promise.all([loadSchedule(), loadScheduleUpdates()]);
