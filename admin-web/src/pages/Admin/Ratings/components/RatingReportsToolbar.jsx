@@ -21,6 +21,7 @@ export default function RatingReportsToolbar({
   return (
     <div className="space-y-3">
       <Input
+        appearance="filter"
         placeholder="Search reports..."
         value={globalFilter}
         onChange={(event) => setGlobalFilter(event.target.value)}
@@ -29,6 +30,7 @@ export default function RatingReportsToolbar({
 
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <NativeSelect
+          appearance="filter"
           className="w-full sm:w-48"
           value={statusFilter}
           onChange={(event) => {
@@ -43,6 +45,7 @@ export default function RatingReportsToolbar({
         </NativeSelect>
 
         <NativeSelect
+          appearance="filter"
           className="w-full sm:w-48"
           value={reasonFilter}
           onChange={(event) => setReasonFilter(event.target.value)}
@@ -54,7 +57,7 @@ export default function RatingReportsToolbar({
           ))}
         </NativeSelect>
 
-        <Button variant="outline" onClick={onResetFilters}>
+        <Button variant="outline" appearance="filter" onClick={onResetFilters}>
           Reset filters
         </Button>
       </div>

@@ -27,6 +27,7 @@ function matchesSearch(lookup, search) {
 export default function DataLookupsPage() {
   const [lookups, setLookups] = useState([]);
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editingLookup, setEditingLookup] = useState(null);
@@ -44,7 +45,7 @@ export default function DataLookupsPage() {
     setIsLoading(true);
     setLoadError("");
     try {
-      setLookups(await lookupsApi.getActiveLookups());
+      setLookups(await lookupsApi.getAdminLookups());
     } catch (error) {
       setLoadError(getErrorMessage(error, "Unable to load data lookups."));
     } finally {
@@ -62,9 +63,11 @@ export default function DataLookupsPage() {
 
     return lookups.filter((lookup) => (
       (categoryFilter === "all" || lookup.category === categoryFilter)
+      && (statusFilter === "all"
+        || (statusFilter === "active" ? lookup.isActive : !lookup.isActive))
       && matchesSearch(lookup, normalizedSearch)
     ));
-  }, [categoryFilter, lookups, searchQuery]);
+  }, [categoryFilter, lookups, searchQuery, statusFilter]);
 
   const groupedLookups = useMemo(() => LOOKUP_CATEGORIES
     .filter((category) => categoryFilter === "all" || category.value === categoryFilter)
@@ -77,6 +80,7 @@ export default function DataLookupsPage() {
 
   function resetFilters() {
     setCategoryFilter("all");
+    setStatusFilter("all");
     setSearchQuery("");
   }
 
@@ -129,16 +133,14 @@ export default function DataLookupsPage() {
     setActionNotice("");
     try {
       const updated = await lookupsApi.toggleLookupStatus(lookup.id);
-      setLookups((current) => (
-        updated.isActive
-          ? current.map((item) => item.id === updated.id ? updated : item)
-          : current.filter((item) => item.id !== updated.id)
-      ));
+      setLookups((current) =>
+        current.map((item) => item.id === updated.id ? updated : item),
+      );
       setLookupToDeactivate(null);
       setActionNotice(
         updated.isActive
           ? `${updated.labelEn || "Data lookup"} was activated successfully.`
-          : `${updated.labelEn || "Data lookup"} was deactivated successfully. It is no longer shown because the current backend list returns active records only.`,
+          : `${updated.labelEn || "Data lookup"} was deactivated successfully.`,
       );
     } catch (error) {
       setActionError(getErrorMessage(error, "Unable to update lookup status."));
@@ -164,14 +166,19 @@ export default function DataLookupsPage() {
     }
   }
 
-  const hasActiveFilters = categoryFilter !== "all" || Boolean(searchQuery);
+  const hasActiveFilters =
+    categoryFilter !== "all" ||
+    statusFilter !== "all" ||
+    Boolean(searchQuery);
+  const activeLookupCount = lookups.filter((lookup) => lookup.isActive).length;
+  const inactiveLookupCount = lookups.length - activeLookupCount;
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Data Lookups</h1>
-          <p className="mt-1 text-sm text-slate-600">Manage the active values available in clinic forms.</p>
+          <p className="mt-1 text-sm text-slate-600">Manage the lookup values available in clinic forms.</p>
         </div>
         <Button onClick={openAddDialog} disabled={isLoading}>
           <Plus className="h-4 w-4" />
@@ -179,15 +186,12 @@ export default function DataLookupsPage() {
         </Button>
       </div>
 
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="status">
-        The current backend list returns active lookups only. Inactive records and reactivation after a page reload will be available when the admin lookup-list endpoint is added.
-      </div>
-
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm" aria-label="Data lookup filters">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
             <Input
+              appearance="filter"
               className="w-full pl-9 sm:w-64"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
@@ -195,21 +199,33 @@ export default function DataLookupsPage() {
               aria-label="Search data lookups"
             />
           </div>
-          <NativeSelect className="w-full sm:w-52" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} aria-label="Filter by category">
+          <NativeSelect appearance="filter" className="w-full sm:w-52" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} aria-label="Filter by category">
             <NativeSelectOption value="all">All categories</NativeSelectOption>
             {LOOKUP_CATEGORIES.map((category) => (
               <NativeSelectOption key={category.value} value={category.value}>{category.label}</NativeSelectOption>
             ))}
           </NativeSelect>
+          <NativeSelect
+            appearance="filter"
+            className="w-full sm:w-40"
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+            aria-label="Filter by status"
+          >
+            <NativeSelectOption value="all">All statuses</NativeSelectOption>
+            <NativeSelectOption value="active">Active</NativeSelectOption>
+            <NativeSelectOption value="inactive">Inactive</NativeSelectOption>
+          </NativeSelect>
           {hasActiveFilters && (
-            <Button variant="outline" onClick={resetFilters}>
+            <Button variant="outline" appearance="filter" onClick={resetFilters}>
               <X className="h-4 w-4" />
               Reset
             </Button>
           )}
         </div>
         <p className="mt-4 border-t border-slate-100 pt-3 text-sm text-slate-500" aria-live="polite">
-          Showing {visibleLookups.length} of {lookups.length} active {lookups.length === 1 ? "lookup" : "lookups"}. Select a column heading to change its order.
+          Showing {visibleLookups.length} of {lookups.length} {lookups.length === 1 ? "lookup" : "lookups"}
+          {` · ${activeLookupCount} active · ${inactiveLookupCount} inactive`}. Select a column heading to change its order.
         </p>
       </section>
 
@@ -240,7 +256,7 @@ export default function DataLookupsPage() {
         </div>
       ) : (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-12 text-center">
-          <h2 className="font-medium text-slate-800">No active data lookups found</h2>
+          <h2 className="font-medium text-slate-800">No data lookups found</h2>
           <p className="mt-1 text-sm text-slate-500">Try another status, category, or search term.</p>
           {hasActiveFilters && <Button className="mt-4" variant="outline" onClick={resetFilters}>Reset filters</Button>}
         </div>

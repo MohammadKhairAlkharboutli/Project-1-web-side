@@ -6,16 +6,17 @@ import {
 } from "@/components/ui/native-select";
 
 export default function ClinicsTableToolbar({
-  table,
   globalFilter,
   setGlobalFilter,
-  locationOptions,
+  status,
+  setStatus,
   onResetFilters,
 }) {
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <Input
-        placeholder="Search clinics..."
+        appearance="filter"
+        placeholder="Search clinics, locations..."
         value={globalFilter}
         onChange={(event) => setGlobalFilter(event.target.value)}
         className="max-w-sm"
@@ -23,24 +24,19 @@ export default function ClinicsTableToolbar({
 
       <div className="flex flex-wrap gap-2">
         <NativeSelect
+          appearance="filter"
           className="w-[180px]"
-          value={table.getColumn("location")?.getFilterValue() ?? "all"}
-          onChange={(event) => {
-            const value = event.target.value;
-            table
-              .getColumn("location")
-              ?.setFilterValue(value === "all" ? undefined : value);
-          }}
+          value={status}
+          onChange={(event) => setStatus(event.target.value)}
         >
-          <NativeSelectOption value="all">All locations</NativeSelectOption>
-          {locationOptions.map((location) => (
-            <NativeSelectOption key={location} value={location}>
-              {location}
-            </NativeSelectOption>
-          ))}
+          <NativeSelectOption value="all">All statuses</NativeSelectOption>
+          <NativeSelectOption value="active">Active</NativeSelectOption>
+          <NativeSelectOption value="inactive">Inactive</NativeSelectOption>
+          <NativeSelectOption value="maintenance">Maintenance</NativeSelectOption>
+          <NativeSelectOption value="closed">Closed</NativeSelectOption>
         </NativeSelect>
 
-        <Button type="button" variant="outline" onClick={onResetFilters}>
+        <Button type="button" variant="outline" appearance="filter" onClick={onResetFilters}>
           Reset filters
         </Button>
       </div>

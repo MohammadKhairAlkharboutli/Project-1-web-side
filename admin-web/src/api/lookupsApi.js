@@ -14,6 +14,11 @@ export const lookupsApi = {
     return (data ?? []).map(normalizeLookup);
   },
 
+  async getAdminLookups(params = {}) {
+    const { data } = await axiosClient.get("/lookups/admin", { params });
+    return (data ?? []).map(normalizeLookup);
+  },
+
   async createLookup(lookup) {
     const { data } = await axiosClient.post("/lookups", lookup);
     return normalizeLookup(data);

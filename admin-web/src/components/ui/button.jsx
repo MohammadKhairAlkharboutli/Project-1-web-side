@@ -44,6 +44,7 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  appearance,
   asChild = false,
   ...props
 }) {
@@ -54,9 +55,14 @@ function Button({
       data-slot="button"
       data-variant={variant}
       data-size={size}
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={cn(
+        buttonVariants({ variant, size }),
+        appearance === "filter" &&
+          "h-10 rounded-md border-slate-300 bg-white px-3 text-slate-700 shadow-sm hover:border-slate-400 hover:bg-slate-50",
+        className,
+      )}
       {...props} />
   );
 }
 
-export { Button, buttonVariants }
+export { Button }

@@ -50,6 +50,7 @@ export default function CheckInCandidates({
         <label className="relative block w-full sm:w-72">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
+            appearance="filter"
             value={searchTerm}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder="Search patient"

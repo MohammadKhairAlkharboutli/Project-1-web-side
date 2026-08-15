@@ -47,6 +47,28 @@ export const DATE_RANGE_OPTIONS = [
   { value: "this-month", label: "This month" },
 ];
 
+// These ranges map exactly to the admin endpoint's date-only `from` / `to`
+// parameters. Time-relative labels such as “Upcoming” are intentionally not
+// included because the endpoint does not evaluate the appointment start time.
+export const ADMIN_APPOINTMENT_DATE_RANGE_OPTIONS = [
+  { value: "all", label: "All dates" },
+  { value: "today", label: "Today" },
+  { value: "this-week", label: "This week" },
+  { value: "next-week", label: "Next week" },
+  { value: "this-month", label: "This month" },
+];
+
+export const PAYMENT_STATUS_OPTIONS = [
+  { value: "all", label: "All payment states" },
+  { value: "pending", label: "Payment pending" },
+  { value: "held", label: "Payment held" },
+  { value: "completed", label: "Payment completed" },
+  { value: "refunded", label: "Refunded" },
+  { value: "partial_refunded", label: "Partially refunded" },
+  { value: "forfeited", label: "Forfeited" },
+  { value: "failed", label: "Payment failed" },
+];
+
 export function getAppointmentStatusLabel(status) {
   const labels = {
     pending: "Pending",

@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Mail, Phone, Star } from "lucide-react";
+import { Mail, Phone, RotateCcw, ShieldOff, Star } from "lucide-react";
 
 import {
   profileHeaderDetailsLabel,
@@ -9,6 +10,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   formatApprovalStatus,
   formatCurrency,
   formatDoctorStatus,
@@ -16,12 +27,40 @@ import {
   getDoctorInitials,
 } from "../doctorUtils";
 
-export default function DoctorProfileHeader({ doctor }) {
-  const statusStyle = doctor.status === "ACTIVE"
+export default function DoctorProfileHeader({
+  doctor,
+  onStatusChange,
+  isUpdatingStatus,
+}) {
+  const normalizedStatus = String(doctor.status || "").toLowerCase();
+  const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
+  const [statusActionError, setStatusActionError] = useState("");
+  const isActive = normalizedStatus === "active";
+  const isInactive = normalizedStatus === "inactive";
+  const nextStatus = isActive ? "inactive" : "active";
+  const canChangeStatus = isActive || isInactive;
+  const statusStyle = normalizedStatus === "active"
     ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-    : doctor.status === "ON_LEAVE"
+    : normalizedStatus === "on_vacation"
       ? "border-amber-200 bg-amber-50 text-amber-800"
       : "border-slate-200 bg-slate-100 text-slate-600";
+
+  async function confirmStatusChange(event) {
+    event.preventDefault();
+    setStatusActionError("");
+
+    try {
+      await onStatusChange(nextStatus);
+      setIsStatusDialogOpen(false);
+    } catch (error) {
+      const message = error?.response?.data?.message || error?.message;
+      setStatusActionError(
+        Array.isArray(message)
+          ? message.join(" ")
+          : message || "Unable to update the doctor status.",
+      );
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
@@ -66,6 +105,25 @@ export default function DoctorProfileHeader({ doctor }) {
               View ratings
             </Link>
           </Button>
+
+          {canChangeStatus ? (
+            <Button
+              variant={isActive ? "destructive" : "outline"}
+              size="sm"
+              disabled={isUpdatingStatus}
+              onClick={() => {
+                setStatusActionError("");
+                setIsStatusDialogOpen(true);
+              }}
+            >
+              {isActive ? (
+                <ShieldOff className="h-4 w-4" />
+              ) : (
+                <RotateCcw className="h-4 w-4" />
+              )}
+              {isActive ? "Deactivate doctor" : "Reactivate doctor"}
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -112,6 +170,49 @@ export default function DoctorProfileHeader({ doctor }) {
           </div>
         </div>
       </div>
+
+      <AlertDialog
+        open={isStatusDialogOpen}
+        onOpenChange={(open) => {
+          if (!isUpdatingStatus) {
+            setIsStatusDialogOpen(open);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isActive ? "Deactivate doctor?" : "Reactivate doctor?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {isActive
+                ? "This doctor will no longer be available for new clinic assignments or patient bookings. Their existing records will remain unchanged."
+                : "This doctor will become available for clinic assignments and patient bookings again."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {statusActionError ? (
+            <p className="text-sm text-red-600" role="alert">
+              {statusActionError}
+            </p>
+          ) : null}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isUpdatingStatus}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant={isActive ? "destructive" : "default"}
+              disabled={isUpdatingStatus}
+              onClick={confirmStatusChange}
+            >
+              {isUpdatingStatus
+                ? "Saving..."
+                : isActive
+                  ? "Deactivate doctor"
+                  : "Reactivate doctor"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

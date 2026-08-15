@@ -14,6 +14,7 @@ export default function SecretariesTableToolbar({
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <Input
+        appearance="filter"
         placeholder="Search secretaries..."
         value={globalFilter}
         onChange={(event) => setGlobalFilter(event.target.value)}
@@ -22,6 +23,7 @@ export default function SecretariesTableToolbar({
 
       <div className="flex flex-wrap gap-2">
         <NativeSelect
+          appearance="filter"
           className="w-[160px]"
           value={table.getColumn("status")?.getFilterValue() ?? "all"}
           onChange={(event) => {
@@ -37,6 +39,7 @@ export default function SecretariesTableToolbar({
         </NativeSelect>
 
         <NativeSelect
+          appearance="filter"
           className="w-[180px]"
           value={table.getColumn("clinic")?.getFilterValue() ?? "all"}
           onChange={(event) => {
@@ -64,7 +67,7 @@ export default function SecretariesTableToolbar({
           </NativeSelectOption>
         </NativeSelect>
 
-        <Button type="button" variant="outline" onClick={onResetFilters}>
+        <Button type="button" variant="outline" appearance="filter" onClick={onResetFilters}>
           Reset filters
         </Button>
       </div>

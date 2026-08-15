@@ -2,7 +2,7 @@ import { useOutletContext } from "react-router-dom";
 
 import DataTable from "@/components/shared/DataTable";
 import { getDoctorAppointmentColumns } from "@/components/shared/Appointments/DoctorAppointmentColumns";
-import DoctorAppointmentsToolbar from "@/components/shared/Appointments/DoctorAppointmentsToolbar";
+import ProfileAppointmentsToolbar from "@/components/shared/Appointments/ProfileAppointmentsToolbar";
 import { useAdminAppointments } from "@/hooks/useAdminAppointments";
 
 export default function DoctorAppointments() {
@@ -14,6 +14,7 @@ export default function DoctorAppointments() {
     limit,
     search,
     status,
+    paymentStatus,
     dateRange,
     exactDate,
     isLoading,
@@ -22,6 +23,7 @@ export default function DoctorAppointments() {
     setPageSize,
     setSearch,
     setStatus,
+    setPaymentStatus,
     setDateRange,
     setExactDate,
     resetFilters,
@@ -61,11 +63,13 @@ export default function DoctorAppointments() {
               : "No appointments found for this doctor."
         }
         toolbar={() => (
-          <DoctorAppointmentsToolbar
+          <ProfileAppointmentsToolbar
             search={search}
             setSearch={setSearch}
             status={status}
             setStatus={setStatus}
+            paymentStatus={paymentStatus}
+            setPaymentStatus={setPaymentStatus}
             dateRange={dateRange}
             setDateRange={setDateRange}
             exactDate={exactDate}

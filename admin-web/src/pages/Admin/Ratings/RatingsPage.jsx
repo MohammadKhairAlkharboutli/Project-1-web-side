@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
+import { adminPatientsApi } from "@/api/adminPatientsApi";
+import { doctorsApi } from "@/api/doctorsApi";
 import { ratingsApi } from "@/api/ratingsApi";
 import DataTable from "@/components/shared/DataTable";
 import {
@@ -24,6 +26,30 @@ function getErrorMessage(error, fallback) {
   return Array.isArray(message) ? message.join(" ") : message;
 }
 
+function getDoctorOption(doctor) {
+  return {
+    id: Number(doctor.id),
+    label: doctor.user?.fullName || `Doctor #${doctor.id}`,
+    description: doctor.specialization || null,
+  };
+}
+
+function getPatientOption(patient) {
+  return {
+    id: Number(patient.id),
+    label: patient.user?.fullName || `Patient #${patient.id}`,
+    description: patient.user?.email || patient.user?.phone || null,
+  };
+}
+
+function getInitialOption(id, label) {
+  const numericId = Number(id);
+
+  return Number.isInteger(numericId) && numericId > 0
+    ? { id: numericId, label: `${label} #${numericId}`, needsHydration: true }
+    : null;
+}
+
 export default function RatingsPage() {
   const [searchParams] = useSearchParams();
   const [ratings, setRatings] = useState([]);
@@ -38,16 +64,94 @@ export default function RatingsPage() {
   const [actionNotice, setActionNotice] = useState("");
   const [hidingRatingId, setHidingRatingId] = useState(null);
   const [ratingToHide, setRatingToHide] = useState(null);
-  const [doctorFilter, setDoctorFilter] = useState(
-    searchParams.get("doctorId") || "",
+  const [selectedDoctor, setSelectedDoctor] = useState(() =>
+    getInitialOption(searchParams.get("doctorId"), "Doctor"),
   );
-  const [patientFilter, setPatientFilter] = useState(
-    searchParams.get("patientId") || "",
+  const [selectedPatient, setSelectedPatient] = useState(() =>
+    getInitialOption(searchParams.get("patientId"), "Patient"),
   );
   const [scoreFilter, setScoreFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedRating, setSelectedRating] = useState(null);
   const debouncedSearch = useDebouncedValue(search);
+
+  useEffect(() => {
+    if (!selectedDoctor?.needsHydration) {
+      return undefined;
+    }
+
+    let isCurrent = true;
+
+    doctorsApi
+      .getDoctor(selectedDoctor.id)
+      .then((doctor) => {
+        if (isCurrent) {
+          setSelectedDoctor(getDoctorOption(doctor));
+        }
+      })
+      .catch(() => {
+        if (isCurrent) {
+          setSelectedDoctor((currentDoctor) => (
+            currentDoctor
+              ? { ...currentDoctor, needsHydration: false }
+              : currentDoctor
+          ));
+        }
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [selectedDoctor]);
+
+  useEffect(() => {
+    if (!selectedPatient?.needsHydration) {
+      return undefined;
+    }
+
+    let isCurrent = true;
+
+    adminPatientsApi
+      .getPatient(selectedPatient.id)
+      .then((patient) => {
+        if (isCurrent) {
+          setSelectedPatient(getPatientOption(patient));
+        }
+      })
+      .catch(() => {
+        if (isCurrent) {
+          setSelectedPatient((currentPatient) => (
+            currentPatient
+              ? { ...currentPatient, needsHydration: false }
+              : currentPatient
+          ));
+        }
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [selectedPatient]);
+
+  const loadDoctorOptions = useCallback(async (searchTerm) => {
+    const response = await doctorsApi.getAdminDoctors({
+      page: 1,
+      limit: 25,
+      ...(searchTerm ? { search: searchTerm } : {}),
+    });
+
+    return response.data.map(getDoctorOption);
+  }, []);
+
+  const loadPatientOptions = useCallback(async (searchTerm) => {
+    const response = await adminPatientsApi.getPatients({
+      page: 1,
+      limit: 25,
+      ...(searchTerm ? { search: searchTerm } : {}),
+    });
+
+    return response.data.map(getPatientOption);
+  }, []);
 
   useEffect(() => {
     let isCurrent = true;
@@ -61,8 +165,8 @@ export default function RatingsPage() {
           page,
           limit,
           ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
-          ...(doctorFilter ? { doctorId: doctorFilter } : {}),
-          ...(patientFilter ? { patientId: patientFilter } : {}),
+          ...(selectedDoctor ? { doctorId: selectedDoctor.id } : {}),
+          ...(selectedPatient ? { patientId: selectedPatient.id } : {}),
           ...(scoreFilter !== "all" ? { score: scoreFilter } : {}),
           ...(statusFilter !== "all" ? { status: statusFilter } : {}),
         });
@@ -90,12 +194,12 @@ export default function RatingsPage() {
     };
   }, [
     debouncedSearch,
-    doctorFilter,
     limit,
     loadAttempt,
     page,
-    patientFilter,
     scoreFilter,
+    selectedDoctor,
+    selectedPatient,
     statusFilter,
   ]);
 
@@ -138,13 +242,13 @@ export default function RatingsPage() {
     setPage(1);
   }
 
-  function setDoctorFilterValue(value) {
-    setDoctorFilter(value);
+  function setDoctorFilterValue(option) {
+    setSelectedDoctor(option);
     setPage(1);
   }
 
-  function setPatientFilterValue(value) {
-    setPatientFilter(value);
+  function setPatientFilterValue(option) {
+    setSelectedPatient(option);
     setPage(1);
   }
 
@@ -160,8 +264,8 @@ export default function RatingsPage() {
 
   function resetFilters(table) {
     setSearchState("");
-    setDoctorFilter("");
-    setPatientFilter("");
+    setSelectedDoctor(null);
+    setSelectedPatient(null);
     setScoreFilter("all");
     setStatusFilter("all");
     table.resetSorting();
@@ -216,10 +320,12 @@ export default function RatingsPage() {
         toolbar={(toolbarProps) => (
           <RatingsToolbar
             {...toolbarProps}
-            doctorFilter={doctorFilter}
-            setDoctorFilter={setDoctorFilterValue}
-            patientFilter={patientFilter}
-            setPatientFilter={setPatientFilterValue}
+            selectedDoctor={selectedDoctor}
+            setSelectedDoctor={setDoctorFilterValue}
+            loadDoctorOptions={loadDoctorOptions}
+            selectedPatient={selectedPatient}
+            setSelectedPatient={setPatientFilterValue}
+            loadPatientOptions={loadPatientOptions}
             scoreFilter={scoreFilter}
             setScoreFilter={setScoreFilterValue}
             statusFilter={statusFilter}

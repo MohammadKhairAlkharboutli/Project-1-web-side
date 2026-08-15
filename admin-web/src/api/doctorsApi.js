@@ -63,6 +63,14 @@ export const doctorsApi = {
     };
   },
 
+  async updateDoctorStatus(doctorId, status) {
+    const { data } = await axiosClient.patch(
+      `/doctors/${Number(doctorId)}/status`,
+      { status },
+    );
+    return normalizeAdminDoctor(data);
+  },
+
   async getOwnProfile() {
     const { data } = await axiosClient.get("/doctors/me");
     return data;

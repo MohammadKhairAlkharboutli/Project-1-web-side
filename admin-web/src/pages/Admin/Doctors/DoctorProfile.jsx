@@ -23,6 +23,7 @@ export default function DoctorProfile() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [loadAttempt, setLoadAttempt] = useState(0);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   useEffect(() => {
     let isCurrent = true;
@@ -62,6 +63,30 @@ export default function DoctorProfile() {
     };
   }, [doctorId, loadAttempt]);
 
+  async function updateDoctorStatus(status) {
+    if (!doctor) {
+      return;
+    }
+
+    setIsUpdatingStatus(true);
+
+    try {
+      const updatedDoctor = await doctorsApi.updateDoctorStatus(doctor.id, status);
+      setDoctor((currentDoctor) => (
+        currentDoctor
+          ? {
+              ...currentDoctor,
+              ...updatedDoctor,
+              user: updatedDoctor.user ?? currentDoctor.user,
+              assignedClinic: currentDoctor.assignedClinic,
+            }
+          : currentDoctor
+      ));
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="mx-auto max-w-3xl rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
@@ -99,6 +124,8 @@ export default function DoctorProfile() {
         header={
           <DoctorProfileHeader
             doctor={doctor}
+            onStatusChange={updateDoctorStatus}
+            isUpdatingStatus={isUpdatingStatus}
           />
         }
         nav={<DoctorProfileNav doctorId={doctor.id} />}

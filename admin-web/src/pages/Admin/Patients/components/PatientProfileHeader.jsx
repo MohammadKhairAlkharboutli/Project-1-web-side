@@ -13,6 +13,7 @@ import {
   formatPatientStatus,
   getPatientDisplayName,
   getPatientInitials,
+  getPatientStatusBadgeClassName,
 } from "../patientUtils";
 
 export default function PatientProfileHeader({ patient }) {
@@ -33,7 +34,8 @@ export default function PatientProfileHeader({ patient }) {
                 {getPatientDisplayName(patient)}
               </h1>
               <Badge
-                variant={user.status === "ACTIVE" ? "default" : "secondary"}
+                variant="outline"
+                className={getPatientStatusBadgeClassName(user.status)}
               >
                 {formatPatientStatus(user.status)}
               </Badge>

@@ -23,6 +23,7 @@ export function useAdminAppointments(baseFilters = {}) {
   }));
   const [search, setSearchState] = useState("");
   const [status, setStatusState] = useState("all");
+  const [paymentStatus, setPaymentStatusState] = useState("all");
   const [dateRange, setDateRangeState] = useState("all");
   const [exactDate, setExactDateState] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -48,11 +49,20 @@ export function useAdminAppointments(baseFilters = {}) {
       ...normalizedBaseFilters,
       ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
       ...(status !== "all" ? { status } : {}),
+      ...(paymentStatus !== "all" ? { paymentStatus } : {}),
       ...dateFilters,
       page,
       limit,
     }),
-    [dateFilters, debouncedSearch, limit, normalizedBaseFilters, page, status],
+    [
+      dateFilters,
+      debouncedSearch,
+      limit,
+      normalizedBaseFilters,
+      page,
+      paymentStatus,
+      status,
+    ],
   );
 
   useEffect(() => {
@@ -105,6 +115,11 @@ export function useAdminAppointments(baseFilters = {}) {
     setPage(1);
   }
 
+  function setPaymentStatus(value) {
+    setPaymentStatusState(value);
+    setPage(1);
+  }
+
   function setDateRange(value) {
     setDateRangeState(value);
     setExactDateState("");
@@ -128,6 +143,7 @@ export function useAdminAppointments(baseFilters = {}) {
   function resetFilters() {
     setSearchState("");
     setStatusState("all");
+    setPaymentStatusState("all");
     setDateRangeState("all");
     setExactDateState("");
     setPage(1);
@@ -144,6 +160,7 @@ export function useAdminAppointments(baseFilters = {}) {
     limit,
     search,
     status,
+    paymentStatus,
     dateRange,
     exactDate,
     isLoading,
@@ -152,6 +169,7 @@ export function useAdminAppointments(baseFilters = {}) {
     setPageSize,
     setSearch,
     setStatus,
+    setPaymentStatus,
     setDateRange,
     setExactDate,
     resetFilters,

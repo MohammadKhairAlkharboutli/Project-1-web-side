@@ -34,6 +34,9 @@ export default function ClinicProfile() {
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [closeError, setCloseError] = useState("");
   const [isClosing, setIsClosing] = useState(false);
+  const [reactivateClinicOpen, setReactivateClinicOpen] = useState(false);
+  const [isReactivating, setIsReactivating] = useState(false);
+  const [reactivateError, setReactivateError] = useState("");
 
   useEffect(() => {
     let isCurrent = true;
@@ -104,6 +107,35 @@ export default function ClinicProfile() {
     setDeactivateClinicOpen(open);
   }
 
+  async function reactivateClinic() {
+    setIsReactivating(true);
+    setReactivateError("");
+
+    try {
+      const updatedClinic = await clinicsApi.updateClinic(clinic.id, {
+        status: "active",
+      });
+      setClinic(updatedClinic);
+      setReactivateClinicOpen(false);
+    } catch (error) {
+      setReactivateError(
+        getErrorMessage(error, "We could not reactivate this clinic. Please try again."),
+      );
+    } finally {
+      setIsReactivating(false);
+    }
+  }
+
+  function handleReactivateDialogChange(open) {
+    if (!open && !isReactivating) {
+      setReactivateError("");
+      setReactivateClinicOpen(false);
+      return;
+    }
+
+    setReactivateClinicOpen(open);
+  }
+
   if (isLoading) {
     return (
       <div className="mx-auto max-w-3xl rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
@@ -140,6 +172,8 @@ export default function ClinicProfile() {
             clinic={clinic}
             onEditClinic={() => setEditClinicOpen(true)}
             onDeactivateClinic={() => setDeactivateClinicOpen(true)}
+            onReactivateClinic={() => setReactivateClinicOpen(true)}
+            isReactivating={isReactivating}
           />
         }
         nav={<ClinicProfileNav clinicId={clinic.id} />}
@@ -176,6 +210,31 @@ export default function ClinicProfile() {
             <AlertDialogCancel disabled={isClosing}>Cancel</AlertDialogCancel>
             <Button variant="destructive" onClick={closeClinic} disabled={isClosing}>
               {isClosing ? "Closing..." : "Close clinic"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={reactivateClinicOpen}
+        onOpenChange={handleReactivateDialogChange}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reactivate clinic?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will make {clinic.name} active and available again across the system.
+            </AlertDialogDescription>
+            {reactivateError ? (
+              <p className="text-sm text-red-700" role="alert">
+                {reactivateError}
+              </p>
+            ) : null}
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isReactivating}>Cancel</AlertDialogCancel>
+            <Button onClick={reactivateClinic} disabled={isReactivating}>
+              {isReactivating ? "Reactivating..." : "Reactivate clinic"}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

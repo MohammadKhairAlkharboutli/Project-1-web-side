@@ -1,5 +1,3 @@
-import DoctorRatingFilter from "@/components/shared/Ratings/DoctorRatingFilter";
-import PatientRatingFilter from "@/components/shared/Ratings/PatientRatingFilter";
 import {
   RATING_SCORE_OPTIONS,
   RATING_STATUS_OPTIONS,
@@ -10,14 +8,17 @@ import {
   NativeSelect,
   NativeSelectOption,
 } from "@/components/ui/native-select";
+import AsyncAppointmentEntityFilter from "@/pages/Admin/Appointments/components/AsyncAppointmentEntityFilter";
 
 export default function RatingsToolbar({
   globalFilter,
   setGlobalFilter,
-  doctorFilter,
-  setDoctorFilter,
-  patientFilter,
-  setPatientFilter,
+  selectedDoctor,
+  setSelectedDoctor,
+  loadDoctorOptions,
+  selectedPatient,
+  setSelectedPatient,
+  loadPatientOptions,
   scoreFilter,
   setScoreFilter,
   statusFilter,
@@ -27,17 +28,29 @@ export default function RatingsToolbar({
   return (
     <div className="space-y-3">
       <Input
-        placeholder="Search ratings..."
+        appearance="filter"
+        placeholder="Search ratings, doctors, patients..."
         value={globalFilter}
         onChange={(event) => setGlobalFilter(event.target.value)}
         className="max-w-sm"
       />
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-        <DoctorRatingFilter value={doctorFilter} onChange={setDoctorFilter} />
-        <PatientRatingFilter value={patientFilter} onChange={setPatientFilter} />
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
+        <AsyncAppointmentEntityFilter
+          label="Doctor"
+          selectedOption={selectedDoctor}
+          onSelect={setSelectedDoctor}
+          loadOptions={loadDoctorOptions}
+        />
+        <AsyncAppointmentEntityFilter
+          label="Patient"
+          selectedOption={selectedPatient}
+          onSelect={setSelectedPatient}
+          loadOptions={loadPatientOptions}
+        />
 
         <NativeSelect
+          appearance="filter"
           className="w-full sm:w-44"
           value={scoreFilter}
           onChange={(event) => setScoreFilter(event.target.value)}
@@ -50,6 +63,7 @@ export default function RatingsToolbar({
         </NativeSelect>
 
         <NativeSelect
+          appearance="filter"
           className="w-full sm:w-40"
           value={statusFilter}
           onChange={(event) => {
@@ -63,7 +77,7 @@ export default function RatingsToolbar({
           ))}
         </NativeSelect>
 
-        <Button variant="outline" onClick={onResetFilters}>
+        <Button variant="outline" appearance="filter" onClick={onResetFilters}>
           Reset filters
         </Button>
       </div>

@@ -20,6 +20,7 @@ import {
 
 const CLINIC_STATUS_OPTIONS = [
   { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
   { value: "maintenance", label: "Maintenance" },
   { value: "closed", label: "Closed" },
 ];
@@ -27,7 +28,7 @@ const CLINIC_STATUS_OPTIONS = [
 const clinicFormSchema = z.object({
   name: z.string().trim().min(1, "Clinic name is required."),
   location: z.string().trim().min(1, "Location is required."),
-  status: z.enum(["active", "maintenance", "closed"], {
+  status: z.enum(["active", "inactive", "maintenance", "closed"], {
     error: "Status is required.",
   }),
   description: z.string().trim().min(1, "Description is required."),

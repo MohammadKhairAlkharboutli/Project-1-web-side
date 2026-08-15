@@ -1,4 +1,4 @@
-import { MapPin, Pencil, PowerOff, Star } from "lucide-react";
+import { MapPin, Pencil, PowerOff, RotateCcw, Star } from "lucide-react";
 
 import {
   profileHeaderDetailsLabel,
@@ -17,7 +17,12 @@ export default function ClinicProfileHeader({
   clinic,
   onEditClinic,
   onDeactivateClinic,
+  onReactivateClinic,
+  isReactivating,
 }) {
+  const canDeactivate = clinic.status === "active" || clinic.status === "maintenance";
+  const canReactivate = clinic.status === "closed" || clinic.status === "inactive";
+
   return (
     <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
       <div className="space-y-4">
@@ -56,12 +61,19 @@ export default function ClinicProfileHeader({
             Edit clinic info
           </Button>
 
-          {clinic.status !== "closed" && (
+          {canReactivate ? (
+            <Button onClick={onReactivateClinic} disabled={isReactivating}>
+              <RotateCcw className="h-4 w-4" />
+              {isReactivating ? "Reactivating..." : "Reactivate clinic"}
+            </Button>
+          ) : null}
+
+          {canDeactivate ? (
             <Button variant="destructive" onClick={onDeactivateClinic}>
               <PowerOff className="h-4 w-4" />
               Deactivate clinic
             </Button>
-          )}
+          ) : null}
         </div>
 
         <div

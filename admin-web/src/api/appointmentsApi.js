@@ -18,4 +18,12 @@ export const appointmentsApi = {
     const { data } = await axiosClient.get(`/appointments/${appointmentId}`);
     return data;
   },
+
+  async cancelAppointment(appointmentId, cancellationReason) {
+    const { data } = await axiosClient.patch(
+      `/appointments/${Number(appointmentId)}/cancel`,
+      { cancellationReason },
+    );
+    return data;
+  },
 };

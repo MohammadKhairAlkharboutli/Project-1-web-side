@@ -6,6 +6,7 @@ import DoctorProfile from "./pages/Admin/Doctors/DoctorProfile";
 import DoctorOverview from "./pages/Admin/Doctors/DoctorOverview";
 import DoctorSchedule from "./pages/Admin/Doctors/DoctorSchedule";
 import DoctorAppointments from "./pages/Admin/Doctors/DoctorAppointments";
+import AdminDoctorLeaves from "./pages/Admin/Doctors/DoctorLeaves";
 import AdminAppointmentsPage from "./pages/Admin/Appointments/AdminAppointmentsPage";
 import AppointmentDetails from "./pages/Admin/Appointments/AppointmentDetails";
 import PatientsPage from "./pages/Admin/Patients/PatientsPage";
@@ -70,6 +71,7 @@ function App() {
               <Route path="schedules" element={<DoctorSchedule />} />
               <Route path="clinics" element={<Navigate to=".." relative="path" replace />} />
               <Route path="appointments" element={<DoctorAppointments />} />
+              <Route path="leaves" element={<AdminDoctorLeaves />} />
             </Route>
           </Route>
           <Route path="appointments" element={<AdminAppointmentsPage />} />

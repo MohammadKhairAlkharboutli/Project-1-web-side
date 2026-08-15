@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import { clinicsApi } from "@/api/clinicsApi";
 import DataTable from "@/components/shared/DataTable";
 import { Button } from "@/components/ui/button";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 import { getClinicColumns } from "./components/ClinicColumns";
 import ClinicFormDialog from "./components/ClinicFormDialog";
@@ -24,10 +25,16 @@ export default function ClinicsPage() {
   const location = useLocation();
   const [clinicFormOpen, setClinicFormOpen] = useState(false);
   const [clinics, setClinics] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [search, setSearchState] = useState("");
+  const [status, setStatusState] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [actionNotice] = useState(location.state?.notice || "");
+  const debouncedSearch = useDebouncedValue(search);
 
   useEffect(() => {
     if (location.state?.notice) {
@@ -39,11 +46,20 @@ export default function ClinicsPage() {
     let isCurrent = true;
 
     async function loadClinics() {
+      setIsLoading(true);
+      setLoadError("");
+
       try {
-        const data = await clinicsApi.getClinics();
+        const response = await clinicsApi.getAdminClinics({
+          page,
+          limit,
+          ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
+          ...(status !== "all" ? { status } : {}),
+        });
 
         if (isCurrent) {
-          setClinics(data);
+          setClinics(response.data);
+          setTotal(response.total);
           setLoadError("");
         }
       } catch (error) {
@@ -62,31 +78,32 @@ export default function ClinicsPage() {
     return () => {
       isCurrent = false;
     };
-  }, [loadAttempt]);
+  }, [debouncedSearch, limit, loadAttempt, page, status]);
 
-  const locationOptions = Array.from(
-    new Set(clinics.map((clinic) => clinic.location).filter(Boolean)),
-  ).sort((left, right) => left.localeCompare(right));
   const columns = getClinicColumns((clinic) =>
     navigate(`/admin/clinics/${clinic.id}`),
   );
 
-  function resetFilters(table, setGlobalFilter) {
-    setGlobalFilter("");
-    table.resetColumnFilters();
-    table.resetSorting();
+  function setSearch(value) {
+    setSearchState(value);
+    setPage(1);
+  }
+
+  function setStatus(value) {
+    setStatusState(value);
+    setPage(1);
+  }
+
+  function resetFilters() {
+    setSearchState("");
+    setStatusState("all");
+    setPage(1);
   }
 
   async function addClinic(formData) {
-    const clinic = await clinicsApi.createClinic(formData);
-
-    if (clinic.status === "active") {
-      setClinics((currentClinics) =>
-        [...currentClinics, clinic].sort((left, right) =>
-          left.name.localeCompare(right.name),
-        ),
-      );
-    }
+    await clinicsApi.createClinic(formData);
+    setPage(1);
+    setLoadAttempt((attempt) => attempt + 1);
   }
 
   function retryLoad() {
@@ -118,16 +135,29 @@ export default function ClinicsPage() {
             ? "Loading clinics..."
             : loadError
               ? "Clinics could not be loaded."
-              : "No active clinics found."
+              : "No clinics match the current filters."
         }
-        pagination={false}
-        toolbar={({ table, globalFilter, setGlobalFilter }) => (
+        globalFilter={search}
+        onGlobalFilterChange={setSearch}
+        serverFiltering
+        sorting={false}
+        serverPagination={{
+          page,
+          limit,
+          total,
+          onPageChange: setPage,
+          onPageSizeChange: (nextLimit) => {
+            setLimit(nextLimit);
+            setPage(1);
+          },
+        }}
+        toolbar={() => (
           <ClinicsTableToolbar
-            table={table}
-            globalFilter={globalFilter}
-            setGlobalFilter={setGlobalFilter}
-            locationOptions={locationOptions}
-            onResetFilters={() => resetFilters(table, setGlobalFilter)}
+            globalFilter={search}
+            setGlobalFilter={setSearch}
+            status={status}
+            setStatus={setStatus}
+            onResetFilters={resetFilters}
           />
         )}
       />

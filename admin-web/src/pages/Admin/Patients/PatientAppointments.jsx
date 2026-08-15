@@ -1,102 +1,36 @@
-import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 
-import { adminPatientsApi } from "@/api/adminPatientsApi";
 import DataTable from "@/components/shared/DataTable";
-import { appointmentMatchesDateRange } from "@/components/shared/Appointments/appointmentUtils";
+import ProfileAppointmentsToolbar from "@/components/shared/Appointments/ProfileAppointmentsToolbar";
 import { Button } from "@/components/ui/button";
+import { useAdminAppointments } from "@/hooks/useAdminAppointments";
 
 import { getPatientAppointmentColumns } from "./components/PatientAppointmentColumns";
-import PatientAppointmentsToolbar from "./components/PatientAppointmentsToolbar";
-
-function getErrorMessage(error) {
-  const message = error?.response?.data?.message || error?.message;
-  return Array.isArray(message)
-    ? message.join(" ")
-    : message || "We could not load the appointments. Please try again.";
-}
 
 export default function PatientAppointments() {
   const { patient } = useOutletContext();
-  const [appointments, setAppointments] = useState([]);
-  const [search, setSearchState] = useState("");
-  const [status, setStatusState] = useState("all");
-  const [dateRange, setDateRangeState] = useState("all");
-  const [exactDate, setExactDateState] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
-  const [loadAttempt, setLoadAttempt] = useState(0);
-
-  useEffect(() => {
-    let isCurrent = true;
-
-    async function loadAppointments() {
-      setIsLoading(true);
-      setLoadError("");
-      setAppointments([]);
-
-      try {
-        const data = await adminPatientsApi.getAppointments(patient.id);
-
-        if (isCurrent) {
-          setAppointments(data);
-        }
-      } catch (error) {
-        if (isCurrent) {
-          setLoadError(getErrorMessage(error));
-        }
-      } finally {
-        if (isCurrent) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    loadAppointments();
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [loadAttempt, patient.id]);
-
-  const filteredAppointments = useMemo(
-    () =>
-      appointments.filter((appointment) => {
-        const normalizedStatus = String(appointment.status || "").toLowerCase();
-        const matchesStatus = status === "all" || normalizedStatus === status;
-        const matchesDateRange = appointmentMatchesDateRange(appointment, dateRange);
-        const matchesExactDate =
-          !exactDate || String(appointment.requestedDate || "").slice(0, 10) === exactDate;
-
-        return matchesStatus && matchesDateRange && matchesExactDate;
-      }),
-    [appointments, dateRange, exactDate, status],
-  );
-
-  function setSearch(value) {
-    setSearchState(value);
-  }
-
-  function setStatus(value) {
-    setStatusState(value);
-  }
-
-  function setDateRange(value) {
-    setDateRangeState(value);
-    setExactDateState("");
-  }
-
-  function setExactDate(value) {
-    setExactDateState(value);
-    setDateRangeState("all");
-  }
-
-  function resetFilters() {
-    setSearchState("");
-    setStatusState("all");
-    setDateRangeState("all");
-    setExactDateState("");
-  }
+  const {
+    appointments,
+    total,
+    page,
+    limit,
+    search,
+    status,
+    paymentStatus,
+    dateRange,
+    exactDate,
+    isLoading,
+    loadError,
+    setPage,
+    setPageSize,
+    setSearch,
+    setStatus,
+    setPaymentStatus,
+    setDateRange,
+    setExactDate,
+    resetFilters,
+    retryLoad,
+  } = useAdminAppointments({ patientId: patient.id });
 
   return (
     <div className="space-y-6">
@@ -111,10 +45,18 @@ export default function PatientAppointments() {
 
       <DataTable
         columns={getPatientAppointmentColumns()}
-        data={filteredAppointments}
+        data={appointments}
         globalFilter={search}
         onGlobalFilterChange={setSearch}
+        serverFiltering
         sorting={false}
+        serverPagination={{
+          page,
+          limit,
+          total,
+          onPageChange: setPage,
+          onPageSizeChange: setPageSize,
+        }}
         emptyMessage={
           isLoading
             ? "Loading appointments..."
@@ -123,11 +65,13 @@ export default function PatientAppointments() {
               : "No appointments found for this patient."
         }
         toolbar={() => (
-          <PatientAppointmentsToolbar
+          <ProfileAppointmentsToolbar
             search={search}
             setSearch={setSearch}
             status={status}
             setStatus={setStatus}
+            paymentStatus={paymentStatus}
+            setPaymentStatus={setPaymentStatus}
             dateRange={dateRange}
             setDateRange={setDateRange}
             exactDate={exactDate}
@@ -147,7 +91,7 @@ export default function PatientAppointments() {
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => setLoadAttempt((attempt) => attempt + 1)}
+            onClick={retryLoad}
           >
             Try again
           </Button>

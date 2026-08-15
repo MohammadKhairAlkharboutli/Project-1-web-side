@@ -311,7 +311,7 @@ export default function AdminQueuePage() {
         ? "Loading queue..."
         : selectedView === "active"
           ? "No active queue entries for this doctor and clinic."
-          : "No queue history for this doctor and clinic.";
+          : "No completed or skipped entries for this doctor and clinic today.";
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6">

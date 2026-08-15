@@ -11,7 +11,7 @@ import {
   isCompletedAppointment,
 } from "./appointmentUtils";
 
-export default function AppointmentDetailsPage({ appointment }) {
+export default function AppointmentDetailsPage({ appointment, headerActions }) {
   if (!appointment) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
@@ -39,6 +39,9 @@ export default function AppointmentDetailsPage({ appointment }) {
             {getAppointmentTimePositionLabel(appointment)}
           </p>
         </div>
+        {headerActions ? (
+          <div className="flex shrink-0 flex-wrap gap-2">{headerActions}</div>
+        ) : null}
       </div>
 
       {isCompletedAppointment(appointment) ? (

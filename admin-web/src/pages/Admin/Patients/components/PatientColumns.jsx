@@ -6,6 +6,7 @@ import {
   formatEnumLabel,
   formatPatientStatus,
   getPatientDisplayName,
+  getPatientStatusBadgeClassName,
 } from "../patientUtils";
 
 export function getPatientColumns(onViewPatient) {
@@ -69,7 +70,10 @@ export function getPatientColumns(onViewPatient) {
         const status = row.original.user?.status;
 
         return (
-          <Badge variant={status === "ACTIVE" ? "default" : "secondary"}>
+          <Badge
+            variant="outline"
+            className={getPatientStatusBadgeClassName(status)}
+          >
             {formatPatientStatus(status)}
           </Badge>
         );

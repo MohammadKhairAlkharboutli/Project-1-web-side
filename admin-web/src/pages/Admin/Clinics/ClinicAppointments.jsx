@@ -1,18 +1,44 @@
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useOutletContext, useSearchParams } from "react-router-dom";
 
+import { doctorsApi } from "@/api/doctorsApi";
 import DataTable from "@/components/shared/DataTable";
-import { getUniqueAppointmentsById } from "@/components/shared/Appointments/appointmentFilters";
+import ProfileAppointmentsToolbar from "@/components/shared/Appointments/ProfileAppointmentsToolbar";
 import { useAdminAppointments } from "@/hooks/useAdminAppointments";
 
 import { getClinicAppointmentColumns } from "./components/ClinicAppointmentColumns";
-import ClinicAppointmentsToolbar from "./components/ClinicAppointmentsToolbar";
+import AsyncAppointmentEntityFilter from "../Appointments/components/AsyncAppointmentEntityFilter";
+
+function getDoctorOption(doctor) {
+  const name =
+    doctor?.user?.fullName ||
+    doctor?.user?.full_name ||
+    [doctor?.user?.firstName, doctor?.user?.fatherName, doctor?.user?.lastName]
+      .filter(Boolean)
+      .join(" ");
+
+  return {
+    id: Number(doctor?.id),
+    label: name || `Doctor #${doctor?.id}`,
+    description: doctor?.specialization || null,
+  };
+}
 
 export default function ClinicAppointments() {
   const { clinic } = useOutletContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const doctorIdParam = searchParams.get("doctorId");
-  const activeDoctorId = doctorIdParam ?? "all";
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const activeSelectedDoctor =
+    doctorIdParam && Number(selectedDoctor?.id) === Number(doctorIdParam)
+      ? selectedDoctor
+      : doctorIdParam
+        ? {
+            id: Number(doctorIdParam),
+            label: `Doctor #${doctorIdParam}`,
+            description: null,
+          }
+        : null;
   const baseFilters = useMemo(
     () => ({
       clinicId: clinic.id,
@@ -27,6 +53,7 @@ export default function ClinicAppointments() {
     limit,
     search,
     status,
+    paymentStatus,
     dateRange,
     exactDate,
     isLoading,
@@ -35,26 +62,80 @@ export default function ClinicAppointments() {
     setPageSize,
     setSearch,
     setStatus,
+    setPaymentStatus,
     setDateRange,
     setExactDate,
     resetFilters: resetAppointmentFilters,
     retryLoad,
   } = useAdminAppointments(baseFilters);
 
-  function handleDoctorChange(doctorId) {
-    setPage(1);
-
-    if (doctorId === "all") {
-      setSearchParams({});
-      return;
+  useEffect(() => {
+    if (!doctorIdParam) {
+      return undefined;
     }
 
-    setSearchParams({ doctorId });
+    let isCurrent = true;
+
+    async function loadSelectedDoctor() {
+      try {
+        const doctor = await doctorsApi.getDoctor(doctorIdParam);
+
+        if (isCurrent) {
+          setSelectedDoctor(getDoctorOption(doctor));
+        }
+      } catch {
+        if (isCurrent) {
+          setSelectedDoctor({
+            id: Number(doctorIdParam),
+            label: `Doctor #${doctorIdParam}`,
+            description: null,
+          });
+        }
+      }
+    }
+
+    loadSelectedDoctor();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [doctorIdParam]);
+
+  const loadDoctorOptions = useCallback(
+    async (searchTerm) => {
+      const response = await doctorsApi.getAdminDoctors({
+        page: 1,
+        limit: 25,
+        clinicId: clinic.id,
+        ...(searchTerm ? { search: searchTerm } : {}),
+      });
+
+      return response.data.map(getDoctorOption);
+    },
+    [clinic.id],
+  );
+
+  function handleDoctorChange(option) {
+    setSelectedDoctor(option);
+    setPage(1);
+
+    const nextParams = new URLSearchParams(searchParams);
+
+    if (option) {
+      nextParams.set("doctorId", String(option.id));
+    } else {
+      nextParams.delete("doctorId");
+    }
+
+    setSearchParams(nextParams);
   }
 
   function resetFilters() {
     resetAppointmentFilters();
-    setSearchParams({});
+    setSelectedDoctor(null);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("doctorId");
+    setSearchParams(nextParams);
   }
 
   return (
@@ -90,21 +171,25 @@ export default function ClinicAppointments() {
               : "No appointments found for this clinic."
         }
         toolbar={() => (
-          <ClinicAppointmentsToolbar
+          <ProfileAppointmentsToolbar
             search={search}
             setSearch={setSearch}
             status={status}
             setStatus={setStatus}
+            paymentStatus={paymentStatus}
+            setPaymentStatus={setPaymentStatus}
             dateRange={dateRange}
             setDateRange={setDateRange}
             exactDate={exactDate}
             setExactDate={setExactDate}
-            doctorId={activeDoctorId}
-            setDoctorId={handleDoctorChange}
-            doctorOptions={getUniqueAppointmentsById(
-              appointments,
-              "doctorId",
-            )}
+            leadingFilters={
+              <AsyncAppointmentEntityFilter
+                label="Doctor"
+                selectedOption={activeSelectedDoctor}
+                onSelect={handleDoctorChange}
+                loadOptions={loadDoctorOptions}
+              />
+            }
             onResetFilters={resetFilters}
           />
         )}

@@ -1,4 +1,4 @@
-import { Clock3, History, RefreshCw } from "lucide-react";
+import { Clock3, ListChecks, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,9 +17,9 @@ const VIEW_OPTIONS = [
   },
   {
     value: "history",
-    label: "History",
-    description: "Done or skipped",
-    icon: History,
+    label: "Today’s activity",
+    description: "Completed or skipped today",
+    icon: ListChecks,
   },
 ];
 
@@ -43,6 +43,7 @@ export default function AdminQueueToolbar({
           <label className="space-y-1.5 text-sm font-medium text-slate-700">
             <span>Clinic</span>
             <NativeSelect
+              appearance="filter"
               className="w-full"
               value={selectedClinicId}
               onChange={(event) => onClinicChange(event.target.value)}
@@ -60,6 +61,7 @@ export default function AdminQueueToolbar({
           <label className="space-y-1.5 text-sm font-medium text-slate-700">
             <span>Doctor</span>
             <NativeSelect
+              appearance="filter"
               className="w-full"
               value={selectedDoctorId}
               onChange={(event) => onDoctorChange(event.target.value)}
@@ -119,6 +121,7 @@ export default function AdminQueueToolbar({
           <Button
             type="button"
             variant="outline"
+            appearance="filter"
             onClick={onRefresh}
             disabled={loading || !selectedClinicId || !selectedDoctorId}
           >

@@ -15,6 +15,7 @@ export default function PatientsTableToolbar({
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <Input
+        appearance="filter"
         placeholder="Search patients..."
         value={search}
         onChange={(event) => setSearch(event.target.value)}
@@ -23,15 +24,17 @@ export default function PatientsTableToolbar({
 
       <div className="flex flex-wrap gap-2">
         <NativeSelect
+          appearance="filter"
           className="w-[160px]"
           value={status}
           onChange={(event) => setStatus(event.target.value)}
         >
           <NativeSelectOption value="all">All statuses</NativeSelectOption>
-          <NativeSelectOption value="ACTIVE">Active</NativeSelectOption>
-          <NativeSelectOption value="INACTIVE">Inactive</NativeSelectOption>
+          <NativeSelectOption value="active">Active</NativeSelectOption>
+          <NativeSelectOption value="inactive">Inactive</NativeSelectOption>
+          <NativeSelectOption value="suspended">Suspended</NativeSelectOption>
         </NativeSelect>
-        <Button type="button" variant="outline" onClick={onResetFilters}>
+        <Button type="button" variant="outline" appearance="filter" onClick={onResetFilters}>
           Reset filters
         </Button>
       </div>

@@ -15,6 +15,10 @@ export default function DoctorProfileNav({ doctorId }) {
       label: "Appointments",
       to: `/admin/doctors/${doctorId}/appointments`,
     },
+    {
+      label: "Leaves",
+      to: `/admin/doctors/${doctorId}/leaves`,
+    },
   ];
 
   return (

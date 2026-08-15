@@ -1,23 +1,25 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
+import { adminPatientsApi } from "@/api/adminPatientsApi";
+import { clinicsApi } from "@/api/clinicsApi";
+import { doctorsApi } from "@/api/doctorsApi";
 import DataTable from "@/components/shared/DataTable";
-import { getUniqueAppointmentsById } from "@/components/shared/Appointments/appointmentFilters";
 import { useAdminAppointments } from "@/hooks/useAdminAppointments";
 
 import { getAdminAppointmentColumns } from "./components/AdminAppointmentColumns";
 import AdminAppointmentsToolbar from "./components/AdminAppointmentsToolbar";
 
 export default function AdminAppointmentsPage() {
-  const [selectedDoctorId, setSelectedDoctorId] = useState("all");
-  const [selectedPatientId, setSelectedPatientId] = useState("all");
-  const [selectedClinicId, setSelectedClinicId] = useState("all");
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [selectedClinic, setSelectedClinic] = useState(null);
   const baseFilters = useMemo(
     () => ({
-      ...(selectedDoctorId !== "all" ? { doctorId: selectedDoctorId } : {}),
-      ...(selectedPatientId !== "all" ? { patientId: selectedPatientId } : {}),
-      ...(selectedClinicId !== "all" ? { clinicId: selectedClinicId } : {}),
+      ...(selectedDoctor ? { doctorId: selectedDoctor.id } : {}),
+      ...(selectedPatient ? { patientId: selectedPatient.id } : {}),
+      ...(selectedClinic ? { clinicId: selectedClinic.id } : {}),
     }),
-    [selectedClinicId, selectedDoctorId, selectedPatientId],
+    [selectedClinic, selectedDoctor, selectedPatient],
   );
   const {
     appointments,
@@ -26,6 +28,7 @@ export default function AdminAppointmentsPage() {
     limit,
     search,
     status,
+    paymentStatus,
     dateRange,
     exactDate,
     isLoading,
@@ -34,32 +37,80 @@ export default function AdminAppointmentsPage() {
     setPageSize,
     setSearch,
     setStatus,
+    setPaymentStatus,
     setDateRange,
     setExactDate,
     resetFilters: resetAppointmentFilters,
     retryLoad,
   } = useAdminAppointments(baseFilters);
 
-  function updateDoctorFilter(value) {
-    setSelectedDoctorId(value);
+  const loadDoctorOptions = useCallback(
+    async (searchTerm) => {
+      const response = await doctorsApi.getAdminDoctors({
+        page: 1,
+        limit: 25,
+        ...(searchTerm ? { search: searchTerm } : {}),
+        ...(selectedClinic ? { clinicId: selectedClinic.id } : {}),
+      });
+
+      return response.data.map((doctor) => ({
+        id: doctor.id,
+        label: doctor.user?.fullName || `Doctor #${doctor.id}`,
+        description: doctor.specialization || null,
+      }));
+    },
+    [selectedClinic],
+  );
+
+  const loadPatientOptions = useCallback(async (searchTerm) => {
+    const response = await adminPatientsApi.getPatients({
+      page: 1,
+      limit: 25,
+      ...(searchTerm ? { search: searchTerm } : {}),
+    });
+
+    return response.data.map((patient) => ({
+      id: patient.id,
+      label: patient.user?.fullName || `Patient #${patient.id}`,
+      description: patient.user?.email || patient.user?.phone || null,
+    }));
+  }, []);
+
+  const loadClinicOptions = useCallback(async (searchTerm) => {
+    const response = await clinicsApi.getAdminClinics({
+      page: 1,
+      limit: 25,
+      ...(searchTerm ? { search: searchTerm } : {}),
+    });
+
+    return response.data.map((clinic) => ({
+      id: Number(clinic.id),
+      label: clinic.name || `Clinic #${clinic.id}`,
+      description: clinic.location || null,
+    }));
+  }, []);
+
+  function updateDoctorFilter(option) {
+    setSelectedDoctor(option);
     setPage(1);
   }
 
-  function updatePatientFilter(value) {
-    setSelectedPatientId(value);
+  function updatePatientFilter(option) {
+    setSelectedPatient(option);
     setPage(1);
   }
 
-  function updateClinicFilter(value) {
-    setSelectedClinicId(value);
+  function updateClinicFilter(option) {
+    setSelectedClinic(option);
+    setSelectedDoctor(null);
     setPage(1);
   }
 
   function resetFilters() {
     resetAppointmentFilters();
-    setSelectedDoctorId("all");
-    setSelectedPatientId("all");
-    setSelectedClinicId("all");
+    setSelectedDoctor(null);
+    setSelectedPatient(null);
+    setSelectedClinic(null);
   }
 
   return (
@@ -100,19 +151,21 @@ export default function AdminAppointmentsPage() {
             setSearch={setSearch}
             status={status}
             setStatus={setStatus}
+            paymentStatus={paymentStatus}
+            setPaymentStatus={setPaymentStatus}
             dateRange={dateRange}
             setDateRange={setDateRange}
             exactDate={exactDate}
             setExactDate={setExactDate}
-            doctorId={selectedDoctorId}
-            setDoctorId={updateDoctorFilter}
-            patientId={selectedPatientId}
-            setPatientId={updatePatientFilter}
-            clinicId={selectedClinicId}
-            setClinicId={updateClinicFilter}
-            doctorOptions={getUniqueAppointmentsById(appointments, "doctorId")}
-            patientOptions={getUniqueAppointmentsById(appointments, "patientId")}
-            clinicOptions={getUniqueAppointmentsById(appointments, "clinicId")}
+            selectedDoctor={selectedDoctor}
+            setSelectedDoctor={updateDoctorFilter}
+            loadDoctorOptions={loadDoctorOptions}
+            selectedPatient={selectedPatient}
+            setSelectedPatient={updatePatientFilter}
+            loadPatientOptions={loadPatientOptions}
+            selectedClinic={selectedClinic}
+            setSelectedClinic={updateClinicFilter}
+            loadClinicOptions={loadClinicOptions}
             onResetFilters={resetFilters}
           />
         )}

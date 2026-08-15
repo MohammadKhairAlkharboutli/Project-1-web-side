@@ -21,6 +21,7 @@ export default function DoctorsTableToolbar({
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <Input
+        appearance="filter"
         placeholder="Search doctors..."
         value={search}
         onChange={(event) => setSearch(event.target.value)}
@@ -29,6 +30,7 @@ export default function DoctorsTableToolbar({
 
       <div className="flex flex-wrap gap-2">
         <NativeSelect
+          appearance="filter"
           className="w-[150px]"
           value={status}
           onChange={(event) => setStatus(event.target.value)}
@@ -36,10 +38,10 @@ export default function DoctorsTableToolbar({
           <NativeSelectOption value="all">All statuses</NativeSelectOption>
           <NativeSelectOption value="active">Active</NativeSelectOption>
           <NativeSelectOption value="inactive">Inactive</NativeSelectOption>
-          <NativeSelectOption value="on_vacation">On vacation</NativeSelectOption>
         </NativeSelect>
 
         <NativeSelect
+          appearance="filter"
           className="w-[200px]"
           value={clinicId}
           onChange={(event) => setClinicId(event.target.value)}
@@ -56,6 +58,7 @@ export default function DoctorsTableToolbar({
         </NativeSelect>
 
         <Input
+          appearance="filter"
           placeholder="Specialization..."
           value={specialization}
           onChange={(event) => setSpecialization(event.target.value)}
@@ -63,7 +66,7 @@ export default function DoctorsTableToolbar({
           aria-label="Filter by specialization"
         />
 
-        <Button type="button" variant="outline" onClick={onResetFilters}>
+        <Button type="button" variant="outline" appearance="filter" onClick={onResetFilters}>
           Reset filters
         </Button>
       </div>

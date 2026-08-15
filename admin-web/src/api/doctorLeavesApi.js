@@ -8,6 +8,13 @@ export const doctorLeavesApi = {
     return data;
   },
 
+  async getAdminLeaves(filters = {}) {
+    const { data } = await axiosClient.get("/doctor-leaves/admin", {
+      params: filters,
+    });
+    return Array.isArray(data) ? data : [];
+  },
+
   async createLeave(payload) {
     const { data } = await axiosClient.post("/doctor-leaves", payload);
     return data;

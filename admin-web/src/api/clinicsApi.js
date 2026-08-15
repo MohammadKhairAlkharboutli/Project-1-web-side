@@ -6,6 +6,19 @@ export const clinicsApi = {
     return data;
   },
 
+  async getAdminClinics(filters = {}) {
+    const { data } = await axiosClient.get("/clinics/admin", {
+      params: filters,
+    });
+
+    return {
+      data: Array.isArray(data?.data) ? data.data : [],
+      total: Number(data?.total ?? 0),
+      page: Number(data?.page ?? filters.page ?? 1),
+      limit: Number(data?.limit ?? filters.limit ?? 10),
+    };
+  },
+
   async getClinic(clinicId) {
     const { data } = await axiosClient.get(`/clinics/${clinicId}`);
     return data;

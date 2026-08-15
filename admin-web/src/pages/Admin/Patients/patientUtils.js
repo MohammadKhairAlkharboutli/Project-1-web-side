@@ -34,6 +34,17 @@ export function formatPatientStatus(status) {
     .join(" ");
 }
 
+export function getPatientStatusBadgeClassName(status) {
+  switch (String(status || "").toLowerCase()) {
+    case "active":
+      return "border-emerald-200 bg-emerald-50 text-emerald-700";
+    case "suspended":
+      return "border-red-200 bg-red-50 text-red-700";
+    default:
+      return "border-slate-200 bg-slate-100 text-slate-600";
+  }
+}
+
 export function formatEnumLabel(value) {
   if (!value) {
     return "N/A";

@@ -1,18 +1,17 @@
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   NativeSelect,
   NativeSelectOption,
 } from "@/components/ui/native-select";
+
 import {
   ADMIN_APPOINTMENT_DATE_RANGE_OPTIONS,
   APPOINTMENT_STATUS_OPTIONS,
   PAYMENT_STATUS_OPTIONS,
-} from "@/components/shared/Appointments/appointmentUtils";
+} from "./appointmentUtils";
 
-import AsyncAppointmentEntityFilter from "./AsyncAppointmentEntityFilter";
-
-export default function AdminAppointmentsToolbar({
+export default function ProfileAppointmentsToolbar({
   search,
   setSearch,
   status,
@@ -23,50 +22,25 @@ export default function AdminAppointmentsToolbar({
   setDateRange,
   exactDate,
   setExactDate,
-  selectedDoctor,
-  setSelectedDoctor,
-  loadDoctorOptions,
-  selectedPatient,
-  setSelectedPatient,
-  loadPatientOptions,
-  selectedClinic,
-  setSelectedClinic,
-  loadClinicOptions,
+  leadingFilters,
   onResetFilters,
 }) {
   return (
     <div className="space-y-3">
       <Input
+        appearance="filter"
         placeholder="Search by appointment ID, patient, doctor, clinic, phone..."
         value={search}
         onChange={(event) => setSearch(event.target.value)}
-        className="h-10 max-w-sm border-slate-300 bg-white shadow-sm placeholder:text-slate-400"
+        className="max-w-sm"
       />
 
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
-        <AsyncAppointmentEntityFilter
-          label="Clinic"
-          selectedOption={selectedClinic}
-          onSelect={setSelectedClinic}
-          loadOptions={loadClinicOptions}
-        />
-
-        <AsyncAppointmentEntityFilter
-          label="Doctor"
-          selectedOption={selectedDoctor}
-          onSelect={setSelectedDoctor}
-          loadOptions={loadDoctorOptions}
-        />
-
-        <AsyncAppointmentEntityFilter
-          label="Patient"
-          selectedOption={selectedPatient}
-          onSelect={setSelectedPatient}
-          loadOptions={loadPatientOptions}
-        />
+        {leadingFilters}
 
         <NativeSelect
-          className="w-full sm:w-40 [&_select]:h-10 [&_select]:rounded-md [&_select]:border-slate-300 [&_select]:bg-white [&_select]:px-3 [&_select]:text-slate-900 [&_select]:shadow-sm [&_select]:hover:border-slate-400"
+          appearance="filter"
+          className="w-full sm:w-40"
           value={status}
           onChange={(event) => setStatus(event.target.value)}
         >
@@ -78,7 +52,8 @@ export default function AdminAppointmentsToolbar({
         </NativeSelect>
 
         <NativeSelect
-          className="w-full sm:w-44 [&_select]:h-10 [&_select]:rounded-md [&_select]:border-slate-300 [&_select]:bg-white [&_select]:px-3 [&_select]:text-slate-900 [&_select]:shadow-sm [&_select]:hover:border-slate-400"
+          appearance="filter"
+          className="w-full sm:w-44"
           value={paymentStatus}
           onChange={(event) => setPaymentStatus(event.target.value)}
         >
@@ -90,7 +65,8 @@ export default function AdminAppointmentsToolbar({
         </NativeSelect>
 
         <NativeSelect
-          className="w-full sm:w-40 [&_select]:h-10 [&_select]:rounded-md [&_select]:border-slate-300 [&_select]:bg-white [&_select]:px-3 [&_select]:text-slate-900 [&_select]:shadow-sm [&_select]:hover:border-slate-400"
+          appearance="filter"
+          className="w-full sm:w-40"
           value={dateRange}
           onChange={(event) => setDateRange(event.target.value)}
         >
@@ -104,18 +80,15 @@ export default function AdminAppointmentsToolbar({
         <label className="w-full text-xs font-medium text-slate-600 sm:w-40">
           Specific date
           <Input
+            appearance="filter"
             type="date"
             value={exactDate}
             onChange={(event) => setExactDate(event.target.value)}
-            className="mt-1 h-10 w-full border-slate-300 bg-white shadow-sm"
+            className="mt-1 w-full"
           />
         </label>
 
-        <Button
-          variant="outline"
-          className="h-10 rounded-md border-slate-300 bg-white px-3 text-slate-700 shadow-sm hover:border-slate-400 hover:bg-slate-50"
-          onClick={onResetFilters}
-        >
+        <Button variant="outline" appearance="filter" onClick={onResetFilters}>
           Reset filters
         </Button>
       </div>
