@@ -1,6 +1,6 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import { AlertCircle, CheckCircle2, Sliders } from "lucide-react";
+import { AlertCircle, Camera, CheckCircle2, LoaderCircle, Sliders, Trash2 } from "lucide-react";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 
 import {
@@ -117,8 +117,19 @@ function FieldError({ error }) {
   return error ? <p className="mt-1.5 text-xs font-medium text-rose-600">{error.message}</p> : null;
 }
 
-function DoctorViewProfile({ doctor, onEditClick, completionStatus }) {
+function DoctorViewProfile({
+  doctor,
+  avatarUrl,
+  onAvatarSelect,
+  onAvatarRemove,
+  avatarError,
+  isUploadingAvatar,
+  isRemovingAvatar,
+  onEditClick,
+  completionStatus,
+}) {
   const { locale } = useDoctorLocale();
+  const fileInputRef = useRef(null);
   const [profileLookups, setProfileLookups] = useState([]);
   useEffect(() => {
     let active = true;
@@ -181,13 +192,20 @@ function DoctorViewProfile({ doctor, onEditClick, completionStatus }) {
         <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:text-left">
           <div className="relative shrink-0">
             <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] p-1 text-3xl font-black text-white shadow-md sm:h-32 sm:w-32">
-              {doctor?.user?.avatarUrl ? (
-                <img src={doctor.user.avatarUrl} alt={fullName} className="h-full w-full rounded-xl object-cover" />
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={fullName} className="h-full w-full rounded-xl object-cover" />
               ) : (
                 initials || "D"
               )}
             </div>
             <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-white bg-emerald-500 shadow-xs" />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png"
+              className="hidden"
+              onChange={onAvatarSelect}
+            />
           </div>
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 rounded-md border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-bold tracking-wide text-[#1e61dc]">
@@ -198,6 +216,29 @@ function DoctorViewProfile({ doctor, onEditClick, completionStatus }) {
             <p className="text-sm font-medium text-slate-500">
               {doctor?.subSpecialization ? getLookupLabel(subSpecializationLookup || { value: doctor.subSpecialization }, locale) : "Clinical Operations & Patient Services"}
             </p>
+            <div className="flex flex-wrap justify-center gap-2 pt-1 sm:justify-start">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingAvatar || isRemovingAvatar}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isUploadingAvatar ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+                {doctor?.user?.avatarUrl ? "Change photo" : "Upload photo"}
+              </button>
+              {doctor?.user?.avatarUrl ? (
+                <button
+                  type="button"
+                  onClick={onAvatarRemove}
+                  disabled={isUploadingAvatar || isRemovingAvatar}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isRemovingAvatar ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                  Remove photo
+                </button>
+              ) : null}
+            </div>
+            {avatarError ? <p className="text-xs font-medium text-rose-600" role="alert">{avatarError}</p> : null}
           </div>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-3 border-t border-slate-100 pt-6 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
@@ -300,7 +341,89 @@ function Tariff({ label, value, primary = false }) {
   );
 }
 
-function DoctorEditProfile({ initialData, onSaveSuccess, onCancel }) {
+function ProfilePhotoField({
+  doctor,
+  avatarUrl,
+  onAvatarSelect,
+  onAvatarRemove,
+  avatarError,
+  isUploadingAvatar,
+  isRemovingAvatar,
+}) {
+  const fileInputRef = useRef(null);
+  const fullName = doctor?.user?.full_name || "Doctor";
+  const initials = fullName
+    .replace(/^Dr\.?\s+/i, "")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase() || "D";
+  const hasAvatar = Boolean(doctor?.user?.avatarUrl);
+
+  return (
+    <ProfileFormSection
+      title="Profile photo"
+      description="Optional. Use a clear professional photo so patients can recognize you."
+    >
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] p-1 text-xl font-black text-white shadow-md">
+          {avatarUrl ? (
+            <img src={avatarUrl} alt={fullName} className="h-full w-full rounded-xl object-cover" />
+          ) : (
+            initials
+          )}
+        </div>
+        <div className="space-y-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png"
+            className="hidden"
+            onChange={onAvatarSelect}
+          />
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploadingAvatar || isRemovingAvatar}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isUploadingAvatar ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+              {hasAvatar ? "Change photo" : "Upload photo"}
+            </button>
+            {hasAvatar ? (
+              <button
+                type="button"
+                onClick={onAvatarRemove}
+                disabled={isUploadingAvatar || isRemovingAvatar}
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isRemovingAvatar ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                Remove photo
+              </button>
+            ) : null}
+          </div>
+          <p className="text-xs text-slate-500">JPG or PNG, up to 5 MB.</p>
+          {avatarError ? <p className="text-xs font-medium text-rose-600" role="alert">{avatarError}</p> : null}
+        </div>
+      </div>
+    </ProfileFormSection>
+  );
+}
+
+function DoctorEditProfile({
+  initialData,
+  avatarUrl,
+  onAvatarSelect,
+  onAvatarRemove,
+  avatarError,
+  isUploadingAvatar,
+  isRemovingAvatar,
+  onSaveSuccess,
+  onCancel,
+}) {
   const { locale } = useDoctorLocale();
   const {
     register,
@@ -408,6 +531,16 @@ function DoctorEditProfile({ initialData, onSaveSuccess, onCancel }) {
 
       {saveError && <p className="rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-xs font-medium text-rose-700">{saveError}</p>}
 
+      <ProfilePhotoField
+        doctor={initialData}
+        avatarUrl={avatarUrl}
+        onAvatarSelect={onAvatarSelect}
+        onAvatarRemove={onAvatarRemove}
+        avatarError={avatarError}
+        isUploadingAvatar={isUploadingAvatar}
+        isRemovingAvatar={isRemovingAvatar}
+      />
+
       <ProfileFormSection title="Personal information" description="Required to complete your account profile.">
         <div className="grid grid-cols-1 gap-4 text-xs sm:grid-cols-2">
           <FormField label="Gender" error={errors.gender}>
@@ -513,7 +646,12 @@ export default function DoctorProfileContainer() {
   const { direction } = useDoctorLocale();
   const location = useLocation();
   const navigate = useNavigate();
-  const { refreshDoctorShell } = useOutletContext();
+  const {
+    refreshDoctorShell,
+    avatarUrl,
+    uploadAvatar,
+    removeAvatar,
+  } = useOutletContext();
   const completionContext = useContext(DoctorProfileCompletionContext);
   const clinicAssignmentContext = useContext(DoctorClinicAssignmentContext);
   const completionRequired = Boolean(location.state?.completionRequired);
@@ -521,6 +659,9 @@ export default function DoctorProfileContainer() {
   const [doctorCompletionStatus, setDoctorCompletionStatus] = useState(null);
   const [isEditing, setIsEditing] = useState(completionRequired);
   const [loadState, setLoadState] = useState({ status: "loading", error: "" });
+  const [avatarError, setAvatarError] = useState("");
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isRemovingAvatar, setIsRemovingAvatar] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -558,6 +699,55 @@ export default function DoctorProfileContainer() {
     };
   }, []);
 
+  async function handleAvatarSelect(event) {
+    const [file] = event.target.files ?? [];
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    if (!["image/jpeg", "image/png"].includes(file.type)) {
+      setAvatarError("Choose a JPG or PNG image for your profile photo.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError("Choose an image smaller than 5 MB.");
+      return;
+    }
+
+    setAvatarError("");
+    setIsUploadingAvatar(true);
+
+    try {
+      const updatedUser = await uploadAvatar(file);
+      setDoctorData((current) => current
+        ? { ...current, user: { ...current.user, avatarUrl: updatedUser.avatarUrl ?? current.user?.avatarUrl } }
+        : current);
+    } catch (error) {
+      setAvatarError(getErrorMessage(error, "We could not update your profile photo."));
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  }
+
+  async function handleAvatarRemove() {
+    setAvatarError("");
+    setIsRemovingAvatar(true);
+
+    try {
+      await removeAvatar();
+      setDoctorData((current) => current
+        ? { ...current, user: { ...current.user, avatarUrl: null } }
+        : current);
+    } catch (error) {
+      setAvatarError(getErrorMessage(error, "We could not remove your profile photo."));
+    } finally {
+      setIsRemovingAvatar(false);
+    }
+  }
+
   if (loadState.status === "loading") {
     return <div className="flex min-h-full items-center justify-center p-8 text-sm font-medium text-slate-500">Loading your profile…</div>;
   }
@@ -593,6 +783,12 @@ export default function DoctorProfileContainer() {
         {isEditing ? (
           <DoctorEditProfile
             initialData={doctorData}
+            avatarUrl={avatarUrl}
+            onAvatarSelect={handleAvatarSelect}
+            onAvatarRemove={handleAvatarRemove}
+            avatarError={avatarError}
+            isUploadingAvatar={isUploadingAvatar}
+            isRemovingAvatar={isRemovingAvatar}
             onSaveSuccess={async (updatedProfile, serverCompletionStatus) => {
               setDoctorData((currentProfile) => ({
                 ...updatedProfile,
@@ -610,7 +806,17 @@ export default function DoctorProfileContainer() {
             onCancel={() => setIsEditing(false)}
           />
         ) : (
-          <DoctorViewProfile doctor={doctorData} completionStatus={completionStatus} onEditClick={() => setIsEditing(true)} />
+          <DoctorViewProfile
+            doctor={doctorData}
+            avatarUrl={avatarUrl}
+            onAvatarSelect={handleAvatarSelect}
+            onAvatarRemove={handleAvatarRemove}
+            avatarError={avatarError}
+            isUploadingAvatar={isUploadingAvatar}
+            isRemovingAvatar={isRemovingAvatar}
+            completionStatus={completionStatus}
+            onEditClick={() => setIsEditing(true)}
+          />
         )}
       </div>
     </div>

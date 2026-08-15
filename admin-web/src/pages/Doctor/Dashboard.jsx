@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import {
   ArrowUpRight,
   CalendarDays,
@@ -71,13 +71,13 @@ function getInitials(fullName) {
     .toUpperCase();
 }
 
-function DoctorAvatar({ doctor }) {
+function DoctorAvatar({ doctor, avatarUrl }) {
   const [imageFailed, setImageFailed] = useState(false);
 
-  if (doctor.avatarUrl && !imageFailed) {
+  if (avatarUrl && !imageFailed) {
     return (
       <img
-        src={doctor.avatarUrl}
+        src={avatarUrl}
         alt=""
         className="h-11 w-11 shrink-0 rounded-xl object-cover"
         onError={() => setImageFailed(true)}
@@ -134,6 +134,7 @@ function DashboardError({ message, onRetry }) {
 }
 
 export default function DoctorDashboard() {
+  const { avatarUrl } = useOutletContext();
   const [dashboard, setDashboard] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -222,7 +223,7 @@ export default function DoctorDashboard() {
 
           <div className="flex flex-col justify-between rounded-[22px] border border-slate-100 bg-white px-5 py-4 shadow-xs lg:col-span-4">
             <div className="flex items-center gap-3.5">
-              <DoctorAvatar doctor={doctor} />
+              <DoctorAvatar doctor={doctor} avatarUrl={avatarUrl} />
               <div className="min-w-0 flex-1">
                 <h2 className="truncate text-xs font-extrabold text-slate-900">
                   {doctor.fullName || "Doctor"}

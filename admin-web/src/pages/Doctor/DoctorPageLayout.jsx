@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   CalendarDays,
@@ -25,6 +25,7 @@ import {
 import { cn } from "@/lib/utils";
 import { authApi } from "@/api/authApi";
 import { doctorsApi } from "@/api/doctorsApi";
+import { userAvatarApi } from "@/api/userAvatarApi";
 import { DoctorLocaleProvider, useDoctorLocale } from "@/context/DoctorLocaleContext";
 
 const doctorNavItems = [
@@ -50,15 +51,51 @@ function DoctorPageLayoutContent() {
   } : {};
   const label = (value) => labels[value] || value;
   const [doctor, setDoctor] = useState(null);
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  const avatarObjectUrlRef = useRef(null);
+
+  const clearAvatarUrl = useCallback(() => {
+    if (avatarObjectUrlRef.current) {
+      URL.revokeObjectURL(avatarObjectUrlRef.current);
+      avatarObjectUrlRef.current = null;
+    }
+
+    setAvatarUrl(null);
+  }, [avatarObjectUrlRef]);
+
+  const loadAvatar = useCallback(async (profile) => {
+    clearAvatarUrl();
+
+    const storedAvatarUrl = profile?.user?.avatarUrl;
+    if (!storedAvatarUrl) {
+      return;
+    }
+
+    try {
+      const nextAvatarUrl = await userAvatarApi.getObjectUrl();
+      avatarObjectUrlRef.current = nextAvatarUrl;
+      setAvatarUrl(nextAvatarUrl);
+    } catch {
+      // Legacy Google accounts store an external URL. Uploaded avatars always
+      // use the authenticated blob request above.
+      if (/^https:\/\//i.test(storedAvatarUrl)) {
+        setAvatarUrl(storedAvatarUrl);
+      }
+    }
+  }, [avatarObjectUrlRef, clearAvatarUrl]);
 
   const refreshDoctorShell = useCallback(async () => {
     try {
       const { profile } = await doctorsApi.getOwnProfile();
       setDoctor(profile);
+      await loadAvatar(profile);
+      return profile;
     } catch {
       setDoctor(null);
+      clearAvatarUrl();
+      return null;
     }
-  }, []);
+  }, [clearAvatarUrl, loadAvatar]);
 
   useEffect(() => {
     let isMounted = true;
@@ -66,12 +103,17 @@ function DoctorPageLayoutContent() {
     async function loadInitialDoctor() {
       try {
         const { profile } = await doctorsApi.getOwnProfile();
-        if (isMounted) {
-          setDoctor(profile);
+
+        if (!isMounted) {
+          return;
         }
+
+        setDoctor(profile);
+        await loadAvatar(profile);
       } catch {
         if (isMounted) {
           setDoctor(null);
+          clearAvatarUrl();
         }
       }
     }
@@ -79,8 +121,23 @@ function DoctorPageLayoutContent() {
     loadInitialDoctor();
     return () => {
       isMounted = false;
+      if (avatarObjectUrlRef.current) {
+        URL.revokeObjectURL(avatarObjectUrlRef.current);
+        avatarObjectUrlRef.current = null;
+      }
     };
-  }, []);
+  }, [avatarObjectUrlRef, clearAvatarUrl, loadAvatar]);
+
+  const uploadAvatar = useCallback(async (file) => {
+    const updatedUser = await userAvatarApi.upload(file);
+    await refreshDoctorShell();
+    return updatedUser;
+  }, [refreshDoctorShell]);
+
+  const removeAvatar = useCallback(async () => {
+    await userAvatarApi.remove();
+    await refreshDoctorShell();
+  }, [refreshDoctorShell]);
   
   const doctorName = doctor?.user?.full_name || [doctor?.user?.firstName, doctor?.user?.lastName].filter(Boolean).join(" ") || "Doctor";
   const doctorSpecialty = doctor?.specialization || label("Specialist");
@@ -194,7 +251,7 @@ function DoctorPageLayoutContent() {
                       {doctorName}
                     </span>
                     <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl bg-blue-100 text-xs font-bold text-blue-700">
-                      {doctor?.user?.avatarUrl ? <img src={doctor.user.avatarUrl} alt="" className="h-full w-full object-cover" /> : initials}
+                      {avatarUrl ? <img src={avatarUrl} alt="" className="h-full w-full object-cover" /> : initials}
                     </span>
                     <ChevronDown size={14} className="text-slate-400 mr-1" />
                   </button>
@@ -220,7 +277,12 @@ function DoctorPageLayoutContent() {
           </header>
 
           <main className="flex-1 p-8 sm:p-10 max-w-7xl w-full mx-auto bg-white overflow-y-auto">
-            <Outlet context={{ refreshDoctorShell }} />
+            <Outlet context={{
+              refreshDoctorShell,
+              avatarUrl,
+              uploadAvatar,
+              removeAvatar,
+            }} />
           </main>
 
           <footer className="border-t border-slate-100 bg-white py-4 px-10 text-xs font-semibold text-slate-400 flex justify-between items-center shrink-0">

@@ -1,4 +1,5 @@
 import axiosClient from "./axiosClient";
+import { userAvatarApi } from "./userAvatarApi";
 
 export const adminAccountApi = {
   getCurrentAccount: async () => {
@@ -14,25 +15,14 @@ export const adminAccountApi = {
   },
 
   uploadAvatar: async (file) => {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const { data } = await axiosClient.patch("/users/me/avatar", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-
-    return data;
+    return userAvatarApi.upload(file);
   },
 
   removeAvatar: async () => {
-    await axiosClient.delete("/users/me/avatar");
+    await userAvatarApi.remove();
   },
 
   getAvatar: async () => {
-    const { data } = await axiosClient.get("/users/me/avatar", {
-      responseType: "blob",
-    });
-
-    return URL.createObjectURL(data);
+    return userAvatarApi.getObjectUrl();
   },
 };
