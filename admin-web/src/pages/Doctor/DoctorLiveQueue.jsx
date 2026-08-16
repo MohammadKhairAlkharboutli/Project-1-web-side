@@ -25,6 +25,7 @@ function getStatusBadge(status) {
 export default function DoctorLiveQueue() {
   const navigate = useNavigate();
   const { assignedClinic } = useContext(DoctorClinicAssignmentContext) || {};
+  const assignedClinicId = assignedClinic?.id;
   const [queue, setQueue] = useState([]);
   const [loadState, setLoadState] = useState("loading");
   const [message, setMessage] = useState("");
@@ -35,14 +36,14 @@ export default function DoctorLiveQueue() {
     setLoadState("loading");
     setError("");
     try {
-      const data = await doctorQueueApi.getMyQueue();
+      const data = await doctorQueueApi.getMyQueue(assignedClinicId);
       setQueue(Array.isArray(data) ? data : []);
       setLoadState("ready");
     } catch (requestError) {
       setError(getErrorMessage(requestError, "Unable to load today’s queue."));
       setLoadState("error");
     }
-  }, []);
+  }, [assignedClinicId]);
 
   useEffect(() => {
     const timer = window.setTimeout(loadQueue, 0);

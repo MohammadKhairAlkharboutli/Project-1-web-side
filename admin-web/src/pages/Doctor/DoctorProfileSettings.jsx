@@ -80,9 +80,6 @@ function normalizeDoctorProfile(profile, assignedClinic = null) {
 
 function buildProfileDefaults(doctor) {
   return {
-    fatherName: doctor?.user?.fatherName || "",
-    phone: doctor?.user?.phone || "",
-    address: doctor?.user?.address || "",
     gender: doctor?.user?.gender || "",
     birthDate: asDateInputValue(doctor?.user?.birthDate),
     specialization: doctor?.specialization || "",
@@ -259,7 +256,6 @@ function DoctorViewProfile({
           <ProfileSection title="Account & credentials" subtitle="Metadata">
             <div className="grid grid-cols-1 gap-4 text-xs sm:grid-cols-2">
               <ProfileDetail label="Email address" value={doctor?.user?.email} />
-              <ProfileDetail label="Phone number" value={doctor?.user?.phone} />
               <ProfileDetail label="License ID" value={doctor?.licenseNumber} />
               <ProfileDetail label="Gender" value={formatEnumLabel(doctor?.user?.gender)} />
               <ProfileDetail label="Birth date" value={formatDate(doctor?.user?.birthDate)} />
@@ -268,11 +264,6 @@ function DoctorViewProfile({
             </div>
           </ProfileSection>
 
-          <ProfileSection title="Contact details" subtitle="Account">
-            <div className="rounded-2xl border border-blue-50 bg-blue-50/30 p-5 text-sm leading-relaxed text-slate-600">
-              {doctor?.user?.address || "N/A"}
-            </div>
-          </ProfileSection>
         </div>
 
         <div className="space-y-6">

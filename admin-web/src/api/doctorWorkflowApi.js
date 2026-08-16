@@ -66,8 +66,10 @@ export const doctorPatientsApi = {
 };
 
 export const doctorQueueApi = {
-  async getMyQueue() {
-    const { data } = await axiosClient.get("/queues/doctor/my-queue");
+  async getMyQueue(clinicId) {
+    const { data } = await axiosClient.get("/queues/doctor/my-queue", {
+      ...(clinicId != null ? { params: { clinicId: numericId(clinicId) } } : {}),
+    });
     return data;
   },
 

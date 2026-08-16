@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { AlertCircle, Calendar, CalendarOff, Clock, LoaderCircle, Plus, RefreshCw, Trash2 } from "lucide-react";
@@ -86,6 +86,7 @@ export default function DoctorLeaves() {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [leaveView, setLeaveView] = useState("upcoming");
+  const isApplyingLeaveRef = useRef(false);
   const leaveForm = useForm({ resolver: zodResolver(leaveSchema), defaultValues });
   const isPartial = useWatch({ control: leaveForm.control, name: "isPartial" });
 
@@ -132,6 +133,7 @@ export default function DoctorLeaves() {
   async function createLeave() {
     if (!pendingLeave) return;
     const values = pendingLeave;
+    isApplyingLeaveRef.current = true;
     setPendingLeave(null);
     setIsSaving(true);
     setError("");
@@ -146,6 +148,7 @@ export default function DoctorLeaves() {
       setFormOpen(true);
     } finally {
       setIsSaving(false);
+      isApplyingLeaveRef.current = false;
     }
   }
 
@@ -176,7 +179,7 @@ export default function DoctorLeaves() {
     {loadState === "ready" ? <section className="overflow-hidden rounded-3xl border border-slate-200/60 bg-white shadow-xs"><div className="flex flex-col gap-4 border-b border-slate-100 p-6 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-sm font-bold text-slate-800">{text("Your time-off entries")}</h2><p className="mt-1 text-xs text-slate-500">{upcomingLeaveCount} upcoming {upcomingLeaveCount === 1 ? "entry" : "entries"} · {leaves.length} total</p></div><div className="inline-flex w-fit rounded-xl border border-slate-200 bg-slate-50 p-1" role="tablist" aria-label="Time-off timing"><button type="button" role="tab" aria-selected={leaveView === "upcoming"} onClick={() => setLeaveView("upcoming")} className={`rounded-lg px-3 py-1.5 text-xs font-bold ${leaveView === "upcoming" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}>Upcoming</button><button type="button" role="tab" aria-selected={leaveView === "past"} onClick={() => setLeaveView("past")} className={`rounded-lg px-3 py-1.5 text-xs font-bold ${leaveView === "past" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}>Past</button><button type="button" role="tab" aria-selected={leaveView === "all"} onClick={() => setLeaveView("all")} className={`rounded-lg px-3 py-1.5 text-xs font-bold ${leaveView === "all" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}>All</button></div></div><LeaveTable leaves={visibleLeaves} onDelete={setDeleteTarget} text={text} /></section> : null}
 
     <Dialog open={formOpen} onOpenChange={(open) => { if (!isSaving) setFormOpen(open); }}><DialogContent className="sm:max-w-lg" showCloseButton={!isSaving}><DialogHeader><DialogTitle>Add time off</DialogTitle></DialogHeader><form className="space-y-5 p-5" onSubmit={leaveForm.handleSubmit(prepareCreate)} noValidate><p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">This time off starts as soon as you save it. Appointments that conflict with these hours will be updated, and affected patients will be notified.</p><label className="grid gap-1.5 text-sm font-medium text-slate-700">Exception date<Input type="date" {...leaveForm.register("exceptionDate")} />{leaveForm.formState.errors.exceptionDate ? <span className="text-xs text-rose-600">{leaveForm.formState.errors.exceptionDate.message}</span> : null}</label><label className="flex items-center gap-3 text-sm font-medium text-slate-700"><input type="checkbox" {...leaveForm.register("isPartial")} className="h-4 w-4 rounded border-slate-300 text-blue-600" />Partial time off (specific hours)</label>{isPartial ? <div className="grid gap-4 sm:grid-cols-2"><label className="grid gap-1.5 text-sm font-medium text-slate-700">Start time<Input type="time" {...leaveForm.register("startTime")} />{leaveForm.formState.errors.startTime ? <span className="text-xs text-rose-600">{leaveForm.formState.errors.startTime.message}</span> : null}</label><label className="grid gap-1.5 text-sm font-medium text-slate-700">End time<Input type="time" {...leaveForm.register("endTime")} />{leaveForm.formState.errors.endTime ? <span className="text-xs text-rose-600">{leaveForm.formState.errors.endTime.message}</span> : null}</label></div> : null}<label className="grid gap-1.5 text-sm font-medium text-slate-700">Reason <span className="font-normal text-slate-500">(optional)</span><textarea rows={4} {...leaveForm.register("reason")} placeholder="Reason for time off" className="w-full rounded-xl border border-slate-200 p-3 font-normal outline-none focus:border-blue-500" />{leaveForm.formState.errors.reason ? <span className="text-xs text-rose-600">{leaveForm.formState.errors.reason.message}</span> : null}</label><DialogFooter><Button type="button" variant="outline" onClick={() => setFormOpen(false)}>Cancel</Button><Button type="submit">Continue</Button></DialogFooter></form></DialogContent></Dialog>
-    <AlertDialog open={Boolean(pendingLeave)} onOpenChange={(open) => { if (!open && !isSaving) { setPendingLeave(null); setFormOpen(true); } }}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Apply this time off immediately?</AlertDialogTitle><AlertDialogDescription>This time off will start right away. Appointments that conflict with it may need to be cancelled, and affected patients will be notified. Removing this entry later will not automatically restore those appointments.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={isSaving}>Go back</AlertDialogCancel><AlertDialogAction disabled={isSaving} onClick={createLeave}>{isSaving ? <><LoaderCircle className="animate-spin" size={16} /> Saving…</> : "Apply time off"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+    <AlertDialog open={Boolean(pendingLeave)} onOpenChange={(open) => { if (!open && !isSaving && !isApplyingLeaveRef.current) { setPendingLeave(null); setFormOpen(true); } }}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Apply this time off immediately?</AlertDialogTitle><AlertDialogDescription>This time off will start right away. Appointments that conflict with it may need to be cancelled, and affected patients will be notified. Removing this entry later will not automatically restore those appointments.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={isSaving}>Go back</AlertDialogCancel><AlertDialogAction disabled={isSaving} onClick={createLeave}>{isSaving ? <><LoaderCircle className="animate-spin" size={16} /> Saving…</> : "Apply time off"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
     <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => { if (!open && !isDeleting) setDeleteTarget(null); }}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Remove this time-off entry?</AlertDialogTitle><AlertDialogDescription>This removes the schedule exception only. It does not restore appointments that were cancelled when the entry was created.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={isDeleting}>Keep entry</AlertDialogCancel><AlertDialogAction variant="destructive" disabled={isDeleting} onClick={deleteLeave}>{isDeleting ? <><LoaderCircle className="animate-spin" size={16} /> Removing…</> : "Remove time off"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
   </div>;
 }
