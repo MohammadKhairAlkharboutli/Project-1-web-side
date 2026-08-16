@@ -124,6 +124,15 @@ function formatTime(value) {
   return String(value || "").slice(0, 5) || "—";
 }
 
+function formatDisplayTime(value) {
+  const time = formatTime(value);
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return time;
+
+  const [hours, minutes] = time.split(":").map(Number);
+  const period = hours >= 12 ? "PM" : "AM";
+  return `${hours % 12 || 12}:${String(minutes).padStart(2, "0")} ${period}`;
+}
+
 function statusLabel(status) {
   return String(status || "").replaceAll("_", " ") || "Unknown";
 }
@@ -222,7 +231,7 @@ export default function DoctorOperationsTab() {
   }, [loadOperations]);
 
   useEffect(() => {
-    if (!formOpen) return undefined;
+    if (!formOpen || selectedPatient) return undefined;
 
     let active = true;
     const timer = window.setTimeout(async () => {
@@ -262,7 +271,7 @@ export default function DoctorOperationsTab() {
       active = false;
       window.clearTimeout(timer);
     };
-  }, [formOpen, patientSearch]);
+  }, [formOpen, patientSearch, selectedPatient]);
 
   const todayOperations = state.operations.filter((operation) =>
     isToday(operation.requestedDate),
@@ -283,6 +292,12 @@ export default function DoctorOperationsTab() {
       : state.operationSlots.filter(
           (slot) => Number(slot.dayOfWeek) === selectedDay,
         );
+  const hasOperationSchedule = state.operationSlots.length > 0;
+  const hasAvailableOperationDays = state.operationDays.length > 0;
+  const selectedDateHasAvailability = Boolean(
+    selectedDate &&
+      state.operationDays.some((date) => dateKey(date) === selectedDate),
+  );
 
   function resetOperationForm() {
     form.reset();
@@ -425,7 +440,11 @@ export default function DoctorOperationsTab() {
             <Button
               className="bg-white text-blue-700 hover:bg-blue-50"
               onClick={openOperationForm}
-              disabled={state.status !== "ready" || !state.operationDays.length}
+              disabled={
+                state.status !== "ready" ||
+                !hasOperationSchedule ||
+                !hasAvailableOperationDays
+              }
             >
               <CalendarPlus className="h-4 w-4" /> Schedule operation
             </Button>
@@ -483,6 +502,39 @@ export default function DoctorOperationsTab() {
             Try again
           </Button>
         </div>
+      ) : null}
+
+      {state.status === "ready" && !hasOperationSchedule ? (
+        <section className="rounded-3xl border border-amber-200 bg-amber-50 p-6 text-amber-950">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+            <div>
+              <h2 className="font-bold">Operation availability is not configured</h2>
+              <p className="mt-1 text-sm text-amber-900">
+                Add an active OPERATION slot to your schedule before you can
+                schedule an operation.
+              </p>
+              <Button asChild variant="outline" className="mt-4 border-amber-300 bg-white">
+                <Link to="/doctor/schedule">Open schedule</Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {state.status === "ready" && hasOperationSchedule && !hasAvailableOperationDays ? (
+        <section className="rounded-3xl border border-blue-100 bg-blue-50 p-6 text-blue-950">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-blue-700" />
+            <div>
+              <h2 className="font-bold">No upcoming operation dates are available</h2>
+              <p className="mt-1 text-sm text-blue-900">
+                Your operation schedule is configured, but there are currently no
+                dates available to book.
+              </p>
+            </div>
+          </div>
+        </section>
       ) : null}
 
       {state.status === "ready" ? (
@@ -583,7 +635,7 @@ export default function DoctorOperationsTab() {
           if (!open) resetOperationForm();
         }}
       >
-        <DialogContent className="sm:max-w-xl">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Schedule operation</DialogTitle>
           </DialogHeader>
@@ -626,48 +678,50 @@ export default function DoctorOperationsTab() {
                 </div>
               ) : null}
 
-              <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-                {patientSearchState.status === "loading" ? (
-                  <div className="flex items-center gap-2 px-3 py-3 text-sm text-slate-500">
-                    <LoaderCircle className="h-4 w-4 animate-spin" /> Searching patients...
-                  </div>
-                ) : null}
-                {patientSearchState.status === "error" ? (
-                  <p className="px-3 py-3 text-sm text-rose-700">{patientSearchState.error}</p>
-                ) : null}
-                {patientSearchState.status === "ready" && patientSearchState.patients.length ? (
-                  <ul className="max-h-44 overflow-y-auto py-1">
-                    {patientSearchState.patients.map((patient) => (
-                      <li key={patient.id}>
-                        <button
-                          type="button"
-                          className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors hover:bg-slate-50"
-                          onClick={() => selectPatient(patient)}
-                        >
-                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">
-                            {patientInitials(patient)}
-                          </span>
-                          <span className="min-w-0">
-                            <span className="block truncate font-semibold text-slate-800">
-                              {patientName(patient)}
+              {!selectedPatient ? (
+                <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                  {patientSearchState.status === "loading" ? (
+                    <div className="flex items-center gap-2 px-3 py-3 text-sm text-slate-500">
+                      <LoaderCircle className="h-4 w-4 animate-spin" /> Searching patients...
+                    </div>
+                  ) : null}
+                  {patientSearchState.status === "error" ? (
+                    <p className="px-3 py-3 text-sm text-rose-700">{patientSearchState.error}</p>
+                  ) : null}
+                  {patientSearchState.status === "ready" && patientSearchState.patients.length ? (
+                    <ul className="max-h-44 overflow-y-auto py-1">
+                      {patientSearchState.patients.map((patient) => (
+                        <li key={patient.id}>
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors hover:bg-slate-50"
+                            onClick={() => selectPatient(patient)}
+                          >
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">
+                              {patientInitials(patient)}
                             </span>
-                            <span className="block truncate text-xs text-slate-500">
-                              {patient.user?.phone || patient.user?.email || "Patient"}
+                            <span className="min-w-0">
+                              <span className="block truncate font-semibold text-slate-800">
+                                {patientName(patient)}
+                              </span>
+                              <span className="block truncate text-xs text-slate-500">
+                                {patient.user?.phone || patient.user?.email || "Patient"}
+                              </span>
                             </span>
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-                {patientSearchState.status === "ready" && !patientSearchState.patients.length ? (
-                  <p className="px-3 py-3 text-sm text-slate-500">
-                    {patientSearch.trim()
-                      ? "No eligible patients match your search."
-                      : "No eligible patients are available for an operation."}
-                  </p>
-                ) : null}
-              </div>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {patientSearchState.status === "ready" && !patientSearchState.patients.length ? (
+                    <p className="px-3 py-3 text-sm text-slate-500">
+                      {patientSearch.trim()
+                        ? "No eligible patients match your search."
+                        : "No eligible patients are available for an operation."}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
               {form.formState.errors.patientId ? (
                 <span className="text-xs text-rose-600">
                   {form.formState.errors.patientId.message}
@@ -689,9 +743,28 @@ export default function DoctorOperationsTab() {
               ) : null}
             </label>
 
-            {selectedDate && daySlots.length ? (
+            {selectedDate && !selectedDateHasAvailability ? (
+              <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                No operation availability is open on this date. Choose another
+                date.
+              </p>
+            ) : null}
+
+            {selectedDate && selectedDateHasAvailability && !daySlots.length ? (
+              <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                No OPERATION slot is configured for this day of the week. Update
+                your schedule before booking this date.
+              </p>
+            ) : null}
+
+            {selectedDate && selectedDateHasAvailability && daySlots.length ? (
               <p className="rounded-xl bg-blue-50 px-3 py-2 text-xs text-blue-800">
-                Operation availability: {daySlots.map((slot) => `${formatTime(slot.startTime)}–${formatTime(slot.endTime)}`).join(", ")}
+                Operation availability: {daySlots
+                  .map(
+                    (slot) =>
+                      `${formatDisplayTime(slot.startTime)}–${formatDisplayTime(slot.endTime)}`,
+                  )
+                  .join(", ")}
               </p>
             ) : null}
 
