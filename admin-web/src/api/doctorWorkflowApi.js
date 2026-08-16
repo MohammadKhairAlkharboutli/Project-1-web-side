@@ -58,6 +58,13 @@ export const doctorAppointmentsApi = {
   },
 };
 
+export const doctorPatientsApi = {
+  async getPatients(params = {}) {
+    const { data } = await axiosClient.get("/doctors/me/patients", { params });
+    return data;
+  },
+};
+
 export const doctorQueueApi = {
   async getMyQueue() {
     const { data } = await axiosClient.get("/queues/doctor/my-queue");

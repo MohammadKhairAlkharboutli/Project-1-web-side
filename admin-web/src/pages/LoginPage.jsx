@@ -12,6 +12,7 @@ const cleanPhone = (value) => value.replace(/\s/g, "").replace(/-/g, "");
 const homeRouteByRole = {
   admin: "/admin",
   doctor: "/doctor",
+  secretary: "/secretary",
 };
 
 function getStoredSessionRoute() {
@@ -79,7 +80,7 @@ export default function LoginPage() {
       const destination = homeRouteByRole[String(response?.user?.role || "").toLowerCase()];
       if (!destination) {
         authApi.clearSession();
-        setError("This sign-in is available to doctor and administrator accounts only.");
+        setError("This sign-in is available to authorized staff accounts only.");
         return;
       }
       navigate(destination, { replace: true });
@@ -122,12 +123,12 @@ export default function LoginPage() {
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-100">Welcome to Tabibi</p>
                 <h1 className="mt-3 text-3xl font-black leading-tight tracking-tight sm:text-4xl">Your clinic, in one secure place.</h1>
                 <p className="mt-5 max-w-sm text-sm leading-6 text-blue-50">
-                  Doctors and administrators can securely sign in to manage care, appointments, and clinic operations.
+                  Doctors, administrators, and reception staff can securely sign in to their assigned workspace.
                 </p>
               </div>
 
               <div className="rounded-2xl border border-white/15 bg-slate-950/10 p-4 backdrop-blur-sm">
-                <p className="text-xs font-bold text-white">For doctors and administrators</p>
+                <p className="text-xs font-bold text-white">For authorized clinic staff</p>
                 <p className="mt-1 text-xs leading-5 text-blue-100">You will be taken to the right workspace automatically after signing in.</p>
               </div>
             </div>

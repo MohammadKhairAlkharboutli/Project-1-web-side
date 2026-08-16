@@ -1,14 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { ChevronDown, LogOut, User } from "lucide-react";
 
 import { authApi } from "@/api/authApi";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import AccountDropdown from "@/components/shared/AccountDropdown";
 import { useAdminAccount } from "@/context/AdminAccountContext";
 
 const adminPageTitles = [
@@ -63,41 +56,15 @@ export default function Topbar() {
         {title}
       </h1>
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-          >
-            {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt=""
-                className="h-9 w-9 rounded-full object-cover ring-1 ring-slate-200"
-              />
-            ) : (
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-primary)] text-sm font-semibold text-white">
-                {initials}
-              </div>
-            )}
-            <span className="hidden max-w-44 truncate text-sm font-medium text-slate-700 sm:inline">
-              {adminName}
-            </span>
-            <ChevronDown className="h-4 w-4 text-slate-400" aria-hidden="true" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuItem onSelect={() => navigate("/admin/profile")}>
-            <User className="h-4 w-4" />
-            Profile
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive" onSelect={handleLogout}>
-            <LogOut className="h-4 w-4" />
-            Log out
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <AccountDropdown
+        name={adminName}
+        subtitle="Administrator"
+        initials={initials}
+        avatarUrl={avatarUrl}
+        onProfile={() => navigate("/admin/profile")}
+        onSettings={() => navigate("/admin/profile")}
+        onLogout={handleLogout}
+      />
     </header>
   );
 }

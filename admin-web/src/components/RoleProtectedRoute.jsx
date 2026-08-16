@@ -3,6 +3,7 @@ import { Navigate, Outlet } from "react-router-dom";
 const homeRouteByRole = {
   admin: "/admin",
   doctor: "/doctor",
+  secretary: "/secretary",
 };
 
 function getStoredRole() {

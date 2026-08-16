@@ -15,4 +15,9 @@ export const referralsApi = {
     const { data } = await axiosClient.get("/referrals/doctor/received", { params });
     return data;
   },
+
+  async getSelfReferrals(params = {}) {
+    const { data } = await axiosClient.get("/referrals/doctor/self", { params });
+    return data;
+  },
 };

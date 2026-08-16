@@ -1,18 +1,32 @@
 import axiosClient from "./axiosClient";
 
 export const authApi = {
-  storeSession: ({ accessToken, refreshToken }) => {
+  storeSession: ({ accessToken, refreshToken, user }) => {
     if (!accessToken || !refreshToken) {
       throw new Error("The server did not return a complete session.");
     }
 
     localStorage.setItem("accessToken", accessToken);
     localStorage.setItem("refreshToken", refreshToken);
+
+    if (user) {
+      localStorage.setItem("sessionUser", JSON.stringify(user));
+    }
   },
 
   clearSession: () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
+    localStorage.removeItem("sessionUser");
+  },
+
+  getStoredUser: () => {
+    try {
+      const storedUser = localStorage.getItem("sessionUser");
+      return storedUser ? JSON.parse(storedUser) : null;
+    } catch {
+      return null;
+    }
   },
 
   login: async (loginData) => {

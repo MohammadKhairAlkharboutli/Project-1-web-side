@@ -35,28 +35,38 @@ export default function AdminQueueToolbar({
   onDoctorChange,
   onViewChange,
   onRefresh,
+  fixedClinic = false,
 }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[220px_220px]">
-          <label className="space-y-1.5 text-sm font-medium text-slate-700">
-            <span>Clinic</span>
-            <NativeSelect
-              appearance="filter"
-              className="w-full"
-              value={selectedClinicId}
-              onChange={(event) => onClinicChange(event.target.value)}
-              disabled={loadingLookups}
-            >
-              <NativeSelectOption value="">Select clinic</NativeSelectOption>
-              {clinics.map((clinic) => (
-                <NativeSelectOption key={clinic.id} value={String(clinic.id)}>
-                  {clinic.name || `Clinic #${clinic.id}`}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-          </label>
+          {fixedClinic ? (
+            <div className="space-y-1.5 text-sm font-medium text-slate-700">
+              <span>Clinic</span>
+              <div className="flex h-9 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700">
+                {clinics[0]?.name || "Assigned clinic"}
+              </div>
+            </div>
+          ) : (
+            <label className="space-y-1.5 text-sm font-medium text-slate-700">
+              <span>Clinic</span>
+              <NativeSelect
+                appearance="filter"
+                className="w-full"
+                value={selectedClinicId}
+                onChange={(event) => onClinicChange(event.target.value)}
+                disabled={loadingLookups}
+              >
+                <NativeSelectOption value="">Select clinic</NativeSelectOption>
+                {clinics.map((clinic) => (
+                  <NativeSelectOption key={clinic.id} value={String(clinic.id)}>
+                    {clinic.name || `Clinic #${clinic.id}`}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </label>
+          )}
 
           <label className="space-y-1.5 text-sm font-medium text-slate-700">
             <span>Doctor</span>

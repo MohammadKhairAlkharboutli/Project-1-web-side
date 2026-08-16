@@ -31,7 +31,7 @@ function getErrorMessage(error, fallback) {
   return Array.isArray(message) ? message.join(" ") : message;
 }
 
-export default function AdminQueuePage() {
+export default function AdminQueuePage({ secretaryMode = false }) {
   const [searchParams] = useSearchParams();
   const [clinics, setClinics] = useState([]);
   const [doctors, setDoctors] = useState([]);
@@ -39,7 +39,7 @@ export default function AdminQueuePage() {
   const [appointments, setAppointments] = useState([]);
 
   const [selectedClinicId, setSelectedClinicId] = useState(
-    searchParams.get("clinicId") ?? "",
+    secretaryMode ? "" : searchParams.get("clinicId") ?? "",
   );
   const [selectedDoctorId, setSelectedDoctorId] = useState(
     searchParams.get("doctorId") ?? "",
@@ -74,35 +74,67 @@ export default function AdminQueuePage() {
     setQueueError("");
 
     try {
-      const [queueData, appointmentData] = await Promise.all([
-        queueApi.getAdminLiveQueue({
+      if (secretaryMode) {
+        const deskData = await queueApi.getSecretaryDesk({
           clinicId: selectedClinicId,
           doctorId: selectedDoctorId,
-        }),
-        appointmentsApi.getAdminAppointments({
-          clinicId: selectedClinicId,
-          doctorId: selectedDoctorId,
-          status: "confirmed",
-          from: today,
-          to: today,
-          limit: 100,
-        }),
-      ]);
+        });
+        setQueueItems(Array.isArray(deskData?.queue) ? deskData.queue : []);
+        setAppointments(
+          Array.isArray(deskData?.appointments) ? deskData.appointments : [],
+        );
+      } else {
+        const [queueData, appointmentData] = await Promise.all([
+          queueApi.getAdminLiveQueue({
+            clinicId: selectedClinicId,
+            doctorId: selectedDoctorId,
+          }),
+          appointmentsApi.getAdminAppointments({
+            clinicId: selectedClinicId,
+            doctorId: selectedDoctorId,
+            status: "confirmed",
+            from: today,
+            to: today,
+            limit: 100,
+          }),
+        ]);
 
-      setQueueItems(Array.isArray(queueData) ? queueData : []);
-      setAppointments(appointmentData.data);
+        setQueueItems(Array.isArray(queueData) ? queueData : []);
+        setAppointments(appointmentData.data);
+      }
     } catch (error) {
       setQueueError(getErrorMessage(error, "Could not load the queue desk."));
     } finally {
       setLoadingQueue(false);
       setLoadingAppointments(false);
     }
-  }, [selectedClinicId, selectedDoctorId, today]);
+  }, [secretaryMode, selectedClinicId, selectedDoctorId, today]);
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadClinics() {
+      if (secretaryMode) {
+        setLoadingLookups(true);
+        setLookupError("");
+
+        try {
+          const data = await queueApi.getSecretaryDeskContext();
+          if (isMounted) {
+            setClinics(Array.isArray(data?.clinics) ? data.clinics : []);
+          }
+        } catch (error) {
+          if (isMounted) {
+            setLookupError(getErrorMessage(error, "Could not load your queue desk."));
+          }
+        } finally {
+          if (isMounted) {
+            setLoadingLookups(false);
+          }
+        }
+        return;
+      }
+
       setLoadingLookups(true);
       setLookupError("");
 
@@ -128,12 +160,39 @@ export default function AdminQueuePage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [secretaryMode]);
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadDoctors() {
+      if (secretaryMode) {
+        if (!selectedClinicId) {
+          setDoctors([]);
+          return;
+        }
+
+        setLoadingDoctors(true);
+        setLookupError("");
+
+        try {
+          const data = await queueApi.getSecretaryClinicDoctors(selectedClinicId);
+          if (isMounted) {
+            setDoctors(Array.isArray(data) ? data : []);
+          }
+        } catch (error) {
+          if (isMounted) {
+            setLookupError(getErrorMessage(error, "Could not load doctors."));
+            setDoctors([]);
+          }
+        } finally {
+          if (isMounted) {
+            setLoadingDoctors(false);
+          }
+        }
+        return;
+      }
+
       if (!selectedClinicId) {
         setDoctors([]);
         return;
@@ -165,7 +224,7 @@ export default function AdminQueuePage() {
     return () => {
       isMounted = false;
     };
-  }, [selectedClinicId]);
+  }, [secretaryMode, selectedClinicId]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(loadDeskData, 0);
@@ -177,7 +236,7 @@ export default function AdminQueuePage() {
       return undefined;
     }
 
-    const intervalId = window.setInterval(loadDeskData, 10000);
+    const intervalId = window.setInterval(loadDeskData, 10_000);
     return () => window.clearInterval(intervalId);
   }, [loadDeskData, selectedClinicId, selectedDoctorId]);
 
@@ -256,7 +315,11 @@ export default function AdminQueuePage() {
     setActionError("");
 
     try {
-      await queueApi.checkInPatient(appointment.id);
+      if (secretaryMode) {
+        await queueApi.checkInPatientAsSecretary(appointment.id);
+      } else {
+        await queueApi.checkInPatient(appointment.id);
+      }
       await loadDeskData();
     } catch (error) {
       setActionError(getErrorMessage(error, "Could not check in this patient."));
@@ -274,7 +337,11 @@ export default function AdminQueuePage() {
     setActionError("");
 
     try {
-      await queueApi.reorderQueue(moveItem.id, newPosition);
+      if (secretaryMode) {
+        await queueApi.reorderQueueAsSecretary(moveItem.id, newPosition);
+      } else {
+        await queueApi.reorderQueue(moveItem.id, newPosition);
+      }
       setMoveItem(null);
       await loadDeskData();
     } catch (error) {
@@ -293,7 +360,11 @@ export default function AdminQueuePage() {
     setActionError("");
 
     try {
-      await queueApi.skipQueue(skipItem.id);
+      if (secretaryMode) {
+        await queueApi.skipQueueAsSecretary(skipItem.id);
+      } else {
+        await queueApi.skipQueue(skipItem.id);
+      }
       setSkipItem(null);
       await loadDeskData();
     } catch (error) {

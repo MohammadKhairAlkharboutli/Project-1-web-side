@@ -52,6 +52,8 @@ import ConsultationPage from "./pages/Doctor/ConsultationPage";
 import PatientMedicalFile from "./pages/Doctor/PatientMedicalFile";
 import ReferralsPage from "./pages/Doctor/ReferralsPage";
 import DoctorInvitePage from "./pages/DoctorInvitePage";
+import SecretaryPageLayout from "./pages/SecretaryPageLayout";
+import SecretaryProfilePage from "./pages/SecretaryProfilePage";
 
 function App() {
   return (
@@ -132,6 +134,14 @@ function App() {
               <Route path="settings" element={<DoctorSettings />} />
               </Route>
             </Route>
+          </Route>
+        </Route>
+
+        <Route element={<RoleProtectedRoute allowedRole="secretary" />}>
+          <Route path="/secretary" element={<SecretaryPageLayout />}>
+            <Route index element={<AdminQueuePage secretaryMode />} />
+            <Route path="queue" element={<Navigate to="/secretary" replace />} />
+            <Route path="profile" element={<SecretaryProfilePage />} />
           </Route>
         </Route>
       </Route>
