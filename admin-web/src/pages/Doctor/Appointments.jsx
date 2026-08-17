@@ -37,15 +37,44 @@ function getErrorMessage(error, fallback) {
   return Array.isArray(message) ? message.join(" ") : message || fallback;
 }
 
-function dateFiltersForMode(dateMode, fromDate, toDate) {
+function appointmentMatchesDateMode(appointment, dateMode, fromDate, toDate) {
+  const appointmentDate = String(appointment?.requestedDate || "").slice(0, 10);
+  if (!appointmentDate || dateMode === "all") return true;
+
   const today = new Date();
   const todayKey = format(today, "yyyy-MM-dd");
-  if (dateMode === "today") return { from: todayKey, to: todayKey };
-  if (dateMode === "upcoming") return { from: todayKey };
-  if (dateMode === "past") return { to: format(subDays(today, 1), "yyyy-MM-dd") };
-  if (dateMode === "this-week") return { from: todayKey, to: format(endOfWeek(today, { weekStartsOn: 1 }), "yyyy-MM-dd") };
-  if (dateMode === "custom") return { ...(fromDate ? { from: fromDate } : {}), ...(toDate ? { to: toDate } : {}) };
-  return {};
+  if (dateMode === "today") return appointmentDate === todayKey;
+  if (dateMode === "upcoming") return appointmentDate >= todayKey;
+  if (dateMode === "past") return appointmentDate <= format(subDays(today, 1), "yyyy-MM-dd");
+  if (dateMode === "this-week") {
+    return appointmentDate >= todayKey && appointmentDate <= format(endOfWeek(today, { weekStartsOn: 1 }), "yyyy-MM-dd");
+  }
+  if (dateMode === "custom") {
+    return (!fromDate || appointmentDate >= fromDate) && (!toDate || appointmentDate <= toDate);
+  }
+
+  return true;
+}
+
+function appointmentMatchesSearch(appointment, searchTerm) {
+  if (!searchTerm) return true;
+
+  const patient = appointment?.patient?.user ?? {};
+  const values = [
+    appointment?.id,
+    appointment?.type,
+    appointment?.status,
+    appointment?.requestedDate,
+    patient.full_name,
+    patient.fullName,
+    patient.firstName,
+    patient.fatherName,
+    patient.lastName,
+    patient.phone,
+    patient.email,
+  ];
+
+  return values.some((value) => String(value ?? "").toLowerCase().includes(searchTerm));
 }
 
 function PatientCell({ appointment }) {
@@ -79,7 +108,7 @@ function AppointmentCards({ appointments }) {
 }
 
 export default function DoctorAppointments() {
-  const [appointments, setAppointments] = useState([]);
+  const [allAppointments, setAllAppointments] = useState([]);
   const [loadState, setLoadState] = useState("loading");
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
@@ -90,7 +119,6 @@ export default function DoctorAppointments() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
   const limit = 20;
 
   useEffect(() => {
@@ -102,23 +130,39 @@ export default function DoctorAppointments() {
     setLoadState("loading");
     setError("");
     try {
-      const response = await doctorAppointmentsApi.getAppointments({ page, limit, ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}), ...(status !== "all" ? { status } : {}), ...(priority !== "all" ? { priority } : {}), ...dateFiltersForMode(dateMode, fromDate, toDate) });
-      setAppointments(Array.isArray(response?.data) ? response.data : []);
-      setTotal(Number(response?.total) || 0);
+      const response = await doctorAppointmentsApi.getAppointments();
+      setAllAppointments(Array.isArray(response) ? response : []);
       setLoadState("ready");
     } catch (requestError) {
       setError(getErrorMessage(requestError, "Unable to load appointments."));
       setLoadState("error");
     }
-  }, [dateMode, debouncedSearch, fromDate, page, priority, status, toDate]);
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(loadAppointments, 0);
     return () => window.clearTimeout(timer);
   }, [loadAppointments]);
 
-  const stats = useMemo(() => ({ total, scheduled: appointments.filter((item) => item.status === "confirmed").length, checkedIn: appointments.filter((item) => item.checkinTime || item.queue).length, completed: appointments.filter((item) => item.status === "completed").length }), [appointments, total]);
+  const filteredAppointments = useMemo(() => {
+    const searchTerm = debouncedSearch.trim().toLowerCase();
+
+    return allAppointments.filter((appointment) => (
+      String(appointment?.type || "").toLowerCase() !== "operation" &&
+      (status === "all" || appointment.status === status) &&
+      (priority === "all" || String(appointment.priority) === priority) &&
+      appointmentMatchesDateMode(appointment, dateMode, fromDate, toDate) &&
+      appointmentMatchesSearch(appointment, searchTerm)
+    ));
+  }, [allAppointments, dateMode, debouncedSearch, fromDate, priority, status, toDate]);
+  const total = filteredAppointments.length;
   const totalPages = Math.max(1, Math.ceil(total / limit));
+  const currentPage = Math.min(page, totalPages);
+  const appointments = useMemo(
+    () => filteredAppointments.slice((currentPage - 1) * limit, currentPage * limit),
+    [currentPage, filteredAppointments],
+  );
+  const stats = useMemo(() => ({ total, scheduled: appointments.filter((item) => item.status === "confirmed").length, checkedIn: appointments.filter((item) => item.checkinTime || item.queue).length, completed: appointments.filter((item) => item.status === "completed").length }), [appointments, total]);
   const updateFilter = (setter, value) => { setter(value); setPage(1); };
   const resetFilters = () => { setSearch(""); setStatus("all"); setPriority("all"); setDateMode("all"); setFromDate(""); setToDate(""); setPage(1); };
 
@@ -188,11 +232,11 @@ export default function DoctorAppointments() {
             </div>
             {total > 0 ? (
               <div className="mt-5 flex flex-col gap-3 border-t border-slate-200 pt-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-                <p>Showing {(page - 1) * limit + 1}–{(page - 1) * limit + appointments.length} of {total} appointments</p>
+                <p>Showing {(currentPage - 1) * limit + 1}–{(currentPage - 1) * limit + appointments.length} of {total} appointments</p>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" disabled={page <= 1 || loadState === "loading"} onClick={() => setPage((current) => current - 1)}>Previous</Button>
-                  <span className="min-w-20 text-center text-xs font-semibold text-slate-600">Page {page} of {totalPages}</span>
-                  <Button variant="outline" size="sm" disabled={page >= totalPages || loadState === "loading"} onClick={() => setPage((current) => current + 1)}>Next</Button>
+                  <Button variant="outline" size="sm" disabled={currentPage <= 1 || loadState === "loading"} onClick={() => setPage(currentPage - 1)}>Previous</Button>
+                  <span className="min-w-20 text-center text-xs font-semibold text-slate-600">Page {currentPage} of {totalPages}</span>
+                  <Button variant="outline" size="sm" disabled={currentPage >= totalPages || loadState === "loading"} onClick={() => setPage(currentPage + 1)}>Next</Button>
                 </div>
               </div>
             ) : null}

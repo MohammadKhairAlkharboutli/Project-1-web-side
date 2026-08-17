@@ -5,8 +5,12 @@ export const DOCTOR_SCHEDULE_UPDATE_MESSAGE_KEYS = new Set([
   "schedule.request_rejected",
 ]);
 
-function getStorageKey(userId) {
+function getScheduleStorageKey(userId) {
   return `doctor-schedule-updates:last-seen:${userId}`;
+}
+
+function getReceivedReferralStorageKey(userId) {
+  return `doctor-received-referrals:last-seen:${userId}`;
 }
 
 function getNotificationDate(notification) {
@@ -25,7 +29,7 @@ export function hasUnseenDoctorScheduleUpdate(notifications, userId) {
   }
 
   try {
-    const lastSeen = Number(localStorage.getItem(getStorageKey(userId)));
+    const lastSeen = Number(localStorage.getItem(getScheduleStorageKey(userId)));
 
     // On a new browser/device, show the dot once so existing updates are not missed.
     if (!Number.isFinite(lastSeen) || lastSeen <= 0) {
@@ -44,7 +48,44 @@ export function markDoctorScheduleUpdatesSeen(userId) {
   }
 
   try {
-    localStorage.setItem(getStorageKey(userId), String(Date.now()));
+    localStorage.setItem(getScheduleStorageKey(userId), String(Date.now()));
+  } catch {
+    // The dot can still be calculated on the next successful storage access.
+  }
+}
+
+function getReferralDate(referral) {
+  const value = referral?.createdAt ?? referral?.created_at;
+  const timestamp = new Date(value).getTime();
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+export function hasUnseenReceivedReferrals(referrals, userId) {
+  if (!Array.isArray(referrals) || !referrals.length) {
+    return false;
+  }
+
+  try {
+    const lastSeen = Number(localStorage.getItem(getReceivedReferralStorageKey(userId)));
+
+    // On a new browser/device, show the dot once so current referrals are noticed.
+    if (!Number.isFinite(lastSeen) || lastSeen <= 0) {
+      return true;
+    }
+
+    return referrals.some((referral) => getReferralDate(referral) > lastSeen);
+  } catch {
+    return true;
+  }
+}
+
+export function markReceivedReferralsSeen(userId) {
+  if (!userId) {
+    return;
+  }
+
+  try {
+    localStorage.setItem(getReceivedReferralStorageKey(userId), String(Date.now()));
   } catch {
     // The dot can still be calculated on the next successful storage access.
   }

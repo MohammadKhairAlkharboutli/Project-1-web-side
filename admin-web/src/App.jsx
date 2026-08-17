@@ -16,7 +16,8 @@ import PatientMedicalInfo from "./pages/Admin/Patients/PatientMedicalInfo";
 import PatientMedicalHistory from "./pages/Admin/Patients/PatientMedicalHistory";
 import PatientAppointments from "./pages/Admin/Patients/PatientAppointments";
 import PatientProfileLogs from "./pages/Admin/Patients/PatientProfileLogs";
-import FrontDeskTerminalPage from "./pages/Admin/FrontDeskTerminalPage";
+// Disabled for the older backend, which has no front-desk-terminal API.
+// import FrontDeskTerminalPage from "./pages/Admin/FrontDeskTerminalPage";
 import ScheduleChangeRequestsPage from "./pages/Admin/ScheduleChangeRequests/ScheduleChangeRequestsPage";
 import DataLookupsPage from "./pages/Admin/DataLookups/DataLookupsPage";
 import SystemPoliciesPage from "./pages/Admin/SystemPolicies/SystemPoliciesPage";
@@ -50,7 +51,8 @@ import ConsultationPage from "./pages/Doctor/ConsultationPage";
 import PatientMedicalFile from "./pages/Doctor/PatientMedicalFile";
 import ReferralsPage from "./pages/Doctor/ReferralsPage";
 import DoctorInvitePage from "./pages/DoctorInvitePage";
-import SecretaryPageLayout from "./pages/SecretaryPageLayout";
+// Disabled for the older backend, which has no secretary role or queue routes.
+// import SecretaryPageLayout from "./pages/SecretaryPageLayout";
 
 function App() {
   return (
@@ -97,12 +99,16 @@ function App() {
               <Route path="doctors" element={<ClinicDoctors />} />
             </Route>
           </Route>
-          <Route path="secretaries/*" element={<Navigate to="/admin/settings" replace />} />
+          {/* Secretary administration is disabled until its backend support returns.
+          <Route path="secretaries/*" element={<Navigate to="/admin" replace />} />
+          */}
           <Route path="schedule-change-requests" element={<ScheduleChangeRequestsPage />} />
           <Route path="data-lookups" element={<DataLookupsPage />} />
           <Route path="system-policies" element={<SystemPoliciesPage />} />
           <Route path="profile" element={<AdminProfilePage />} />
+          {/* Front Desk Terminal is disabled until its backend API returns.
           <Route path="settings" element={<FrontDeskTerminalPage />} />
+          */}
           <Route path="doctor-invitations" element={<DoctorInvitationsPage />} />
           </Route>
         </Route>
@@ -129,6 +135,7 @@ function App() {
           </Route>
         </Route>
 
+        {/* Secretary workspace is disabled for the older backend.
         <Route element={<RoleProtectedRoute allowedRole="secretary" />}>
           <Route path="/secretary" element={<SecretaryPageLayout />}>
             <Route index element={<AdminQueuePage secretaryMode />} />
@@ -136,6 +143,7 @@ function App() {
             <Route path="profile" element={<Navigate to="/secretary" replace />} />
           </Route>
         </Route>
+        */}
       </Route>
     </Routes>
   );

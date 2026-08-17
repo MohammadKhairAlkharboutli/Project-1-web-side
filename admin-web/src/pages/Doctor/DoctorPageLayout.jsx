@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
   LayoutDashboard,
   LogOut,
-  Settings,
   Stethoscope,
   User,
   CalendarOff,
@@ -18,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import AccountDropdown from "@/components/shared/AccountDropdown";
 import WorkspaceMobileNav from "@/components/shared/WorkspaceMobileNav";
+import Foot from "@/components/Foot";
 import { cn } from "@/lib/utils";
 import { authApi } from "@/api/authApi";
 import { doctorsApi } from "@/api/doctorsApi";
@@ -25,18 +25,21 @@ import { notificationsApi } from "@/api/notificationsApi";
 import { referralsApi } from "@/api/referralsApi";
 import { userAvatarApi } from "@/api/userAvatarApi";
 import { DoctorLocaleProvider, useDoctorLocale } from "@/context/DoctorLocaleContext";
-import { hasUnseenDoctorScheduleUpdate } from "@/lib/doctorAttention";
+import {
+  hasUnseenDoctorScheduleUpdate,
+  hasUnseenReceivedReferrals,
+  markReceivedReferralsSeen,
+} from "@/lib/doctorAttention";
 
 const doctorNavItems = [
   { label: "Dashboard", path: "/doctor", icon: LayoutDashboard, end: true },
   { label: "Appointments", path: "/doctor/appointments", icon: CalendarDays },
   { label: "Queue", path: "/doctor/queue", icon: ListOrdered },
   { label: "Patients", path: "/doctor/patients", icon: Users },
-  { label: "Referrals", path: "/doctor/referrals", icon: Send }, // 👈 Added Referrals here
+  { label: "Referrals", path: "/doctor/referrals", icon: Send },
   { label: "Schedule", path: "/doctor/schedule", icon: Stethoscope },
   { label: "Leaves & Time-Off", path: "/doctor/leaves", icon: CalendarOff },
   { label: "Profile", path: "/doctor/profile", icon: User },
-  { label: "Settings", path: "/doctor/settings", icon: Settings },
 ];
 
 export default function DoctorPageLayout() {
@@ -45,9 +48,10 @@ export default function DoctorPageLayout() {
 
 function DoctorPageLayoutContent() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { direction, locale } = useDoctorLocale();
   const labels = locale === "ar" ? {
-    Dashboard: "لوحة التحكم", Appointments: "المواعيد", Queue: "الانتظار", Patients: "المرضى", Referrals: "الإحالات", Schedule: "الدوام", "Leaves & Time-Off": "الإجازات", Profile: "الملف الشخصي", Settings: "الإعدادات", "Log out": "تسجيل الخروج", Specialist: "اختصاصي",
+    Dashboard: "لوحة التحكم", Appointments: "المواعيد", Queue: "الانتظار", Patients: "المرضى", Referrals: "الإحالات", Schedule: "الدوام", "Leaves & Time-Off": "الإجازات", Profile: "الملف الشخصي", "Log out": "تسجيل الخروج", Specialist: "اختصاصي",
   } : {};
   const label = (value) => labels[value] || value;
   const [doctor, setDoctor] = useState(null);
@@ -116,12 +120,25 @@ function DoctorPageLayoutContent() {
 
     setAttention((current) => ({
       receivedReferrals: receivedReferralsResult.status === "fulfilled"
-        ? Number(receivedReferralsResult.value?.meta?.total) > 0
+        ? hasUnseenReceivedReferrals(
+          receivedReferralsResult.value?.data,
+          userId,
+        )
         : current.receivedReferrals,
       scheduleUpdates: notificationsResult.status === "fulfilled"
         ? hasUnseenDoctorScheduleUpdate(notificationsResult.value, userId)
         : current.scheduleUpdates,
     }));
+  }, [doctor?.user?.id]);
+
+  const acknowledgeReceivedReferrals = useCallback(() => {
+    const userId = doctor?.user?.id;
+    if (!userId) {
+      return;
+    }
+
+    markReceivedReferralsSeen(userId);
+    setAttention((current) => ({ ...current, receivedReferrals: false }));
   }, [doctor?.user?.id]);
 
   useEffect(() => {
@@ -192,6 +209,9 @@ function DoctorPageLayoutContent() {
   
   const doctorName = doctor?.user?.full_name || [doctor?.user?.firstName, doctor?.user?.lastName].filter(Boolean).join(" ") || "Doctor";
   const doctorSpecialty = doctor?.specialization || label("Specialist");
+  const pageTitle = doctorNavItems.find((item) => (
+    item.end ? location.pathname === item.path : location.pathname.startsWith(item.path)
+  ))?.label || "Doctor workspace";
 
   const initials =
     doctorName
@@ -331,6 +351,9 @@ function DoctorPageLayoutContent() {
                 <p className="text-xs text-slate-500">Doctor portal</p>
               </div>
             </div>
+            <h1 className="hidden min-w-0 truncate text-lg font-semibold tracking-tight text-slate-900 lg:block">
+              {label(pageTitle)}
+            </h1>
             <div className="ml-auto">
               <AccountDropdown
                 name={doctorName}
@@ -350,6 +373,7 @@ function DoctorPageLayoutContent() {
             <Outlet context={{
               refreshDoctorShell,
               refreshDoctorAttention,
+              acknowledgeReceivedReferrals,
               doctorUserId: doctor?.user?.id ?? null,
               hasReceivedReferralAttention: attention.receivedReferrals,
               avatarUrl,
@@ -359,9 +383,7 @@ function DoctorPageLayoutContent() {
             </div>
           </main>
 
-          <footer className="flex shrink-0 items-center justify-between border-t border-slate-200 bg-card px-4 py-4 text-xs text-slate-500 sm:px-6 lg:px-8">
-            <p>© 2026 Tabibi Clinical Systems. All rights reserved.</p>
-          </footer>
+          <Foot />
         </div>
 
       </div>

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Activity, AlertCircle, ArrowLeft, CalendarDays, Download, FileText, HeartPulse, History, Mail, MapPin, Paperclip, Pencil, Phone, ShieldAlert, UserRound } from "lucide-react";
 
-import { doctorAppointmentsApi, doctorClinicalApi, doctorPatientsApi } from "@/api/doctorWorkflowApi";
+import { doctorAppointmentsApi, doctorClinicalApi } from "@/api/doctorWorkflowApi";
 import { Button } from "@/components/ui/button";
 import { useDoctorLocale } from "@/context/DoctorLocaleContext";
 import PatientMedicalProfileEditor from "./PatientMedicalProfileEditor";
@@ -82,9 +82,11 @@ export default function PatientMedicalFile() {
     try {
       let appointmentId = searchParams.get("appointmentId");
       if (!appointmentId || !/^\d+$/.test(appointmentId)) {
-        const patients = await doctorPatientsApi.getPatients({ patientId, limit: 1 });
-        const patient = (Array.isArray(patients?.data) ? patients.data : []).find((item) => String(item.id) === String(patientId));
-        appointmentId = patient?.latestAppointment?.id ? String(patient.latestAppointment.id) : "";
+        const appointments = await doctorAppointmentsApi.getAppointments();
+        const appointment = (Array.isArray(appointments) ? appointments : []).find((item) => (
+          String(getPatientId(item)) === String(patientId)
+        ));
+        appointmentId = appointment?.id ? String(appointment.id) : "";
       }
       if (!appointmentId) throw new Error("No appointment was found between you and this patient.");
 

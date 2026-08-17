@@ -7,7 +7,7 @@ import {
   LayoutDashboard,
   ListOrdered,
   MailPlus,
-  MonitorCog,
+  // MonitorCog,
   Scale,
   Star,
   Stethoscope,
@@ -26,6 +26,7 @@ export const adminNavItems = [
   { label: "Schedule Requests", path: "/admin/schedule-change-requests", icon: CalendarClock },
   { label: "Data Lookups", path: "/admin/data-lookups", icon: Database },
   { label: "System Policies", path: "/admin/system-policies", icon: Scale },
-  { label: "Front Desk Terminal", path: "/admin/settings", icon: MonitorCog },
+  // Disabled for the older backend, which has no front-desk-terminal API.
+  // { label: "Front Desk Terminal", path: "/admin/settings", icon: MonitorCog },
   { label: "Clinics", path: "/admin/clinics", icon: Hospital },
 ];

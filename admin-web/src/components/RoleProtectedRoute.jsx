@@ -3,7 +3,8 @@ import { Navigate, Outlet } from "react-router-dom";
 const homeRouteByRole = {
   admin: "/admin",
   doctor: "/doctor",
-  secretary: "/secretary",
+  // Disabled for the older backend, which has no secretary role or routes.
+  // secretary: "/secretary",
 };
 
 function getStoredRole() {

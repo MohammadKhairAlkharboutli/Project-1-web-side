@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
 import { z } from "zod";
@@ -16,7 +16,7 @@ import {
   XCircle,
 } from "lucide-react";
 
-import { doctorAppointmentsApi, doctorPatientsApi } from "@/api/doctorWorkflowApi";
+import { doctorAppointmentsApi } from "@/api/doctorWorkflowApi";
 import { doctorSchedulesApi } from "@/api/doctorSchedulesApi";
 import { doctorsApi } from "@/api/doctorsApi";
 import { DoctorClinicAssignmentContext } from "@/context/DoctorClinicAssignmentContext";
@@ -145,6 +145,22 @@ function isInsideSlot(startTime, endTime, slot) {
   return startTime >= formatTime(slot.startTime) && endTime <= formatTime(slot.endTime);
 }
 
+function getAppointmentPatients(appointments) {
+  const patients = new Map();
+
+  appointments.forEach((appointment) => {
+    const patientId = appointment?.patientId ?? appointment?.patient?.id;
+    if (patientId == null || patients.has(String(patientId))) return;
+
+    patients.set(String(patientId), {
+      ...(appointment?.patient ?? {}),
+      id: patientId,
+    });
+  });
+
+  return [...patients.values()];
+}
+
 export default function DoctorOperationsTab() {
   const { assignedClinic } = useContext(DoctorClinicAssignmentContext) || {};
   const [state, setState] = useState({
@@ -161,7 +177,7 @@ export default function DoctorOperationsTab() {
   const [pendingAction, setPendingAction] = useState(null);
   const [patientSearch, setPatientSearch] = useState("");
   const [selectedPatient, setSelectedPatient] = useState(null);
-  const [patientSearchState, setPatientSearchState] = useState({
+  const [patientState, setPatientState] = useState({
     status: "idle",
     patients: [],
     error: "",
@@ -231,47 +247,39 @@ export default function DoctorOperationsTab() {
   }, [loadOperations]);
 
   useEffect(() => {
-    if (!formOpen || selectedPatient) return undefined;
+    if (!formOpen) return undefined;
 
     let active = true;
-    const timer = window.setTimeout(async () => {
-      setPatientSearchState((current) => ({
-        ...current,
-        status: "loading",
-        error: "",
-      }));
+
+    async function loadPatientsFromAppointments() {
+      setPatientState({ status: "loading", patients: [], error: "" });
 
       try {
-        const response = await doctorPatientsApi.getPatients({
-          page: 1,
-          limit: 10,
-          eligibleForOperation: true,
-          ...(patientSearch.trim() ? { search: patientSearch.trim() } : {}),
-        });
-
+        const appointments = await doctorAppointmentsApi.getAppointments();
         if (active) {
-          setPatientSearchState({
+          setPatientState({
             status: "ready",
-            patients: Array.isArray(response?.data) ? response.data : [],
+            patients: getAppointmentPatients(Array.isArray(appointments) ? appointments : []),
             error: "",
           });
         }
       } catch (error) {
         if (active) {
-          setPatientSearchState({
+          setPatientState({
             status: "error",
             patients: [],
-            error: getErrorMessage(error, "Unable to search your patients."),
+            error: getErrorMessage(error, "Unable to load patients from your appointments."),
           });
         }
       }
-    }, 250);
+    }
+
+    loadPatientsFromAppointments();
 
     return () => {
       active = false;
-      window.clearTimeout(timer);
     };
-  }, [formOpen, patientSearch, selectedPatient]);
+  }, [formOpen]);
 
   const todayOperations = state.operations.filter((operation) =>
     isToday(operation.requestedDate),
@@ -298,12 +306,22 @@ export default function DoctorOperationsTab() {
     selectedDate &&
       state.operationDays.some((date) => dateKey(date) === selectedDate),
   );
+  const matchingPatients = useMemo(() => {
+    const searchTerm = patientSearch.trim().toLowerCase();
+    if (!searchTerm) return patientState.patients;
+
+    return patientState.patients.filter((patient) => [
+      patientName(patient),
+      patient.user?.phone,
+      patient.user?.email,
+    ].some((value) => String(value ?? "").toLowerCase().includes(searchTerm)));
+  }, [patientSearch, patientState.patients]);
 
   function resetOperationForm() {
     form.reset();
     setPatientSearch("");
     setSelectedPatient(null);
-    setPatientSearchState({ status: "idle", patients: [], error: "" });
+    setPatientState({ status: "idle", patients: [], error: "" });
   }
 
   function openOperationForm() {
@@ -680,17 +698,17 @@ export default function DoctorOperationsTab() {
 
               {!selectedPatient ? (
                 <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-                  {patientSearchState.status === "loading" ? (
+                  {patientState.status === "loading" ? (
                     <div className="flex items-center gap-2 px-3 py-3 text-sm text-slate-500">
-                      <LoaderCircle className="h-4 w-4 animate-spin" /> Searching patients...
+                      <LoaderCircle className="h-4 w-4 animate-spin" /> Loading appointment patients...
                     </div>
                   ) : null}
-                  {patientSearchState.status === "error" ? (
-                    <p className="px-3 py-3 text-sm text-rose-700">{patientSearchState.error}</p>
+                  {patientState.status === "error" ? (
+                    <p className="px-3 py-3 text-sm text-rose-700">{patientState.error}</p>
                   ) : null}
-                  {patientSearchState.status === "ready" && patientSearchState.patients.length ? (
+                  {patientState.status === "ready" && matchingPatients.length ? (
                     <ul className="max-h-44 overflow-y-auto py-1">
-                      {patientSearchState.patients.map((patient) => (
+                      {matchingPatients.map((patient) => (
                         <li key={patient.id}>
                           <button
                             type="button"
@@ -713,11 +731,11 @@ export default function DoctorOperationsTab() {
                       ))}
                     </ul>
                   ) : null}
-                  {patientSearchState.status === "ready" && !patientSearchState.patients.length ? (
+                  {patientState.status === "ready" && !matchingPatients.length ? (
                     <p className="px-3 py-3 text-sm text-slate-500">
                       {patientSearch.trim()
-                        ? "No eligible patients match your search."
-                        : "No eligible patients are available for an operation."}
+                        ? "No appointment patients match your search."
+                        : "No patients are available from your appointment history."}
                     </p>
                   ) : null}
                 </div>
@@ -728,8 +746,8 @@ export default function DoctorOperationsTab() {
                 </span>
               ) : null}
               <p className="text-xs font-normal text-slate-500">
-                Only patients with an active or completed consultation with you can
-                be selected.
+                Patients are loaded from your existing appointments because this
+                backend has no doctor-patient search route.
               </p>
             </div>
 

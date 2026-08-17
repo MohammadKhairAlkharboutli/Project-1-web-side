@@ -12,7 +12,8 @@ const cleanPhone = (value) => value.replace(/\s/g, "").replace(/-/g, "");
 const homeRouteByRole = {
   admin: "/admin",
   doctor: "/doctor",
-  secretary: "/secretary",
+  // Disabled for the older backend, which has no secretary role or routes.
+  // secretary: "/secretary",
 };
 
 function getStoredSessionRoute() {

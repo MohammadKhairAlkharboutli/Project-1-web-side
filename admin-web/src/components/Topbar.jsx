@@ -15,7 +15,8 @@ const adminPageTitles = [
   ["/admin/queue", "Queue"],
   ["/admin/doctors", "Doctors"],
   ["/admin/patients", "Patients"],
-  ["/admin/secretaries", "Secretaries"],
+  // Disabled for the older backend, which has no secretary routes.
+  // ["/admin/secretaries", "Secretaries"],
   ["/admin/clinics", "Clinics"],
   ["/admin/profile", "My Profile"],
 ];
@@ -52,18 +53,28 @@ export default function Topbar() {
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-card px-4 sm:px-6">
-      <h1 className="min-w-0 truncate text-lg font-semibold tracking-tight text-slate-900">
+      <div className="flex items-center gap-3 lg:hidden">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">T</div>
+        <div>
+          <p className="text-sm font-semibold text-slate-900">Tabibi</p>
+          <p className="text-xs text-slate-500">Admin workspace</p>
+        </div>
+      </div>
+      <h1 className="hidden min-w-0 truncate text-lg font-semibold tracking-tight text-slate-900 lg:block">
         {title}
       </h1>
 
-      <AccountDropdown
-        name={adminName}
-        subtitle="Administrator"
-        initials={initials}
-        avatarUrl={avatarUrl}
-        onProfile={() => navigate("/admin/profile")}
-        onLogout={handleLogout}
-      />
+      <div className="ml-auto">
+        <AccountDropdown
+          name={adminName}
+          subtitle="Administrator"
+          initials={initials}
+          avatarUrl={avatarUrl}
+          onProfile={() => navigate("/admin/profile")}
+          onSettings={() => navigate("/admin/system-policies")}
+          onLogout={handleLogout}
+        />
+      </div>
     </header>
   );
 }
