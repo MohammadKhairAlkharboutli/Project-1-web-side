@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import { adminPatientsApi } from "@/api/adminPatientsApi";
 import DataTable from "@/components/shared/DataTable";
+import PageHeader from "@/components/shared/PageHeader";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 import { getPatientColumns } from "./components/PatientColumns";
@@ -85,12 +86,10 @@ export default function PatientsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Patients</h1>
-        <p className="text-muted-foreground">
-          Review patient records using the same data shape the backend exposes.
-        </p>
-      </div>
+      <PageHeader
+        title="Patients"
+        description="Review patient records using the same data shape the backend exposes."
+      />
 
       <DataTable
         columns={columns}

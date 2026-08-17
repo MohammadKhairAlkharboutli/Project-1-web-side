@@ -16,7 +16,7 @@ import {
 
 function getDoctorStatusVariant(status) {
   if (String(status).toUpperCase() === "ACTIVE") {
-    return "default";
+    return "success";
   }
 
   if (String(status).toUpperCase() === "INACTIVE") {

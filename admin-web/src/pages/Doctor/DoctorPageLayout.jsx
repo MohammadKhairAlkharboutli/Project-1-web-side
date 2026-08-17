@@ -17,6 +17,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import AccountDropdown from "@/components/shared/AccountDropdown";
+import WorkspaceMobileNav from "@/components/shared/WorkspaceMobileNav";
 import { cn } from "@/lib/utils";
 import { authApi } from "@/api/authApi";
 import { doctorsApi } from "@/api/doctorsApi";
@@ -35,6 +36,7 @@ const doctorNavItems = [
   { label: "Schedule", path: "/doctor/schedule", icon: Stethoscope },
   { label: "Leaves & Time-Off", path: "/doctor/leaves", icon: CalendarOff },
   { label: "Profile", path: "/doctor/profile", icon: User },
+  { label: "Settings", path: "/doctor/settings", icon: Settings },
 ];
 
 export default function DoctorPageLayout() {
@@ -212,31 +214,30 @@ function DoctorPageLayoutContent() {
   }
 
   return (
-    <div className="doctor-portal flex h-screen w-screen overflow-hidden bg-[#F1F5F9] text-slate-900 justify-center p-4 box-border" dir={direction}>
-      
-      <div className="flex w-full max-w-[1440px] h-full bg-white shadow-xl rounded-3xl overflow-hidden border border-slate-200/60">
+    <div className="doctor-portal flex min-h-screen bg-background text-foreground" dir={direction}>
+      <div className="flex min-h-screen w-full flex-col bg-background lg:flex-row">
 
         <aside
           className={cn(
-            "hidden md:flex h-[calc(100vh-3.5rem)] shrink-0 flex-col overflow-hidden rounded-2xl border border-slate-100/80 bg-white shadow-md transition-[width,padding] duration-300 ease-in-out",
-            isSidebarCollapsed ? "m-3 w-20 p-3" : "m-3 w-72 p-5",
+            "hidden min-h-screen shrink-0 flex-col overflow-hidden border-r border-slate-200 bg-card p-4 transition-[width,padding] duration-300 ease-in-out lg:flex",
+            isSidebarCollapsed ? "w-20 p-3" : "w-64 p-4",
           )}
         >
-          <div className={cn("flex items-center", isSidebarCollapsed ? "justify-center" : "justify-between gap-3 border-b border-slate-100 pb-4")}>
+          <div className={cn("flex items-center", isSidebarCollapsed ? "justify-center" : "justify-between gap-3 border-b border-slate-200 pb-4")}>
             <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-base font-bold text-white shadow-md shadow-blue-500/25">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-base font-bold text-primary-foreground shadow-sm">
                 T
               </div>
               <div className={cn("min-w-0 overflow-hidden whitespace-nowrap transition-all duration-300", isSidebarCollapsed ? "w-0 opacity-0" : "w-32 opacity-100")}>
-                <p className="text-xl font-black tracking-tight text-slate-900">Tabibi</p>
-                <p className="text-xs font-medium text-slate-500">Doctor portal</p>
+                <p className="text-lg font-bold tracking-tight text-slate-900">Tabibi</p>
+                <p className="text-xs text-slate-500">Doctor portal</p>
               </div>
             </div>
             <button
               type="button"
               onClick={() => setIsSidebarCollapsed(true)}
               className={cn(
-                "rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700",
+                "rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700",
                 isSidebarCollapsed ? "pointer-events-none w-0 overflow-hidden p-0 opacity-0" : "opacity-100",
               )}
               aria-label="Collapse sidebar"
@@ -249,7 +250,7 @@ function DoctorPageLayoutContent() {
             type="button"
             onClick={() => setIsSidebarCollapsed(false)}
             className={cn(
-              "mt-3 flex h-9 w-full items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700",
+              "mt-3 flex h-9 w-full items-center justify-center rounded-md text-slate-500 transition hover:bg-slate-100 hover:text-slate-700",
               isSidebarCollapsed ? "opacity-100" : "pointer-events-none h-0 -translate-y-1 overflow-hidden opacity-0",
             )}
             aria-label="Expand sidebar"
@@ -257,7 +258,7 @@ function DoctorPageLayoutContent() {
             <ChevronRight className="h-5 w-5" />
           </button>
 
-          <nav className="mt-5 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto pr-1">
+          <nav className="mt-6 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto pr-1">
             {doctorNavItems.map((item) => {
               const Icon = item.icon;
               const hasAttention =
@@ -272,17 +273,17 @@ function DoctorPageLayoutContent() {
                   title={isSidebarCollapsed ? label(item.label) : undefined}
                   className={({ isActive }) =>
                     cn(
-                      "relative flex items-center rounded-2xl py-3 text-xs font-bold transition-all",
-                      isSidebarCollapsed ? "justify-center px-2" : "gap-3.5 px-4",
+                      "relative flex items-center rounded-md py-2.5 text-sm font-medium transition-colors",
+                      isSidebarCollapsed ? "justify-center px-2" : "gap-3 px-3",
                       isActive
-                        ? "border border-blue-100/80 bg-blue-50 text-blue-600 shadow-xs"
-                        : "text-slate-500 hover:bg-slate-50 hover:text-slate-900",
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-slate-600 hover:bg-primary-light hover:text-slate-900",
                     )
                   }
                 >
                   {({ isActive }) => (
                     <>
-                      <Icon size={18} className={isActive ? "text-blue-600" : "text-slate-400"} />
+                      <Icon size={18} className={isActive ? "text-primary-foreground" : "text-slate-400"} />
                       <span className={cn("overflow-hidden whitespace-nowrap transition-all duration-300", isSidebarCollapsed ? "w-0 opacity-0" : "w-40 opacity-100")}>
                         {label(item.label)}
                       </span>
@@ -302,38 +303,15 @@ function DoctorPageLayoutContent() {
             })}
           </nav>
 
-          <div className="mt-auto space-y-1 border-t border-slate-100 pt-3">
-            <NavLink
-              to="/doctor/settings"
-              title={isSidebarCollapsed ? label("Settings") : undefined}
-              className={({ isActive }) =>
-                cn(
-                  "relative flex items-center rounded-2xl py-3 text-xs font-bold transition-all",
-                  isSidebarCollapsed ? "justify-center px-2" : "gap-3.5 px-4",
-                  isActive
-                    ? "border border-blue-100/80 bg-blue-50 text-blue-600 shadow-xs"
-                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900",
-                )
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <Settings size={18} className={isActive ? "text-blue-600" : "text-slate-400"} />
-                  <span className={cn("overflow-hidden whitespace-nowrap transition-all duration-300", isSidebarCollapsed ? "w-0 opacity-0" : "w-40 opacity-100")}>
-                    {label("Settings")}
-                  </span>
-                </>
-              )}
-            </NavLink>
-
+          <div className="mt-auto space-y-1 border-t border-slate-200 pt-3">
             <Button
               type="button"
               variant="ghost"
               onClick={handleLogout}
               title={isSidebarCollapsed ? label("Log out") : undefined}
               className={cn(
-                "flex w-full rounded-2xl py-3 text-xs font-bold text-rose-500 transition-all hover:bg-rose-50 hover:text-rose-600",
-                isSidebarCollapsed ? "justify-center px-2" : "justify-start gap-3.5 px-4",
+                "flex w-full rounded-md py-2.5 text-sm font-medium text-rose-600 transition-colors hover:bg-rose-50 hover:text-rose-700",
+                isSidebarCollapsed ? "justify-center px-2" : "justify-start gap-3 px-3",
               )}
             >
               <LogOut size={18} />
@@ -344,9 +322,15 @@ function DoctorPageLayoutContent() {
           </div>
         </aside>
 
-        <div className="flex-1 flex flex-col min-w-0 bg-white h-full overflow-hidden">
-          
-          <header className="hidden shrink-0 items-center justify-end border-b border-slate-100 bg-white px-8 py-4 md:flex">
+        <div className="flex min-w-0 flex-1 flex-col bg-background">
+          <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-card px-4 sm:px-6">
+            <div className="flex items-center gap-3 lg:hidden">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">T</div>
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Tabibi</p>
+                <p className="text-xs text-slate-500">Doctor portal</p>
+              </div>
+            </div>
             <AccountDropdown
               name={doctorName}
               subtitle={doctorSpecialty}
@@ -357,8 +341,10 @@ function DoctorPageLayoutContent() {
               onLogout={handleLogout}
             />
           </header>
+          <WorkspaceMobileNav items={doctorNavItems} label="Doctor navigation" />
 
-          <main className="flex-1 p-8 sm:p-10 max-w-7xl w-full mx-auto bg-white overflow-y-auto">
+          <main className="w-full flex-1 bg-background p-4 sm:p-6 lg:p-8">
+            <div className="mx-auto w-full max-w-7xl">
             <Outlet context={{
               refreshDoctorShell,
               refreshDoctorAttention,
@@ -368,9 +354,10 @@ function DoctorPageLayoutContent() {
               uploadAvatar,
               removeAvatar,
             }} />
+            </div>
           </main>
 
-          <footer className="border-t border-slate-100 bg-white py-4 px-10 text-xs font-semibold text-slate-400 flex justify-between items-center shrink-0">
+          <footer className="flex shrink-0 items-center justify-between border-t border-slate-200 bg-card px-4 py-4 text-xs text-slate-500 sm:px-6 lg:px-8">
             <p>© 2026 Tabibi Clinical Systems. All rights reserved.</p>
           </footer>
         </div>

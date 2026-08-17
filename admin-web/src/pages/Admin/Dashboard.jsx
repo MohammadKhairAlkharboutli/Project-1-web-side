@@ -54,11 +54,11 @@ const CHART_VIEWS = [
 ];
 
 const STATUS_COLORS = {
-  confirmed: "#2563eb",
-  completed: "#16a34a",
-  cancelled: "#dc2626",
-  no_show: "#f59e0b",
-  in_progress: "#7c3aed",
+  confirmed: "var(--color-primary)",
+  completed: "var(--color-success)",
+  cancelled: "var(--color-destructive)",
+  no_show: "var(--color-warning)",
+  in_progress: "var(--color-violet)",
 };
 
 const statusLabels = {
@@ -81,19 +81,19 @@ const quickActions = [
 const chartConfig = {
   totalAppointments: {
     label: "Total",
-    color: "#2563eb",
+    color: "var(--color-primary)",
   },
   completedAppointments: {
     label: "Completed",
-    color: "#16a34a",
+    color: "var(--color-success)",
   },
   missedOrCancelledAppointments: {
     label: "Missed / Cancelled",
-    color: "#f59e0b",
+    color: "var(--color-warning)",
   },
   completedRevenue: {
     label: "Revenue",
-    color: "#0f766e",
+    color: "var(--color-teal)",
   },
 };
 
@@ -359,7 +359,7 @@ function AppointmentStatusDonut({ data }) {
             strokeWidth={3}
           >
             {data.map((item) => (
-              <Cell key={item.status} fill={STATUS_COLORS[item.status] ?? "#64748b"} />
+              <Cell key={item.status} fill={STATUS_COLORS[item.status] ?? "var(--color-muted-foreground)"} />
             ))}
             <Label
               content={({ viewBox }) => {
@@ -389,7 +389,7 @@ function AppointmentStatusDonut({ data }) {
             <span className="flex min-w-0 items-center gap-2 text-sm text-slate-600">
               <span
                 className="h-2.5 w-2.5 shrink-0 rounded-full"
-                style={{ backgroundColor: STATUS_COLORS[item.status] ?? "#64748b" }}
+                style={{ backgroundColor: STATUS_COLORS[item.status] ?? "var(--color-muted-foreground)" }}
               />
               <span className="truncate">{statusLabels[item.status] ?? getStatusLabel(item.status)}</span>
             </span>

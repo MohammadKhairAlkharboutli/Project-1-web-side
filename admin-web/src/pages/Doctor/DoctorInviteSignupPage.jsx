@@ -13,6 +13,9 @@ import {
 } from "lucide-react";
 import { useParams } from "react-router-dom";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
 const DEMO_INVITED_EMAIL = "doctor@example.com";
 
 const doctorInviteSignupSchema = z
@@ -45,22 +48,24 @@ function PasswordField({ id, label, error, registration }) {
       </label>
       <div className="relative">
         <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-        <input
+        <Input
           id={id}
           type={visible ? "text" : "password"}
           autoComplete={id === "password" ? "new-password" : "new-password"}
           aria-invalid={Boolean(error)}
-          className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-10 pr-11 text-sm font-medium text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 aria-invalid:border-rose-400 aria-invalid:ring-rose-100"
+          className="bg-muted py-2 pl-10 pr-11"
           {...registration}
         />
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           onClick={() => setVisible((current) => !current)}
           aria-label={visible ? "Hide password" : "Show password"}
-          className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+          className="absolute right-1 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
         >
           {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-        </button>
+        </Button>
       </div>
       <FieldError message={error?.message} />
     </div>
@@ -69,20 +74,20 @@ function PasswordField({ id, label, error, registration }) {
 
 function SignupSuccess() {
   return (
-    <div className="w-full max-w-lg rounded-[28px] border border-emerald-100 bg-white p-8 text-center shadow-xl shadow-slate-200/60 sm:p-10">
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+    <div className="w-full max-w-lg rounded-lg border border-emerald-100 bg-card p-8 text-center shadow-raised sm:p-10">
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-lg bg-success-soft text-success">
         <CheckCircle2 className="h-9 w-9" />
       </div>
-      <p className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-emerald-600">
+      <p className="mt-6 text-xs font-semibold uppercase tracking-[0.16em] text-success">
         Signup form complete
       </p>
-      <h1 className="mt-3 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+      <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
         Your account setup is ready.
       </h1>
       <p className="mt-4 text-sm leading-6 text-slate-600">
         This preview does not create an account yet. The invitation and account-creation connection will be enabled when the backend integration is added.
       </p>
-      <div className="mt-7 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-left">
+      <div className="mt-7 rounded-lg border border-blue-100 bg-primary-light p-4 text-left">
         <p className="text-xs font-bold text-blue-900">What happens after connection?</p>
         <p className="mt-1 text-xs leading-5 text-blue-700">
           You will be signed in automatically and guided to complete your doctor profile.
@@ -116,15 +121,15 @@ export default function DoctorInviteSignupPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#f1f5f9] px-4 py-8 text-slate-900 sm:px-6">
+    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-8 text-foreground sm:px-6">
       <div className="w-full max-w-5xl">
         <div className="mb-6 flex items-center justify-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] text-white shadow-lg shadow-blue-500/25">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
             <Stethoscope className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-xl font-black tracking-tight text-slate-900">Tabibi</p>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Clinical Systems</p>
+            <p className="text-xl font-semibold tracking-tight text-slate-900">Tabibi</p>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Clinical Systems</p>
           </div>
         </div>
 
@@ -133,8 +138,8 @@ export default function DoctorInviteSignupPage() {
             <SignupSuccess />
           </div>
         ) : (
-          <div className="grid overflow-hidden rounded-[30px] border border-slate-200/80 bg-white shadow-2xl shadow-slate-300/50 lg:grid-cols-[0.9fr_1.1fr]">
-            <section className="relative overflow-hidden bg-gradient-to-br from-[#0f3f96] via-[#1754bf] to-[#2878d4] p-8 text-white sm:p-10">
+          <div className="grid overflow-hidden rounded-xl border border-slate-200 bg-card shadow-raised lg:grid-cols-[0.9fr_1.1fr]">
+            <section className="relative overflow-hidden bg-primary p-8 text-primary-foreground sm:p-10">
               <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10" />
               <div className="absolute -bottom-24 -left-20 h-64 w-64 rounded-full border-[28px] border-white/10" />
               <div className="relative flex h-full flex-col">
@@ -143,11 +148,11 @@ export default function DoctorInviteSignupPage() {
                   Secure doctor invitation
                 </div>
                 <div className="my-auto py-12 lg:py-0">
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-100">Welcome to Tabibi</p>
-                  <h1 className="mt-3 text-3xl font-black leading-tight tracking-tight sm:text-4xl">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-100">Welcome to Tabibi</p>
+                  <h1 className="mt-3 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
                     Create your doctor account.
                   </h1>
-                  <p className="mt-5 max-w-sm text-sm leading-6 text-blue-50">
+                  <p className="mt-5 max-w-sm text-sm leading-6 text-blue-100">
                     Set up your secure account now. You will complete your personal and professional profile after signup.
                   </p>
                 </div>
@@ -163,15 +168,15 @@ export default function DoctorInviteSignupPage() {
 
             <section className="p-7 sm:p-10">
               <div className="max-w-md">
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1e61dc]">Doctor signup</p>
-                <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-900">Set your account details</h2>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Doctor signup</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">Set your account details</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
                   Your invitation is tied to the email address below.
                 </p>
 
-                <div className="mt-6 rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
+                <div className="mt-6 rounded-lg border border-blue-100 bg-primary-light/70 p-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-[#1e61dc] shadow-sm">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-card text-primary shadow-sm">
                       <Mail className="h-4 w-4" />
                     </div>
                     <div className="min-w-0">
@@ -187,12 +192,12 @@ export default function DoctorInviteSignupPage() {
                       <label htmlFor="firstName" className="mb-1.5 block text-xs font-bold text-slate-700">
                         First name
                       </label>
-                      <input
+                      <Input
                         id="firstName"
                         type="text"
                         autoComplete="given-name"
                         aria-invalid={Boolean(errors.firstName)}
-                        className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 aria-invalid:border-rose-400 aria-invalid:ring-rose-100"
+                        className="bg-muted"
                         {...register("firstName")}
                       />
                       <FieldError message={errors.firstName?.message} />
@@ -201,12 +206,12 @@ export default function DoctorInviteSignupPage() {
                       <label htmlFor="lastName" className="mb-1.5 block text-xs font-bold text-slate-700">
                         Last name
                       </label>
-                      <input
+                      <Input
                         id="lastName"
                         type="text"
                         autoComplete="family-name"
                         aria-invalid={Boolean(errors.lastName)}
-                        className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 aria-invalid:border-rose-400 aria-invalid:ring-rose-100"
+                        className="bg-muted"
                         {...register("lastName")}
                       />
                       <FieldError message={errors.lastName?.message} />
@@ -230,13 +235,14 @@ export default function DoctorInviteSignupPage() {
                     Use at least eight characters. You will be able to finish your doctor profile after account creation.
                   </p>
 
-                  <button
+                  <Button
                     type="submit"
+                    size="lg"
                     disabled={isSubmitting}
-                    className="flex h-11 w-full items-center justify-center rounded-xl bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] px-4 text-sm font-bold text-white shadow-md shadow-blue-500/25 transition hover:opacity-95 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="w-full"
                   >
                     {isSubmitting ? "Preparing account…" : "Create doctor account"}
-                  </button>
+                  </Button>
                 </form>
               </div>
             </section>

@@ -22,13 +22,13 @@ export default function AccountDropdown({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-200/60 bg-slate-50 p-1.5 pl-3 transition-all hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+          className="flex min-w-0 items-center gap-3 rounded-md border border-slate-200 bg-muted p-1.5 pl-3 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
           aria-label="Open account menu"
         >
           <span className="hidden max-w-44 truncate text-right text-xs font-bold text-slate-800 sm:block">
             {name}
           </span>
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-blue-100 text-xs font-bold text-blue-700">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-primary-light text-xs font-semibold text-primary">
             {avatarUrl ? (
               <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
             ) : (
@@ -39,19 +39,19 @@ export default function AccountDropdown({
         </button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-52 rounded-2xl border-slate-100 bg-white p-2 shadow-xl">
+      <DropdownMenuContent align="end" className="w-52 p-2">
         <div className="mb-1 border-b border-slate-100 px-3 py-2">
           <p className="truncate text-xs font-bold text-slate-900">{name}</p>
-          <p className="mt-0.5 truncate text-[10px] font-medium text-blue-600">{subtitle}</p>
+          <p className="mt-0.5 truncate text-[10px] font-medium text-primary">{subtitle}</p>
         </div>
         {onProfile ? (
-          <DropdownMenuItem onSelect={onProfile} className="rounded-xl py-2.5 text-xs font-bold">
+          <DropdownMenuItem onSelect={onProfile} className="py-2.5 text-xs font-semibold">
             <User className="h-4 w-4" />
             Profile
           </DropdownMenuItem>
         ) : null}
         {onSettings ? (
-          <DropdownMenuItem onSelect={onSettings} className="rounded-xl py-2.5 text-xs font-bold">
+          <DropdownMenuItem onSelect={onSettings} className="py-2.5 text-xs font-semibold">
             <Settings className="h-4 w-4" />
             Settings
           </DropdownMenuItem>
@@ -60,7 +60,7 @@ export default function AccountDropdown({
         <DropdownMenuItem
           variant="destructive"
           onSelect={onLogout}
-          className="rounded-xl py-2.5 text-xs font-bold"
+          className="py-2.5 text-xs font-semibold"
         >
           <LogOut className="h-4 w-4" />
           Log out

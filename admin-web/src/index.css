@@ -2,143 +2,112 @@
 @source "./pages/Doctor/DoctorInviteSignupPage.jsx";
 @source "./pages/Doctor/DoctorProfileSettings.jsx";
 
-:root {
+/*
+ * Tabibi design foundation. Semantic names are intentional: screens should
+ * describe the role a value plays (primary, muted, destructive) instead of
+ * introducing page-specific hex values.
+ */
+@theme {
+  --font-sans: "Segoe UI", Inter, ui-sans-serif, system-ui, sans-serif;
+
+  --color-background: #f8fafc;
+  --color-foreground: #0f172a;
+  --color-card: #ffffff;
+  --color-card-foreground: #0f172a;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0f172a;
   --color-primary: #2563eb;
   --color-primary-hover: #1d4ed8;
-  --color-primary-light: #dbeafe;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #eff6ff;
+  --color-secondary-foreground: #1e3a8a;
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #64748b;
+  --color-accent: #eff6ff;
+  --color-accent-foreground: #1e3a8a;
+  --color-border: #e2e8f0;
+  --color-input: #cbd5e1;
+  --color-ring: #2563eb;
+  --color-destructive: #dc2626;
+  --color-destructive-foreground: #ffffff;
+  --color-success: #16a34a;
+  --color-success-soft: #dcfce7;
+  --color-warning: #ca8a04;
+  --color-warning-soft: #fef9c3;
+  --color-info: #0284c7;
+  --color-teal: #0f766e;
+  --color-violet: #7c3aed;
 
-  --color-danger: #dc2626;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  --shadow-surface: 0 1px 2px rgb(15 23 42 / 0.05), 0 1px 3px rgb(15 23 42 / 0.08);
+  --shadow-raised: 0 10px 24px rgb(15 23 42 / 0.10);
+}
+
+:root {
+  --color-primary-light: #dbeafe;
+  --color-danger: var(--color-destructive);
   --color-danger-hover: #b91c1c;
   --color-danger-light: #fee2e2;
-
-  --color-success: #16a34a;
-  --color-success-light: #dcfce7;
-
-  --color-warning: #ca8a04;
-  --color-warning-light: #fef9c3;
-
-  --color-border: #e2e8f0;
-  --color-page: #f8fafc;
+  --color-success-light: var(--color-success-soft);
+  --color-warning-light: var(--color-warning-soft);
+  --color-page: var(--color-background);
 }
 
-/* :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  html {
+    font-family: var(--font-sans);
+    background: var(--color-background);
+  }
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  body {
+    min-width: 320px;
+    margin: 0;
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: inherit;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+/*
+ * Legacy workflow pages still contain a few pre-system gradient utilities.
+ * Keep their visual meaning aligned with the product primary until those
+ * pages are fully composed from shared surfaces.
+ */
+@layer utilities {
+  .bg-gradient-to-br {
+    background-color: var(--color-primary) !important;
+    background-image: none !important;
   }
 }
 
-body {
-  margin: 0;
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
-} */
-
-/* Make the native file chooser clearly actionable while preserving its accessibility. */
+/* Make the native file chooser clearly actionable while preserving accessibility. */
 input[type="file"]::file-selector-button {
   margin-right: 0.75rem;
   border: 0;
   background: transparent;
-  color: #2563eb;
+  color: var(--color-primary);
   cursor: pointer;
   font: inherit;
   font-weight: 600;
@@ -146,8 +115,7 @@ input[type="file"]::file-selector-button {
   text-underline-offset: 2px;
 }
 
-/* The doctor portal owns its language direction.  Logical properties keep
-   tables, cards, forms, and navigation aligned without changing admin pages. */
+/* The doctor portal owns its language direction. */
 .doctor-portal[dir="rtl"] {
   font-family: Tahoma, "Segoe UI", Arial, sans-serif;
 }

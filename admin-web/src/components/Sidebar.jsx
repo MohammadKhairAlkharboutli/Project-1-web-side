@@ -1,33 +1,17 @@
 import { NavLink } from 'react-router-dom'
-import { CalendarClock, CalendarDays, Database, Flag, Hospital, ListOrdered, MonitorCog, Scale, Star, ChevronRight, ChevronLeft, LayoutDashboard, MailPlus, Stethoscope, Users } from 'lucide-react'
+import { ChevronRight, ChevronLeft } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
 import { doctorSchedulesApi } from '@/api/doctorSchedulesApi'
 import { ratingsApi } from '@/api/ratingsApi'
-
-const sidebarItems=[          
-    //just for the icons I can just switch them out for real icons later
-    {label:"Dashboard" , path:"/admin" , icon:LayoutDashboard },
-    {label:"Doctors" , path:"/admin/doctors" , icon:Stethoscope},
-    {label:"Doctor Invitations" , path:"/admin/doctor-invitations" , icon:MailPlus},
-    {label:"Patients" , path:"/admin/patients" , icon: Users},
-    {label:"Appointments" , path:"/admin/appointments" , icon:CalendarDays },
-    {label:"Queue" , path:"/admin/queue" , icon:ListOrdered },
-    {label:"Ratings" , path:"/admin/ratings" , icon:Star },
-    {label:"Rating Reports" , path:"/admin/rating-reports" , icon:Flag },
-    {label:"Schedule Requests" , path:"/admin/schedule-change-requests" , icon:CalendarClock },
-    {label:"Data Lookups" , path:"/admin/data-lookups" , icon:Database },
-    {label:"System Policies" , path:"/admin/system-policies" , icon:Scale },
-    {label:"Front Desk Terminal" , path:"/admin/settings" , icon:MonitorCog },
-    {label:"Clinics" , path:"/admin/clinics" , icon:Hospital }
-]
+import { adminNavItems } from '@/components/adminNavigation'
 
 const SidebarItem = ({item, isCollapsed, hasAttention}) => {
     const Icon = item.icon;
     return(
 
         <NavLink to={item.path}
-                end={item.path==="/admin"} 
+                end={item.end}
                 title={isCollapsed ? item.label : ""}
                 className={({ isActive }) =>
                             `relative flex items-center overflow-hidden rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 ease-in-out ${
@@ -103,7 +87,7 @@ const Sidebar = () => {
 
   return (
 
-    <aside className={`flex min-h-screen flex-col overflow-hidden border-r border-slate-200 bg-white p-4 text-slate-800 transition-[width] duration-300 ease-in-out sm:p-5
+    <aside className={`hidden min-h-screen flex-col overflow-hidden border-r border-slate-200 bg-white p-4 text-slate-800 transition-[width] duration-300 ease-in-out lg:flex sm:p-5
                 ${isCollapsed ? 'w-20' : 'w-64'}`} >
 
         <div className={`flex items-center justify-between gap-2`}>       {/* ----------logo area------------ */}
@@ -114,7 +98,7 @@ const Sidebar = () => {
                 </div>
 
                 <div className={`overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out ${isCollapsed ? "w-0 opacity-0" : "w-28 opacity-100"}`}>
-                    <h1 className='text-lg font-bold leading-tight text-slate-900'>Tabibi</h1>
+                    <p className='text-lg font-bold leading-tight text-slate-900'>Tabibi</p>
                     <p className='text-xs text-slate-500 leading-tight'>admin panel</p>
                 </div>
             </div>
@@ -144,7 +128,7 @@ const Sidebar = () => {
 
         <nav className='mt-6 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto pr-1'>
 
-            {sidebarItems.map((item)=> {
+            {adminNavItems.map((item)=> {
                 const hasAttention =
                     (item.path === "/admin/rating-reports" && attention.ratingReports)
                     || (item.path === "/admin/schedule-change-requests" && attention.scheduleRequests)

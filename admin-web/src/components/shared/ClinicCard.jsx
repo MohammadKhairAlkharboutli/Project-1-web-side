@@ -19,7 +19,7 @@ function formatClinicStatus(status) {
 
 function getClinicStatusVariant(status) {
   if (status === "active") {
-    return "default";
+    return "success";
   }
 
   if (status === "closed") {

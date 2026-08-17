@@ -31,7 +31,7 @@ export default function DoctorOverview() {
     <div className="space-y-6">
       <section
         aria-labelledby="clinic-assignment-heading"
-        className="rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-50 via-white to-white p-6 shadow-lg shadow-blue-100/60"
+        className="rounded-lg border border-blue-100 bg-primary-light/50 p-6 shadow-surface"
       >
         <DoctorClinics />
       </section>

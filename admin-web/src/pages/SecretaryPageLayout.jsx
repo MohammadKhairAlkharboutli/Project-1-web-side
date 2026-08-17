@@ -67,8 +67,8 @@ export default function SecretaryPageLayout() {
         <Outlet />
       </main>
 
-      <footer className="border-t border-slate-200 bg-white px-4 py-3 text-xs text-slate-500 sm:px-6 lg:px-8">
-        Tabibi Clinical Systems
+      <footer className="border-t border-slate-200 bg-card px-4 py-3 text-xs text-slate-500 sm:px-6 lg:px-8">
+        © 2026 Tabibi Clinical Systems. All rights reserved.
       </footer>
     </div>
   );

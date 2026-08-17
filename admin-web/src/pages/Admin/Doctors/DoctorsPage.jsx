@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { clinicsApi } from "@/api/clinicsApi";
 import { doctorsApi } from "@/api/doctorsApi";
 import DataTable from "@/components/shared/DataTable";
+import PageHeader from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
@@ -172,14 +173,10 @@ export default function DoctorsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Doctors</h1>
-          <p className="text-muted-foreground">
-            Review accepted doctor accounts, their clinical profiles, and clinic assignments.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Doctors"
+        description="Review accepted doctor accounts, their clinical profiles, and clinic assignments."
+      />
 
       {showInitialEmptyState ? (
         <section className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-14 text-center">

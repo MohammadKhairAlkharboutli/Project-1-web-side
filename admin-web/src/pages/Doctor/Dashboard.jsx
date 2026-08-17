@@ -24,7 +24,7 @@ const STAT_CONFIG = [
     label: "Appointments Today",
     helper: "Today’s booked visits",
     icon: CalendarDays,
-    iconClass: "bg-blue-50 text-[#1e61dc]",
+    iconClass: "bg-primary-light text-primary",
     helperClass: "bg-blue-50 text-blue-600",
   },
   {
@@ -86,7 +86,7 @@ function DoctorAvatar({ doctor, avatarUrl }) {
   }
 
   return (
-    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-sm font-black text-blue-700">
+    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary-light text-sm font-semibold text-primary">
       {getInitials(doctor.fullName)}
     </div>
   );
@@ -94,18 +94,18 @@ function DoctorAvatar({ doctor, avatarUrl }) {
 
 function DashboardLoading() {
   return (
-    <div className="min-h-screen w-full bg-[#f8fafc] p-6 lg:p-8">
+    <div className="w-full py-2">
       <div className="mx-auto max-w-[1600px] animate-pulse space-y-6">
         <div className="grid gap-6 lg:grid-cols-12">
-          <div className="h-36 rounded-[22px] bg-blue-100 lg:col-span-8" />
-          <div className="h-36 rounded-[22px] bg-slate-200 lg:col-span-4" />
+          <div className="h-36 rounded-lg bg-primary-light lg:col-span-8" />
+          <div className="h-36 rounded-lg bg-slate-200 lg:col-span-4" />
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {STAT_CONFIG.map((stat) => (
-            <div key={stat.key} className="h-28 rounded-[22px] bg-slate-200" />
+            <div key={stat.key} className="h-28 rounded-lg bg-slate-200" />
           ))}
         </div>
-        <div className="h-80 rounded-[24px] bg-slate-200" />
+        <div className="h-80 rounded-lg bg-slate-200" />
       </div>
     </div>
   );
@@ -113,10 +113,10 @@ function DashboardLoading() {
 
 function DashboardError({ message, onRetry }) {
   return (
-    <div className="min-h-screen w-full bg-[#f8fafc] p-6 lg:p-8">
+    <div className="w-full py-2">
       <div className="mx-auto flex min-h-[60vh] max-w-xl items-center">
         <section
-          className="w-full rounded-[24px] border border-red-200 bg-white p-8 text-center shadow-sm"
+          className="w-full rounded-lg border border-red-200 bg-card p-8 text-center shadow-surface"
           role="alert"
         >
           <h1 className="text-xl font-bold text-slate-900">
@@ -189,8 +189,8 @@ export default function DoctorDashboard() {
     : "N/A";
 
   return (
-    <div className="min-h-screen w-full bg-[#f8fafc] p-6 font-sans text-slate-900 antialiased lg:p-8">
-      <div className="mx-auto max-w-[1600px] space-y-6">
+    <div className="w-full font-sans text-slate-900 antialiased">
+      <div className="space-y-6">
         {loadError ? (
           <div
             className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 sm:flex-row sm:items-center sm:justify-between"
@@ -205,14 +205,14 @@ export default function DoctorDashboard() {
         ) : null}
 
         <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-12">
-          <div className="relative flex flex-col justify-center overflow-hidden rounded-[22px] bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] px-6 py-5 text-white shadow-md lg:col-span-8">
+          <div className="relative flex flex-col justify-center overflow-hidden rounded-lg bg-primary px-6 py-5 text-primary-foreground shadow-surface lg:col-span-8">
             <div className="pointer-events-none absolute -bottom-10 -right-10 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
             <div className="relative z-10 space-y-1.5">
               <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-white/30 bg-white/20 px-3 py-0.5 text-[11px] font-bold text-white shadow-xs backdrop-blur-md">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-300" />
                 Clinical Dashboard
               </span>
-              <h1 className="text-xl font-black tracking-tight sm:text-2xl">
+              <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
                 Welcome back, {doctor.fullName || "Doctor"}
               </h1>
               <p className="text-xs font-medium text-blue-100">
@@ -221,7 +221,7 @@ export default function DoctorDashboard() {
             </div>
           </div>
 
-          <div className="flex flex-col justify-between rounded-[22px] border border-slate-100 bg-white px-5 py-4 shadow-xs lg:col-span-4">
+          <div className="flex flex-col justify-between rounded-lg border border-slate-200 bg-card px-5 py-4 shadow-surface lg:col-span-4">
             <div className="flex items-center gap-3.5">
               <DoctorAvatar doctor={doctor} avatarUrl={avatarUrl} />
               <div className="min-w-0 flex-1">
@@ -233,7 +233,7 @@ export default function DoctorDashboard() {
                 </p>
                 <Link
                   to="/doctor/profile"
-                  className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-bold text-[#1e61dc] hover:underline"
+                  className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
                 >
                   Profile
                   <ArrowUpRight size={11} className="-rotate-90" />
@@ -257,13 +257,13 @@ export default function DoctorDashboard() {
             return (
               <div
                 key={stat.key}
-                className="flex items-center justify-between gap-4 rounded-[22px] border border-slate-100 bg-white px-5 py-4 shadow-xs"
+                className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 bg-card px-5 py-4 shadow-surface"
               >
                 <div className="space-y-0.5">
                   <p className="text-[11px] font-semibold text-slate-400">
                     {stat.label}
                   </p>
-                  <p className="text-2xl font-black text-slate-900">
+                  <p className="text-2xl font-semibold text-slate-900">
                     {stats[stat.key]}
                   </p>
                   <span
@@ -282,11 +282,11 @@ export default function DoctorDashboard() {
           })}
         </div>
 
-        <section className="flex flex-col justify-between space-y-6 rounded-[24px] border border-slate-100 bg-white p-6 shadow-xs sm:p-8">
+        <section className="flex flex-col justify-between space-y-6 rounded-lg border border-slate-200 bg-card p-6 shadow-surface sm:p-8">
           <div>
             <div className="mb-4 flex items-center justify-between gap-4">
               <div>
-                <h2 className="text-base font-black text-slate-900">
+                <h2 className="text-base font-semibold text-slate-900">
                   Upcoming Appointments
                 </h2>
                 <p className="mt-0.5 text-xs text-slate-400">
@@ -306,7 +306,7 @@ export default function DoctorDashboard() {
                 </Button>
                 <Link
                   to="/doctor/appointments"
-                  className="flex items-center gap-1 text-xs font-bold text-[#1e61dc] hover:underline"
+                  className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
                 >
                   More
                   <ArrowUpRight size={13} className="-rotate-90" />
@@ -329,11 +329,11 @@ export default function DoctorDashboard() {
                         <AppointmentStatusBadge status={appointment.status} />
                       </div>
                       <p className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
-                        <Clock size={13} className="text-[#1e61dc]" />
+                        <Clock size={13} className="text-primary" />
                         {formatAppointmentTimeRange(appointment)}
                       </p>
                     </div>
-                    <span className="shrink-0 rounded-xl border border-blue-100 bg-blue-50 px-3 py-1.5 text-xs font-bold text-[#1e61dc]">
+                    <span className="shrink-0 rounded-md border border-blue-100 bg-primary-light px-3 py-1.5 text-xs font-semibold text-primary">
                       {appointment.type || "Appointment"}
                     </span>
                   </div>
@@ -348,7 +348,8 @@ export default function DoctorDashboard() {
 
           <Button
             asChild
-            className="w-full rounded-xl bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] py-3.5 text-xs font-bold text-white shadow-md transition-all hover:opacity-90"
+            size="lg"
+            className="w-full"
           >
             <Link to="/doctor/appointments">Manage All Appointments</Link>
           </Button>

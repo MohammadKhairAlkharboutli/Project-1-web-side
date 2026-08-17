@@ -9,6 +9,7 @@ import AppointmentPriorityBadge from "@/components/shared/Appointments/Appointme
 import AppointmentStatusBadge from "@/components/shared/Appointments/AppointmentStatusBadge";
 import { formatAppointmentDate, formatAppointmentTimeRange, getAppointmentTimePositionLabel, getPatientDisplayName } from "@/components/shared/Appointments/appointmentUtils";
 import { Button } from "@/components/ui/button";
+import PageHeader from "@/components/shared/PageHeader";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { useDoctorLocale } from "@/context/DoctorLocaleContext";
@@ -121,5 +122,83 @@ export default function DoctorAppointments() {
   const updateFilter = (setter, value) => { setter(value); setPage(1); };
   const resetFilters = () => { setSearch(""); setStatus("all"); setPriority("all"); setDateMode("all"); setFromDate(""); setToDate(""); setPage(1); };
 
-  return <main className="mx-auto w-full max-w-6xl space-y-6 pb-10"><header className="rounded-3xl bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] px-6 py-7 text-white shadow-lg shadow-blue-500/20 sm:px-8"><div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between"><div><p className="text-xs font-bold uppercase tracking-wider text-blue-100">Doctor appointments</p><h1 className="mt-2 text-2xl font-black tracking-tight">Appointments</h1><p className="mt-1 text-sm text-blue-100">Review your scheduled visits and manage today&apos;s check-ins.</p></div><Button variant="secondary" className="self-start bg-white/15 text-white hover:bg-white/25" onClick={loadAppointments} disabled={loadState === "loading"}><RefreshCw className={`h-4 w-4 ${loadState === "loading" ? "animate-spin" : ""}`} /> Refresh</Button></div><div className="mt-6 grid gap-3 sm:grid-cols-4">{[["Total matching", stats.total], ["Scheduled on page", stats.scheduled], ["Checked in on page", stats.checkedIn], ["Completed on page", stats.completed]].map(([label, value]) => <div key={label} className="rounded-2xl border border-white/20 bg-white/10 px-4 py-3"><p className="text-xs font-semibold uppercase tracking-wide text-blue-100">{label}</p><p className="mt-1 text-2xl font-black">{value}</p></div>)}</div></header><section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"><AppointmentFilters search={search} onSearchChange={(value) => updateFilter(setSearch, value)} status={status} onStatusChange={(value) => updateFilter(setStatus, value)} priority={priority} onPriorityChange={(value) => updateFilter(setPriority, value)} dateMode={dateMode} onDateModeChange={(value) => updateFilter(setDateMode, value)} fromDate={fromDate} onFromDateChange={(value) => updateFilter(setFromDate, value)} toDate={toDate} onToDateChange={(value) => updateFilter(setToDate, value)} onReset={resetFilters} />{loadState === "loading" ? <div className="flex items-center justify-center gap-2 py-16 text-sm font-medium text-slate-500"><LoaderCircle className="h-5 w-5 animate-spin" /> Loading appointments…</div> : null}{loadState === "error" ? <div className="mt-5 rounded-2xl border border-rose-100 bg-rose-50 p-5 text-sm text-rose-800"><p>{error}</p><Button className="mt-4" variant="outline" onClick={loadAppointments}>Try again</Button></div> : null}{loadState === "ready" ? <><div className="mt-5 md:hidden"><AppointmentCards appointments={appointments} /></div><div className="mt-5 hidden md:block"><DataTable columns={getColumns()} data={appointments} pagination={false} emptyMessage="No appointments match these filters." /></div>{total > 0 ? <div className="mt-5 flex flex-col gap-3 border-t border-slate-100 pt-4 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between"><p>Showing {(page - 1) * limit + 1}–{(page - 1) * limit + appointments.length} of {total} appointments</p><div className="flex items-center gap-2"><Button variant="outline" size="sm" disabled={page <= 1 || loadState === "loading"} onClick={() => setPage((current) => current - 1)}>Previous</Button><span className="min-w-20 text-center text-xs font-semibold text-slate-600">Page {page} of {totalPages}</span><Button variant="outline" size="sm" disabled={page >= totalPages || loadState === "loading"} onClick={() => setPage((current) => current + 1)}>Next</Button></div></div> : null}</> : null}</section></main>;
+  return (
+    <main className="mx-auto w-full max-w-6xl space-y-6 pb-10">
+      <PageHeader
+        title="Appointments"
+        description="Review your scheduled visits and manage today’s check-ins."
+        actions={(
+          <Button variant="outline" onClick={loadAppointments} disabled={loadState === "loading"}>
+            <RefreshCw className={`h-4 w-4 ${loadState === "loading" ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        )}
+      />
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          ["Total matching", stats.total],
+          ["Scheduled on page", stats.scheduled],
+          ["Checked in on page", stats.checkedIn],
+          ["Completed on page", stats.completed],
+        ].map(([label, value]) => (
+          <div key={label} className="rounded-lg border border-slate-200 bg-card px-4 py-3 shadow-surface">
+            <p className="text-xs font-medium text-muted-foreground">{label}</p>
+            <p className="mt-1 text-2xl font-semibold text-foreground">{value}</p>
+          </div>
+        ))}
+      </div>
+
+      <section className="rounded-lg border border-slate-200 bg-card p-5 shadow-surface sm:p-6">
+        <AppointmentFilters
+          search={search}
+          onSearchChange={(value) => updateFilter(setSearch, value)}
+          status={status}
+          onStatusChange={(value) => updateFilter(setStatus, value)}
+          priority={priority}
+          onPriorityChange={(value) => updateFilter(setPriority, value)}
+          dateMode={dateMode}
+          onDateModeChange={(value) => updateFilter(setDateMode, value)}
+          fromDate={fromDate}
+          onFromDateChange={(value) => updateFilter(setFromDate, value)}
+          toDate={toDate}
+          onToDateChange={(value) => updateFilter(setToDate, value)}
+          onReset={resetFilters}
+        />
+
+        {loadState === "loading" ? (
+          <div className="flex items-center justify-center gap-2 py-16 text-sm font-medium text-muted-foreground">
+            <LoaderCircle className="h-5 w-5 animate-spin" />
+            Loading appointments…
+          </div>
+        ) : null}
+
+        {loadState === "error" ? (
+          <div className="mt-5 rounded-lg border border-rose-100 bg-rose-50 p-5 text-sm text-rose-800">
+            <p>{error}</p>
+            <Button className="mt-4" variant="outline" onClick={loadAppointments}>Try again</Button>
+          </div>
+        ) : null}
+
+        {loadState === "ready" ? (
+          <>
+            <div className="mt-5 md:hidden"><AppointmentCards appointments={appointments} /></div>
+            <div className="mt-5 hidden md:block">
+              <DataTable columns={getColumns()} data={appointments} pagination={false} emptyMessage="No appointments match these filters." />
+            </div>
+            {total > 0 ? (
+              <div className="mt-5 flex flex-col gap-3 border-t border-slate-200 pt-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+                <p>Showing {(page - 1) * limit + 1}–{(page - 1) * limit + appointments.length} of {total} appointments</p>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" disabled={page <= 1 || loadState === "loading"} onClick={() => setPage((current) => current - 1)}>Previous</Button>
+                  <span className="min-w-20 text-center text-xs font-semibold text-slate-600">Page {page} of {totalPages}</span>
+                  <Button variant="outline" size="sm" disabled={page >= totalPages || loadState === "loading"} onClick={() => setPage((current) => current + 1)}>Next</Button>
+                </div>
+              </div>
+            ) : null}
+          </>
+        ) : null}
+      </section>
+    </main>
+  );
 }

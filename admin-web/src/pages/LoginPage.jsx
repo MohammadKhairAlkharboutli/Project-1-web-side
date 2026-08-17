@@ -97,10 +97,10 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#f1f5f9] px-4 py-8 text-slate-900 sm:px-6">
+    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-8 text-foreground sm:px-6">
       <div className="w-full max-w-5xl">
         <header className="mb-6 flex items-center justify-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] text-white shadow-lg shadow-blue-500/25">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
             <Stethoscope className="h-5 w-5" aria-hidden="true" />
           </div>
           <div>
@@ -109,8 +109,8 @@ export default function LoginPage() {
           </div>
         </header>
 
-        <section className="grid overflow-hidden rounded-[30px] border border-slate-200/80 bg-white shadow-2xl shadow-slate-300/50 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="relative overflow-hidden bg-gradient-to-br from-[#0f3f96] via-[#1754bf] to-[#2878d4] p-8 text-white sm:p-10">
+        <section className="grid overflow-hidden rounded-xl border border-slate-200 bg-card shadow-raised lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="relative overflow-hidden bg-primary p-8 text-primary-foreground sm:p-10">
             <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10" />
             <div className="absolute -bottom-24 -left-20 h-64 w-64 rounded-full border-[28px] border-white/10" />
             <div className="relative flex h-full flex-col">
@@ -120,9 +120,9 @@ export default function LoginPage() {
               </div>
 
               <div className="my-auto py-12 lg:py-0">
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-100">Welcome to Tabibi</p>
-                <h1 className="mt-3 text-3xl font-black leading-tight tracking-tight sm:text-4xl">Your clinic, in one secure place.</h1>
-                <p className="mt-5 max-w-sm text-sm leading-6 text-blue-50">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-100">Welcome to Tabibi</p>
+                <h1 className="mt-3 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">Your clinic, in one secure place.</h1>
+                <p className="mt-5 max-w-sm text-sm leading-6 text-blue-100">
                   Doctors, administrators, and reception staff can securely sign in to their assigned workspace.
                 </p>
               </div>
@@ -136,8 +136,8 @@ export default function LoginPage() {
 
           <div className="p-7 sm:p-10">
             <div className="max-w-md">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1e61dc]">Staff sign in</p>
-              <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-900">Welcome back</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Staff sign in</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">Welcome back</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">Enter your details to access your Tabibi workspace.</p>
 
               <form onSubmit={handleSubmit} className="mt-7 space-y-5" noValidate>
@@ -149,7 +149,7 @@ export default function LoginPage() {
                 placeholder="name@clinic.com or 09XXXXXXXX"
                 autoComplete="username"
                 aria-invalid={Boolean(error)}
-                className="h-11 rounded-xl border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-900 transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                className="bg-muted"
                 value={loginValue}
                 onChange={(event) => setLoginValue(event.target.value)}
               />
@@ -163,7 +163,7 @@ export default function LoginPage() {
                 placeholder="Enter your password"
                 autoComplete="current-password"
                 aria-invalid={Boolean(error)}
-                className="h-11 rounded-xl border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-900 transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100"
+                className="bg-muted"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
               />
@@ -177,7 +177,7 @@ export default function LoginPage() {
                   </p>
                 )}
 
-                <Button type="submit" className="h-11 w-full rounded-xl bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] text-sm font-bold shadow-md shadow-blue-500/25 hover:opacity-95" disabled={isSubmitting}>
+                <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? <><LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" /> Signing in…</> : "Sign in to dashboard"}
                 </Button>
               </form>

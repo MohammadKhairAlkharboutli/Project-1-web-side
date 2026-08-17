@@ -1,0 +1,31 @@
+import {
+  CalendarClock,
+  CalendarDays,
+  Database,
+  Flag,
+  Hospital,
+  LayoutDashboard,
+  ListOrdered,
+  MailPlus,
+  MonitorCog,
+  Scale,
+  Star,
+  Stethoscope,
+  Users,
+} from "lucide-react";
+
+export const adminNavItems = [
+  { label: "Dashboard", path: "/admin", icon: LayoutDashboard, end: true },
+  { label: "Doctors", path: "/admin/doctors", icon: Stethoscope },
+  { label: "Doctor Invitations", path: "/admin/doctor-invitations", icon: MailPlus },
+  { label: "Patients", path: "/admin/patients", icon: Users },
+  { label: "Appointments", path: "/admin/appointments", icon: CalendarDays },
+  { label: "Queue", path: "/admin/queue", icon: ListOrdered },
+  { label: "Ratings", path: "/admin/ratings", icon: Star },
+  { label: "Rating Reports", path: "/admin/rating-reports", icon: Flag },
+  { label: "Schedule Requests", path: "/admin/schedule-change-requests", icon: CalendarClock },
+  { label: "Data Lookups", path: "/admin/data-lookups", icon: Database },
+  { label: "System Policies", path: "/admin/system-policies", icon: Scale },
+  { label: "Front Desk Terminal", path: "/admin/settings", icon: MonitorCog },
+  { label: "Clinics", path: "/admin/clinics", icon: Hospital },
+];

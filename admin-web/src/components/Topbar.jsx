@@ -51,7 +51,7 @@ export default function Topbar() {
   }
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 sm:px-6">
+    <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-card px-4 sm:px-6">
       <h1 className="min-w-0 truncate text-lg font-semibold tracking-tight text-slate-900">
         {title}
       </h1>
@@ -62,7 +62,6 @@ export default function Topbar() {
         initials={initials}
         avatarUrl={avatarUrl}
         onProfile={() => navigate("/admin/profile")}
-        onSettings={() => navigate("/admin/profile")}
         onLogout={handleLogout}
       />
     </header>
