@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { CalendarClock, CalendarDays, Database, Flag, Hospital, ListOrdered, Scale, Star, ChevronRight, ChevronLeft, LayoutDashboard, MailPlus, Stethoscope, Users, UserRoundCog } from 'lucide-react'
+import { CalendarClock, CalendarDays, Database, Flag, Hospital, ListOrdered, MonitorCog, Scale, Star, ChevronRight, ChevronLeft, LayoutDashboard, MailPlus, Stethoscope, Users } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 
 import { doctorSchedulesApi } from '@/api/doctorSchedulesApi'
@@ -18,7 +18,7 @@ const sidebarItems=[
     {label:"Schedule Requests" , path:"/admin/schedule-change-requests" , icon:CalendarClock },
     {label:"Data Lookups" , path:"/admin/data-lookups" , icon:Database },
     {label:"System Policies" , path:"/admin/system-policies" , icon:Scale },
-    {label:"Secretaries" , path:"/admin/secretaries" , icon:UserRoundCog },
+    {label:"Front Desk Terminal" , path:"/admin/settings" , icon:MonitorCog },
     {label:"Clinics" , path:"/admin/clinics" , icon:Hospital }
 ]
 

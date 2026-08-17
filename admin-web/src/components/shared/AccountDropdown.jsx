@@ -44,10 +44,12 @@ export default function AccountDropdown({
           <p className="truncate text-xs font-bold text-slate-900">{name}</p>
           <p className="mt-0.5 truncate text-[10px] font-medium text-blue-600">{subtitle}</p>
         </div>
-        <DropdownMenuItem onSelect={onProfile} className="rounded-xl py-2.5 text-xs font-bold">
-          <User className="h-4 w-4" />
-          Profile
-        </DropdownMenuItem>
+        {onProfile ? (
+          <DropdownMenuItem onSelect={onProfile} className="rounded-xl py-2.5 text-xs font-bold">
+            <User className="h-4 w-4" />
+            Profile
+          </DropdownMenuItem>
+        ) : null}
         {onSettings ? (
           <DropdownMenuItem onSelect={onSettings} className="rounded-xl py-2.5 text-xs font-bold">
             <Settings className="h-4 w-4" />

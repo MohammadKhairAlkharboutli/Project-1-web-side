@@ -16,9 +16,7 @@ import PatientMedicalInfo from "./pages/Admin/Patients/PatientMedicalInfo";
 import PatientMedicalHistory from "./pages/Admin/Patients/PatientMedicalHistory";
 import PatientAppointments from "./pages/Admin/Patients/PatientAppointments";
 import PatientProfileLogs from "./pages/Admin/Patients/PatientProfileLogs";
-import SecretariesPage from "./pages/Admin/Secretaries/SecretariesPage";
-import SecretaryProfile from "./pages/Admin/Secretaries/SecretaryProfile";
-import SecretaryOverview from "./pages/Admin/Secretaries/SecretaryOverview";
+import FrontDeskTerminalPage from "./pages/Admin/FrontDeskTerminalPage";
 import ScheduleChangeRequestsPage from "./pages/Admin/ScheduleChangeRequests/ScheduleChangeRequestsPage";
 import DataLookupsPage from "./pages/Admin/DataLookups/DataLookupsPage";
 import SystemPoliciesPage from "./pages/Admin/SystemPolicies/SystemPoliciesPage";
@@ -53,7 +51,6 @@ import PatientMedicalFile from "./pages/Doctor/PatientMedicalFile";
 import ReferralsPage from "./pages/Doctor/ReferralsPage";
 import DoctorInvitePage from "./pages/DoctorInvitePage";
 import SecretaryPageLayout from "./pages/SecretaryPageLayout";
-import SecretaryProfilePage from "./pages/SecretaryProfilePage";
 
 function App() {
   return (
@@ -100,17 +97,12 @@ function App() {
               <Route path="doctors" element={<ClinicDoctors />} />
             </Route>
           </Route>
-          <Route path="secretaries">
-            <Route index element={<SecretariesPage />} />
-            <Route path=":secretaryId" element={<SecretaryProfile />}>
-              <Route index element={<SecretaryOverview />} />
-            </Route>
-          </Route>
+          <Route path="secretaries/*" element={<Navigate to="/admin/settings" replace />} />
           <Route path="schedule-change-requests" element={<ScheduleChangeRequestsPage />} />
           <Route path="data-lookups" element={<DataLookupsPage />} />
           <Route path="system-policies" element={<SystemPoliciesPage />} />
           <Route path="profile" element={<AdminProfilePage />} />
-          <Route path="settings" element={<Navigate to="/admin/profile" replace />} />
+          <Route path="settings" element={<FrontDeskTerminalPage />} />
           <Route path="doctor-invitations" element={<DoctorInvitationsPage />} />
           </Route>
         </Route>
@@ -141,7 +133,7 @@ function App() {
           <Route path="/secretary" element={<SecretaryPageLayout />}>
             <Route index element={<AdminQueuePage secretaryMode />} />
             <Route path="queue" element={<Navigate to="/secretary" replace />} />
-            <Route path="profile" element={<SecretaryProfilePage />} />
+            <Route path="profile" element={<Navigate to="/secretary" replace />} />
           </Route>
         </Route>
       </Route>

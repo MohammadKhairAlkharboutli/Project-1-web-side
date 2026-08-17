@@ -58,7 +58,6 @@ export default function SecretaryPageLayout() {
             name={displayName}
             subtitle={email || "Reception queue desk"}
             initials={initials}
-            onProfile={() => navigate("/secretary/profile")}
             onLogout={handleLogout}
           />
         </div>

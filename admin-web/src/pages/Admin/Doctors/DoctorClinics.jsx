@@ -258,9 +258,11 @@ export default function DoctorClinics() {
             </DialogDescription>
           </DialogHeader>
 
-          <label className="grid gap-1.5 text-sm font-medium text-slate-700">
+          <label className="grid gap-2 px-5 py-5 text-sm font-medium text-slate-700">
             Clinic
             <NativeSelect
+              className="w-full"
+              appearance="filter"
               value={selectedClinicId}
               onChange={(event) => setSelectedClinicId(event.target.value)}
               disabled={isSubmitting}
