@@ -205,14 +205,14 @@ export default function DoctorDashboard() {
         ) : null}
 
         <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-12">
-          <div className="relative flex flex-col justify-center overflow-hidden rounded-lg bg-primary px-6 py-5 text-primary-foreground shadow-surface lg:col-span-8">
+          <div className="relative flex flex-col justify-center overflow-hidden rounded-3xl bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] px-6 py-6 text-primary-foreground shadow-lg shadow-blue-500/20 sm:px-8 sm:py-7 lg:col-span-8">
             <div className="pointer-events-none absolute -bottom-10 -right-10 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
             <div className="relative z-10 space-y-1.5">
               <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-white/30 bg-white/20 px-3 py-0.5 text-[11px] font-bold text-white shadow-xs backdrop-blur-md">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-300" />
                 Clinical Dashboard
               </span>
-              <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
+              <h1 className="type-hero-title">
                 Welcome back, {doctor.fullName || "Doctor"}
               </h1>
               <p className="text-xs font-medium text-blue-100">

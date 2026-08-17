@@ -22,6 +22,7 @@ import { useDoctorLocale } from "@/context/DoctorLocaleContext";
 import { markDoctorScheduleUpdatesSeen } from "@/lib/doctorAttention";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import PageHeader from "@/components/shared/PageHeader";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -255,10 +256,11 @@ export default function DoctorSchedule() {
   return (
     <div className="min-h-screen w-full bg-[#f8fafc] p-6 font-sans text-slate-900 antialiased lg:p-8">
       <div className="mx-auto max-w-[1600px] space-y-6">
-        <header className="relative flex flex-col justify-between gap-4 rounded-[24px] bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] px-6 py-5 text-white shadow-lg sm:px-8 sm:py-6 lg:flex-row lg:items-center">
-          <div className="relative z-10 space-y-1.5"><span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-white/30 bg-white/25 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-xs backdrop-blur-md"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" /> TABIBI PORTAL</span><h1 className="text-xl font-black tracking-tight text-white sm:text-2xl">Doctor Schedule</h1><p className="max-w-xl text-xs font-medium text-blue-100">Review your weekly operational hours at your assigned clinic.</p></div>
-          <div className="flex flex-wrap items-center gap-3"><div className="flex items-center gap-3 rounded-2xl border border-white/20 bg-white/10 p-3 shadow-inner backdrop-blur-md"><span className="rounded-xl border border-white/20 bg-white/15 px-3.5 py-2 text-xs font-bold text-white sm:text-sm">{assignedClinicName}</span></div><Button type="button" variant="ghost" size="icon" onClick={loadSchedule} className="text-white hover:bg-white/15 hover:text-white" aria-label="Refresh schedule"><RefreshCw size={18} /></Button></div>
-        </header>
+        <PageHeader
+          title="Doctor Schedule"
+          description="Review your weekly operational hours at your assigned clinic."
+          actions={<><span className="inline-flex h-10 items-center rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-semibold text-slate-700 shadow-xs">{assignedClinicName}</span><Button type="button" variant="outline" size="icon" onClick={loadSchedule} aria-label="Refresh schedule"><RefreshCw size={18} /></Button></>}
+        />
 
         {notice ? <p role="status" className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">{notice}</p> : null}
 

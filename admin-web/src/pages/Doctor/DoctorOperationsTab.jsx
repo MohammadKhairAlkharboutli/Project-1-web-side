@@ -448,7 +448,7 @@ export default function DoctorOperationsTab() {
             <p className="text-xs font-bold uppercase tracking-wider text-blue-100">
               Appointment type
             </p>
-            <h1 className="mt-2 text-2xl font-black tracking-tight">Operations</h1>
+            <h1 className="mt-2 type-hero-title">Operations</h1>
             <p className="mt-1 text-sm text-blue-100">
               Schedule and manage your paid procedure appointments. Operations do
               not enter the patient queue.

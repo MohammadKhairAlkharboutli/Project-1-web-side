@@ -339,7 +339,7 @@ export default function AdminProfilePage() {
         </div>
         <label className="mt-5 grid max-w-sm gap-1.5 text-sm font-medium text-slate-700">
           Display language
-          <select value={languagePreview} onChange={(event) => setLanguagePreview(event.target.value)} className="h-8 rounded-xl border border-slate-200 bg-white px-2.5 text-sm text-slate-900 outline-none transition focus:border-[var(--color-primary)] focus:ring-3 focus:ring-blue-100">
+          <select value={languagePreview} onChange={(event) => setLanguagePreview(event.target.value)} className="h-8 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-900 outline-none transition focus:border-[var(--color-primary)] focus:ring-3 focus:ring-blue-100">
             <option value="en">English</option>
             <option value="ar">Arabic</option>
           </select>

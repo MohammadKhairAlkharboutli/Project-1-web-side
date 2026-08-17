@@ -211,16 +211,18 @@ function Section({ title, description, action, children, className = "" }) {
   );
 }
 
-function SegmentedControl({ options, value, onChange, label }) {
+function SegmentedControl({ options, value, onChange, label, appearance = "default" }) {
+  const inverse = appearance === "inverse";
+
   return (
-    <div className="flex flex-wrap gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1" aria-label={label}>
+    <div className={`flex flex-wrap gap-1 rounded-xl border p-1 ${inverse ? "border-white/25 bg-white/10 backdrop-blur-sm" : "border-slate-200 bg-slate-50"}`} aria-label={label}>
       {options.map((option) => (
         <Button
           key={option.value}
           type="button"
           size="sm"
-          variant={value === option.value ? "default" : "ghost"}
-          className="h-7"
+          variant="ghost"
+          className={`h-8 px-3 text-xs font-semibold ${inverse ? (value === option.value ? "bg-white text-blue-700 hover:bg-blue-50 hover:text-blue-700" : "text-white hover:bg-white/15 hover:text-white") : (value === option.value ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground" : "text-slate-600 hover:bg-white hover:text-slate-900")}`}
           onClick={() => onChange(option.value)}
         >
           {option.label}
@@ -575,23 +577,20 @@ export default function Dashboard() {
 
   return (
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <header className="flex flex-col gap-5 rounded-3xl bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] p-6 text-white shadow-lg shadow-blue-500/20 sm:flex-row sm:items-center sm:justify-between sm:p-8">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-            Dashboard
-          </h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Admin overview for patient growth, clinic operations, and revenue.
-          </p>
+          <p className="text-xs font-bold uppercase tracking-wider text-blue-100">Admin workspace</p>
+          <h1 className="mt-2 type-hero-title">Dashboard</h1>
+          <p className="mt-1 text-sm text-blue-100">Admin overview for patient growth, clinic operations, and revenue.</p>
         </div>
-
         <SegmentedControl
           label="Dashboard range"
           options={RANGE_OPTIONS}
           value={range}
           onChange={setRange}
+          appearance="inverse"
         />
-      </div>
+      </header>
 
       {!hasCurrentDashboardData ? (
         isLoading ? (

@@ -2,7 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
-import { AlertCircle, Calendar, CalendarOff, Clock, LoaderCircle, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { AlertCircle, Calendar, Clock, LoaderCircle, Plus, RefreshCw, Trash2 } from "lucide-react";
 
 import { doctorLeavesApi } from "@/api/doctorLeavesApi";
 import { useDoctorLocale } from "@/context/DoctorLocaleContext";
@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import PageHeader from "@/components/shared/PageHeader";
 
 const defaultValues = { exceptionDate: "", isPartial: false, startTime: "", endTime: "", reason: "" };
 const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use a valid time.");
@@ -170,7 +171,11 @@ export default function DoctorLeaves() {
   }
 
   return <div className="space-y-8 pb-10">
-    <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] p-6 text-white shadow-lg shadow-[#1e61dc]/20 sm:flex sm:items-center sm:justify-between"><div className="pointer-events-none absolute -right-10 -bottom-10 h-48 w-48 rounded-full bg-white/10 blur-2xl" /><div className="relative z-10 space-y-1.5"><span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold tracking-wide backdrop-blur-md"><CalendarOff size={14} /> Time off & schedule exceptions</span><h1 className="text-2xl font-black tracking-tight sm:text-3xl">Leaves & Time Off</h1><p className="max-w-xl text-xs font-medium text-blue-100 sm:text-sm">A full-day leave blocks the whole day; partial time off blocks only the specified hours.</p></div><Button onClick={openCreateForm} className="relative z-10 mt-5 gap-2 rounded-2xl bg-white px-5 py-5 text-xs font-bold text-[#1e61dc] shadow-md hover:bg-blue-50 sm:mt-0"><Plus size={18} /> Add time off</Button></header>
+    <PageHeader
+      title="Leaves & Time Off"
+      description="A full-day leave blocks the whole day; partial time off blocks only the specified hours."
+      actions={<Button onClick={openCreateForm}><Plus size={18} /> Add time off</Button>}
+    />
 
     {notice ? <p role="status" className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">{notice}</p> : null}
     {error && loadState !== "error" ? <p role="alert" className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">{error}</p> : null}

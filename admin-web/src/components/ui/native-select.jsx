@@ -19,7 +19,7 @@ function NativeSelect({
         data-slot="native-select"
         data-size={size}
         className={cn(
-          "h-10 w-full min-w-0 appearance-none rounded-xl border border-input bg-card py-2 pr-9 pl-3 text-sm text-foreground shadow-xs transition-colors outline-none select-none selection:bg-primary selection:text-primary-foreground hover:border-slate-400 hover:bg-muted/30 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/20 disabled:pointer-events-none disabled:cursor-not-allowed aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-[size=sm]:h-8 data-[size=sm]:rounded-lg data-[size=sm]:py-1",
+          "h-10 w-full min-w-0 appearance-none rounded-md border border-input bg-card py-2 pr-9 pl-3 text-sm text-foreground transition-colors outline-none select-none selection:bg-primary selection:text-primary-foreground hover:border-slate-400 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/20 disabled:pointer-events-none disabled:cursor-not-allowed aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-[size=sm]:h-8 data-[size=sm]:py-1",
           appearance === "filter" && "shadow-sm",
         )}
         {...props} />

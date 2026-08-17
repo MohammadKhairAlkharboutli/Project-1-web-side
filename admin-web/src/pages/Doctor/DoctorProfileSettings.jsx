@@ -1,6 +1,6 @@
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
-import { AlertCircle, Camera, CheckCircle2, LoaderCircle, Sliders, Trash2 } from "lucide-react";
+import { AlertCircle, Camera, LoaderCircle, Sliders, Trash2 } from "lucide-react";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 
 import {
@@ -159,7 +159,7 @@ function DoctorViewProfile({
             <div>
               <h4 className="text-xs font-black uppercase tracking-wider text-amber-900">Profile incomplete</h4>
               <p className="mt-0.5 text-xs text-amber-700">
-                Complete the required personal and professional details ({Math.round(completionStatus.completionPercentage)}% completed).
+                Complete the required personal and professional details to begin using the portal.
               </p>
             </div>
           </div>
@@ -591,6 +591,10 @@ function DoctorEditProfile({
 }
 
 function CompletionProgress({ completionStatus }) {
+  if (completionStatus.isComplete) {
+    return null;
+  }
+
   const missingLabels = completionStatus.missingFields.map(({ label }) => label).join(", ");
 
   return (
@@ -602,11 +606,7 @@ function CompletionProgress({ completionStatus }) {
       <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
         <div className="h-full rounded-full bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] transition-all duration-300" style={{ width: `${completionStatus.completionPercentage}%` }} />
       </div>
-      {completionStatus.isComplete ? (
-        <p className="flex items-center gap-2 text-xs font-bold text-emerald-700"><CheckCircle2 className="h-4 w-4" /> All required profile details are complete.</p>
-      ) : (
-        <p className="text-xs font-medium text-amber-700">Missing required fields: <span className="font-bold">{missingLabels}</span></p>
-      )}
+      <p className="text-xs font-medium text-amber-700">Missing required fields: <span className="font-bold">{missingLabels}</span></p>
     </div>
   );
 }

@@ -386,14 +386,11 @@ export default function AdminQueuePage({ secretaryMode = false }) {
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-          Queue desk
-        </h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Check in today&apos;s patients and manage the live queue for one doctor at a time.
-        </p>
-      </div>
+      <header className="rounded-3xl bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] p-6 text-white shadow-lg shadow-blue-500/20 sm:p-8">
+        <p className="text-xs font-bold uppercase tracking-wider text-blue-100">Live operations</p>
+        <h1 className="mt-2 type-hero-title">Queue desk</h1>
+        <p className="mt-1 text-sm text-blue-100">Check in today&apos;s patients and manage the live queue for one doctor at a time.</p>
+      </header>
 
       <AdminQueueToolbar
         clinics={clinics}
