@@ -331,15 +331,17 @@ function DoctorPageLayoutContent() {
                 <p className="text-xs text-slate-500">Doctor portal</p>
               </div>
             </div>
-            <AccountDropdown
-              name={doctorName}
-              subtitle={doctorSpecialty}
-              initials={initials}
-              avatarUrl={avatarUrl}
-              onProfile={() => navigate("/doctor/profile")}
-              onSettings={() => navigate("/doctor/settings")}
-              onLogout={handleLogout}
-            />
+            <div className="ml-auto">
+              <AccountDropdown
+                name={doctorName}
+                subtitle={doctorSpecialty}
+                initials={initials}
+                avatarUrl={avatarUrl}
+                onProfile={() => navigate("/doctor/profile")}
+                onSettings={() => navigate("/doctor/settings")}
+                onLogout={handleLogout}
+              />
+            </div>
           </header>
           <WorkspaceMobileNav items={doctorNavItems} label="Doctor navigation" />
 

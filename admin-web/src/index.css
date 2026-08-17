@@ -90,18 +90,6 @@
   }
 }
 
-/*
- * Legacy workflow pages still contain a few pre-system gradient utilities.
- * Keep their visual meaning aligned with the product primary until those
- * pages are fully composed from shared surfaces.
- */
-@layer utilities {
-  .bg-gradient-to-br {
-    background-color: var(--color-primary) !important;
-    background-image: none !important;
-  }
-}
-
 /* Make the native file chooser clearly actionable while preserving accessibility. */
 input[type="file"]::file-selector-button {
   margin-right: 0.75rem;
