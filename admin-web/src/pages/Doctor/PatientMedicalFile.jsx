@@ -164,6 +164,16 @@ export default function PatientMedicalFile() {
       patientName={getPatientName(state.appointment)}
       patientGender={state.appointment?.patient?.user?.gender}
       profile={profile}
+      onAttachmentsUploaded={(uploadedAttachments) => {
+        if (!uploadedAttachments.length) return;
+        setState((current) => ({
+          ...current,
+          attachments: {
+            ...current.attachments,
+            profileAttachments: [...uploadedAttachments, ...current.attachments.profileAttachments],
+          },
+        }));
+      }}
       onCancel={() => setIsEditingProfile(false)}
       onSaved={async () => {
         setIsEditingProfile(false);

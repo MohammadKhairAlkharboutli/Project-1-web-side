@@ -2,6 +2,27 @@ import axiosClient from "./axiosClient";
 
 const numericId = (value) => Number(value);
 
+function normalizeMedicalProfile(response) {
+  if (!response || typeof response !== "object") return response;
+
+  const profile = response.medicalProfile
+    ?? response.medical_profile
+    ?? response.data
+    ?? response;
+
+  if (!profile || typeof profile !== "object") return response;
+
+  return {
+    ...profile,
+    bloodType: profile.bloodType
+      ?? profile.blood_type
+      ?? profile.bloodGroup
+      ?? profile.blood_group
+      ?? profile.blood?.type
+      ?? null,
+  };
+}
+
 export const doctorAppointmentsApi = {
   async getAppointments(params = {}) {
     const { data } = await axiosClient.get("/appointments/doctor/me", { params });
@@ -94,12 +115,12 @@ export const doctorQueueApi = {
 export const doctorClinicalApi = {
   async getMedicalProfile(appointmentId) {
     const { data } = await axiosClient.get(`/medical-profiles/appointment/${numericId(appointmentId)}`);
-    return data;
+    return normalizeMedicalProfile(data);
   },
 
   async updateMedicalProfile(appointmentId, payload) {
     const { data } = await axiosClient.patch(`/medical-profiles/appointment/${numericId(appointmentId)}`, payload);
-    return data;
+    return normalizeMedicalProfile(data);
   },
 
   async getMedicalHistories(appointmentId) {
@@ -150,6 +171,18 @@ export const doctorClinicalApi = {
     const { data } = await axiosClient.post(`/medical-attachments/history/${numericId(historyId)}`, body, {
       headers: { "Content-Type": "multipart/form-data" },
     });
+    return data;
+  },
+
+  async uploadProfileAttachments(appointmentId, files) {
+    if (!files?.length) return [];
+    const body = new FormData();
+    files.forEach((file) => body.append("files", file));
+    const { data } = await axiosClient.post(
+      `/medical-attachments/profile/appointment/${numericId(appointmentId)}`,
+      body,
+      { headers: { "Content-Type": "multipart/form-data" } },
+    );
     return data;
   },
 };
