@@ -14,7 +14,9 @@ export default function AccountDropdown({
   initials,
   avatarUrl,
   onProfile,
+  profileLabel = "Profile",
   onSettings,
+  settingsLabel = "Settings",
   onLogout,
 }) {
   return (
@@ -47,13 +49,13 @@ export default function AccountDropdown({
         {onProfile ? (
           <DropdownMenuItem onSelect={onProfile} className="py-2.5 text-xs font-semibold">
             <User className="h-4 w-4" />
-            Profile
+            {profileLabel}
           </DropdownMenuItem>
         ) : null}
         {onSettings ? (
           <DropdownMenuItem onSelect={onSettings} className="py-2.5 text-xs font-semibold">
             <Settings className="h-4 w-4" />
-            Settings
+            {settingsLabel}
           </DropdownMenuItem>
         ) : null}
         <DropdownMenuSeparator className="my-1" />

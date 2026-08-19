@@ -109,6 +109,35 @@ function formatUpdateDate(value) {
   return Number.isNaN(date.getTime()) ? "Recently" : new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(date);
 }
 
+function getScheduleUpdateIdentity(notification) {
+  // A multi-slot request can produce notifications in the same server batch.
+  // The API does not expose a group identifier, so collapse same-status
+  // entries created in the same minute into the one reminder the doctor sees.
+  const createdAt = new Date(
+    notification?.sentAt ?? notification?.created_at ?? notification?.createdAt,
+  ).getTime();
+  const minute = Number.isFinite(createdAt) ? Math.floor(createdAt / 60_000) : notification?.id;
+  return `${notification?.messageKey}:${minute}`;
+}
+
+function getUniqueScheduleUpdates(notifications) {
+  const seen = new Set();
+
+  return notifications.filter((notification) => {
+    if (!SCHEDULE_UPDATE_KEYS.has(notification?.messageKey)) {
+      return false;
+    }
+
+    const identity = getScheduleUpdateIdentity(notification);
+    if (seen.has(identity)) {
+      return false;
+    }
+
+    seen.add(identity);
+    return true;
+  });
+}
+
 export default function DoctorSchedule() {
   const { text } = useDoctorLocale();
   const { doctorUserId, refreshDoctorAttention } = useOutletContext();
@@ -147,9 +176,7 @@ export default function DoctorSchedule() {
     setScheduleUpdates((current) => ({ ...current, status: "loading", error: "" }));
     try {
       const notifications = await notificationsApi.getMyNotifications();
-      const updates = notifications
-        .filter((notification) => SCHEDULE_UPDATE_KEYS.has(notification.messageKey))
-        .slice(0, 5);
+      const updates = getUniqueScheduleUpdates(notifications).slice(0, 5);
       setScheduleUpdates({ status: "ready", items: updates, error: "" });
       markDoctorScheduleUpdatesSeen(doctorUserId);
       refreshDoctorAttention?.();

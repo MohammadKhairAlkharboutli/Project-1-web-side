@@ -360,8 +360,8 @@ function DoctorPageLayoutContent() {
                 subtitle={doctorSpecialty}
                 initials={initials}
                 avatarUrl={avatarUrl}
-                onProfile={() => navigate("/doctor/profile")}
                 onSettings={() => navigate("/doctor/settings")}
+                settingsLabel="Settings & Profile"
                 onLogout={handleLogout}
               />
             </div>

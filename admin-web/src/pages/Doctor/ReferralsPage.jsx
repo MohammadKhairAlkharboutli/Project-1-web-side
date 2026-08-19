@@ -27,6 +27,24 @@ function formatDate(value) {
   return Number.isNaN(date.getTime()) ? "Not recorded" : new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(date);
 }
 
+function getUniqueReferrals(referrals) {
+  const seenIds = new Set();
+
+  return referrals.filter((referral) => {
+    const id = referral?.id;
+    if (id === null || id === undefined) {
+      return true;
+    }
+
+    if (seenIds.has(id)) {
+      return false;
+    }
+
+    seenIds.add(id);
+    return true;
+  });
+}
+
 export default function ReferralsPage() {
   const {
     acknowledgeReceivedReferrals,
@@ -48,7 +66,7 @@ export default function ReferralsPage() {
       const data = view === "sent"
         ? await referralsApi.getSentReferrals(params)
         : await referralsApi.getReceivedReferrals(params);
-      setResponse({ data: data.data ?? [], meta: data.meta ?? { page, totalPages: 1, total: 0 } });
+      setResponse({ data: getUniqueReferrals(data.data ?? []), meta: data.meta ?? { page, totalPages: 1, total: 0 } });
     } catch (requestError) {
       setError(getErrorMessage(requestError, `Unable to load ${details.heading.toLowerCase()}.`));
     } finally {

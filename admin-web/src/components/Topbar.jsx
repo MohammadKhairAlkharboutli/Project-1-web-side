@@ -71,7 +71,7 @@ export default function Topbar() {
           initials={initials}
           avatarUrl={avatarUrl}
           onProfile={() => navigate("/admin/profile")}
-          onSettings={() => navigate("/admin/system-policies")}
+          profileLabel="Settings & Profile"
           onLogout={handleLogout}
         />
       </div>

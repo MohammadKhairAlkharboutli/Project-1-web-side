@@ -293,7 +293,7 @@ export default function DoctorDashboard() {
                   Your next scheduled visits.
                 </p>
               </div>
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex shrink-0 items-center">
                 <Button
                   type="button"
                   variant="ghost"
@@ -304,13 +304,6 @@ export default function DoctorDashboard() {
                   <RefreshCw className={isLoading ? "animate-spin" : ""} />
                   Refresh
                 </Button>
-                <Link
-                  to="/doctor/appointments"
-                  className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-                >
-                  More
-                  <ArrowUpRight size={13} className="-rotate-90" />
-                </Link>
               </div>
             </div>
 
