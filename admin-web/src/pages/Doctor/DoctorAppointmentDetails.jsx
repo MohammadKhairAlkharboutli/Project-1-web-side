@@ -3,12 +3,11 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, ClipboardList, FileText, LoaderCircle, RefreshCw, Stethoscope, XCircle } from "lucide-react";
 
 import { doctorAppointmentsApi } from "@/api/doctorWorkflowApi";
+import CancelAppointmentDialog from "@/components/shared/Appointments/CancelAppointmentDialog";
 import AppointmentPriorityBadge from "@/components/shared/Appointments/AppointmentPriorityBadge";
 import AppointmentStatusBadge from "@/components/shared/Appointments/AppointmentStatusBadge";
 import { formatAppointmentDate, formatAppointmentTimeRange, formatDateTime, getPriorityLabel, parseAppointmentDateTime } from "@/components/shared/Appointments/appointmentUtils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import PageHeader from "@/components/shared/PageHeader";
 
 function getErrorMessage(error, fallback) {
@@ -52,7 +51,7 @@ export default function DoctorAppointmentDetails() {
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [cancelOpen, setCancelOpen] = useState(false);
-  const [cancelReason, setCancelReason] = useState("");
+  const [cancelError, setCancelError] = useState("");
   const [actionLoading, setActionLoading] = useState("");
 
   const loadAppointment = useCallback(async () => {
@@ -73,16 +72,34 @@ export default function DoctorAppointmentDetails() {
     return () => window.clearTimeout(timer);
   }, [loadAppointment]);
 
-  async function runAction(name, action, successMessage) {
-    setActionLoading(name);
+  function updateCancelDialog(open) {
+    if (actionLoading) {
+      return;
+    }
+
+    setCancelOpen(open);
+    if (!open) {
+      setCancelError("");
+    }
+  }
+
+  async function cancelAppointment(cancellationReason) {
+    if (!appointment || actionLoading) {
+      return;
+    }
+
+    setActionLoading("cancel");
     setNotice("");
-    setError("");
+    setCancelError("");
     try {
-      await action();
+      await doctorAppointmentsApi.cancel(appointment.id, cancellationReason);
       await loadAppointment();
-      setNotice(successMessage);
+      setCancelOpen(false);
+      setNotice("Appointment cancelled. Any eligible held payment was refunded.");
+      return true;
     } catch (actionError) {
-      setError(getErrorMessage(actionError, "The appointment could not be updated."));
+      setCancelError(getErrorMessage(actionError, "The appointment could not be cancelled."));
+      return false;
     } finally {
       setActionLoading("");
     }
@@ -103,7 +120,7 @@ export default function DoctorAppointmentDetails() {
     <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7"><div className="flex flex-col gap-4 border-b border-slate-100 pb-5 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-lg font-black text-slate-900">Visit actions</h2><p className="mt-1 text-sm text-slate-500">Review appointment information and continue through the live queue after the patient is checked in.</p></div><div className="flex flex-wrap gap-2"><Button variant="outline" asChild><Link to={`/doctor/patients/${appointment.patientId}?appointmentId=${appointment.id}`}><FileText className="h-4 w-4" /> Medical file</Link></Button>{hasActiveQueue ? <Button asChild><Link to={canResumeConsultation ? `/doctor/consultation/${appointment.id}` : "/doctor/queue"}><ClipboardList className="h-4 w-4" /> {canResumeConsultation ? "Resume consultation" : "Open queue"}</Link></Button> : null}{canCancel ? <Button variant="outline" disabled={Boolean(actionLoading)} onClick={() => setCancelOpen(true)}><XCircle className="h-4 w-4" /> Cancel</Button> : null}<Button variant="outline" size="icon" disabled={loadState === "loading"} onClick={loadAppointment} aria-label="Refresh appointment"><RefreshCw className="h-4 w-4" /></Button></div></div>
       <dl className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"><InfoItem label="Patient">{appointment.patient?.user?.full_name || [appointment.patient?.user?.firstName, appointment.patient?.user?.lastName].filter(Boolean).join(" ")}</InfoItem><InfoItem label="Phone">{appointment.patient?.user?.phone}</InfoItem><InfoItem label="Clinic">{appointment.clinic?.name}</InfoItem><InfoItem label="Date">{formatAppointmentDate(appointment.requestedDate)}</InfoItem><InfoItem label="Time">{formatAppointmentTimeRange(appointment)}</InfoItem><InfoItem label="Visit type">{appointment.type}</InfoItem><InfoItem label="Priority">{getPriorityLabel(appointment.priority)}</InfoItem><InfoItem label="Checked in">{formatDateTime(appointment.checkinTime)}</InfoItem><InfoItem label="Queue">{appointment.queue ? `Position ${appointment.queue.position} · ${String(appointment.queue.status).replaceAll("_", " ")}` : "Not checked in"}</InfoItem>{appointment.actualStartTime ? <InfoItem label="Actual start">{formatDateTime(appointment.actualStartTime)}</InfoItem> : null}{appointment.actualEndTime ? <InfoItem label="Actual end">{formatDateTime(appointment.actualEndTime)}</InfoItem> : null}{appointment.referral ? <InfoItem label="Referral">{appointment.referral.reason}</InfoItem> : null}</dl></section>
     <section className="grid gap-4 md:grid-cols-2"><article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-base font-black text-slate-900">Reason for visit</h2><p className="mt-3 text-sm leading-6 text-slate-700">{appointment.reasonForVisit || "Not recorded"}</p></article><article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-base font-black text-slate-900">Symptoms</h2><p className="mt-3 text-sm leading-6 text-slate-700">{appointment.symptoms || "Not recorded"}</p></article><article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:col-span-2"><h2 className="text-base font-black text-slate-900">Appointment notes</h2><p className="mt-3 text-sm leading-6 text-slate-700">{appointment.notes || "No appointment notes recorded."}</p></article>{["cancelled", "no_show"].includes(appointment.status) ? <article className="rounded-3xl border border-rose-100 bg-rose-50 p-5 shadow-sm md:col-span-2"><h2 className="text-base font-black text-rose-900">Closed appointment</h2><p className="mt-3 text-sm leading-6 text-rose-800">{appointment.status === "cancelled" ? appointment.cancellationReason || "Cancelled without a recorded reason." : "Marked as a no-show."}</p>{appointment.cancelledAt ? <p className="mt-2 text-xs text-rose-700">Cancelled {formatDateTime(appointment.cancelledAt)}</p> : null}</article> : null}</section>
-    <Dialog open={cancelOpen} onOpenChange={setCancelOpen}><DialogContent><DialogHeader><DialogTitle>Cancel appointment</DialogTitle></DialogHeader><form onSubmit={(event) => { event.preventDefault(); runAction("cancel", () => doctorAppointmentsApi.cancel(appointment.id, cancelReason), "Appointment cancelled."); setCancelOpen(false); }} className="space-y-4 p-5"><label className="grid gap-2 text-sm font-medium text-slate-700">Cancellation reason <span className="font-normal text-slate-500">(optional)</span><Input value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder="Reason for cancellation" /></label><DialogFooter><Button type="button" variant="outline" onClick={() => setCancelOpen(false)}>Keep appointment</Button><Button type="submit" variant="destructive" disabled={Boolean(actionLoading)}>Cancel appointment</Button></DialogFooter></form></DialogContent></Dialog>
+    <CancelAppointmentDialog appointment={appointment} open={cancelOpen} isCancelling={Boolean(actionLoading)} error={cancelError} onOpenChange={updateCancelDialog} onConfirm={cancelAppointment} />
   </main>;
 }
 

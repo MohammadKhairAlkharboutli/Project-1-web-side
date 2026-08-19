@@ -22,7 +22,11 @@ export const appointmentsApi = {
   async cancelAppointment(appointmentId, cancellationReason) {
     const { data } = await axiosClient.patch(
       `/appointments/${Number(appointmentId)}/cancel`,
-      { cancellationReason },
+      {
+        ...(cancellationReason?.trim()
+          ? { cancellationReason: cancellationReason.trim() }
+          : {}),
+      },
     );
     return data;
   },
