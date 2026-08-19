@@ -4,12 +4,7 @@ export const DEFAULT_SYSTEM_POLICIES = {
   maxNoShowCount: 3,
   initialVisitDuration: 30,
   returnVisitDuration: 20,
-  consultationDuration: 20,
-  followUpDuration: 10,
-  operationDuration: 45,
-  defaultDuration: 15,
   checkinBeforeHours: 1,
-  referralFollowUpExpirationDays: 14,
   referralExternalExpirationDays: 30,
 };
 
@@ -29,7 +24,6 @@ const percentOptions = range(0, 100, 5);
 const noShowOptions = range(1, 10);
 const checkinHourOptions = range(0, 12);
 const visitDurationOptions = range(5, 120, 5);
-const queueDurationOptions = [1, ...range(5, 180, 5)];
 
 export const SYSTEM_POLICY_SECTIONS = [
   {
@@ -102,42 +96,8 @@ export const SYSTEM_POLICY_SECTIONS = [
   {
     id: "queue",
     title: "Queue and check-in",
-    description:
-      "Expected consultation times used by queue estimates and check-in windows.",
+    description: "Configure when patients can check in before an appointment.",
     fields: [
-      {
-        key: "consultationDuration",
-        label: "Consultation duration",
-        description: "Expected duration for a normal consultation in the queue.",
-        unit: "minutes",
-        hint: "Minimum 1 minute.",
-        options: queueDurationOptions,
-      },
-      {
-        key: "followUpDuration",
-        label: "Follow-up duration",
-        description: "Expected duration for follow-up queue items.",
-        unit: "minutes",
-        hint: "Minimum 1 minute.",
-        options: queueDurationOptions,
-      },
-      {
-        key: "operationDuration",
-        label: "Operation duration",
-        description: "Expected duration for operation-type queue items.",
-        unit: "minutes",
-        hint: "Minimum 1 minute.",
-        options: queueDurationOptions,
-      },
-      {
-        key: "defaultDuration",
-        label: "Fallback duration",
-        description:
-          "Used when an appointment type does not have a more specific duration.",
-        unit: "minutes",
-        hint: "Minimum 1 minute.",
-        options: queueDurationOptions,
-      },
       {
         key: "checkinBeforeHours",
         label: "Check-in opens before appointment",
@@ -155,14 +115,6 @@ export const SYSTEM_POLICY_SECTIONS = [
     description:
       "How long referral records stay usable after they are created.",
     fields: [
-      {
-        key: "referralFollowUpExpirationDays",
-        label: "Follow-up referral expiration",
-        description: "How long follow-up referrals remain valid.",
-        unit: "days",
-        hint: "Minimum 1 day.",
-        options: expirationOptions,
-      },
       {
         key: "referralExternalExpirationDays",
         label: "External referral expiration",
