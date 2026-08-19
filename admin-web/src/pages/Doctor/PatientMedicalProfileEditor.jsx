@@ -63,7 +63,10 @@ function isFemale(gender) {
 
 function buildDefaults(profile) {
   return {
-    bloodType: profile?.bloodType || "",
+    // Current API responses use camel case, while records returned by older
+    // deployments can still use the database-style key. Preserve the stored
+    // value in both cases so opening the editor never suggests it is blank.
+    bloodType: profile?.bloodType ?? profile?.blood_type ?? "",
     pregnancyStatus: profile?.pregnancyStatus || "",
     disabilityInfo: profile?.disabilityInfo || "",
     currentSymptoms: profile?.currentSymptoms || "",
@@ -101,7 +104,7 @@ function ManagedListField({ label, hint, name, control, setValue, suggestions = 
 
 export default function PatientMedicalProfileEditor({ appointmentId, patientName, patientGender, profile, onCancel, onSaved }) {
   const { locale, text } = useDoctorLocale();
-  const { register, handleSubmit, control, setValue, formState: { errors, isSubmitting } } = useForm({
+  const { register, handleSubmit, control, reset, setValue, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(profileSchema),
     defaultValues: buildDefaults(profile),
     mode: "onTouched",
@@ -110,6 +113,10 @@ export default function PatientMedicalProfileEditor({ appointmentId, patientName
   const [saveError, setSaveError] = useState("");
   const femalePatient = isFemale(patientGender);
   const bloodType = useWatch({ control, name: "bloodType" });
+
+  useEffect(() => {
+    reset(buildDefaults(profile));
+  }, [profile, reset]);
 
   const loadLookups = useCallback(async () => {
     setLookupState((current) => ({ ...current, status: "loading", error: "" }));
