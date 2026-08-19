@@ -22,6 +22,16 @@ const requiredProfileFields = [
   { name: "specialization", label: "medical specialty" },
   { name: "subSpecialization", label: "medical sub-specialty" },
   { name: "licenseNumber", label: "license number" },
+  { name: "languagesSpoken", label: "at least one language" },
+];
+
+const LANGUAGE_OPTIONS = [
+  "ARABIC",
+  "ENGLISH",
+  "TURKISH",
+  "FRENCH",
+  "GERMAN",
+  "KURDISH",
 ];
 
 const fieldClassName =
@@ -64,6 +74,17 @@ function getLookupLabel(lookup, locale) {
   return getLookupDisplayName(lookup, locale) || formatEnumLabel(lookup?.value);
 }
 
+function normalizeSelectedLanguages(languages) {
+  const values = Array.isArray(languages)
+    ? languages
+    : String(languages ?? "").split(",");
+  const normalizedValues = new Set(
+    values.map((language) => String(language).trim().toUpperCase()).filter(Boolean),
+  );
+
+  return LANGUAGE_OPTIONS.filter((language) => normalizedValues.has(language));
+}
+
 function normalizeDoctorProfile(profile, assignedClinic = null) {
   const user = profile?.user || {};
   const fullName = user.full_name || user.fullName || [user.firstName, user.lastName].filter(Boolean).join(" ");
@@ -89,9 +110,7 @@ function buildProfileDefaults(doctor) {
     initialVisitFee: doctor?.initialVisitFee ?? "",
     returnVisitFee: doctor?.returnVisitFee ?? "",
     bio: doctor?.bio || "",
-    languagesSpoken: Array.isArray(doctor?.languagesSpoken)
-      ? doctor.languagesSpoken.join(", ")
-      : doctor?.languagesSpoken || "",
+    languagesSpoken: normalizeSelectedLanguages(doctor?.languagesSpoken),
   };
 }
 
@@ -112,6 +131,31 @@ function getCompletionStatus(values) {
 
 function FieldError({ error }) {
   return error ? <p className="mt-1.5 text-xs font-medium text-rose-600">{error.message}</p> : null;
+}
+
+function LanguagesCheckboxGroup({ register, error }) {
+  return (
+    <fieldset aria-invalid={Boolean(error)} className="rounded-xl border border-slate-200 bg-slate-50 p-4 aria-invalid:border-rose-400 aria-invalid:ring-4 aria-invalid:ring-rose-100">
+      <legend className="px-1 text-xs font-bold text-slate-600">Languages spoken</legend>
+      <p className="mb-3 text-xs text-slate-500">Select every language you speak. Choose at least one.</p>
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {LANGUAGE_OPTIONS.map((language) => (
+          <label key={language} className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-700 transition hover:border-blue-300 hover:bg-blue-50">
+            <input
+              type="checkbox"
+              value={language}
+              className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              {...register("languagesSpoken", {
+                validate: (value) => (Array.isArray(value) && value.length > 0) || "Select at least one language.",
+              })}
+            />
+            {language}
+          </label>
+        ))}
+      </div>
+      <FieldError error={error} />
+    </fieldset>
+  );
 }
 
 function DoctorViewProfile({
@@ -488,10 +532,7 @@ function DoctorEditProfile({
         initialVisitFee: data.initialVisitFee === "" ? undefined : String(data.initialVisitFee),
         returnVisitFee: data.returnVisitFee === "" ? undefined : String(data.returnVisitFee),
         bio: data.bio.trim(),
-        languagesSpoken: data.languagesSpoken
-          .split(",")
-          .map((language) => language.trim())
-          .filter(Boolean),
+        languagesSpoken: normalizeSelectedLanguages(data.languagesSpoken),
       });
 
       await onSaveSuccess(normalizeDoctorProfile(result.profile), result.completionStatus);
@@ -578,9 +619,7 @@ function DoctorEditProfile({
         </div>
         <div className="mt-4 space-y-4 text-xs">
           {lookupState.status === "error" ? <div className="flex flex-wrap items-center gap-3 rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-rose-700"><p className="text-xs font-medium">{lookupState.error}</p><button type="button" onClick={loadLookups} className="text-xs font-bold underline">Retry</button></div> : null}
-          <FormField label="Languages spoken" error={errors.languagesSpoken}>
-            <input {...register("languagesSpoken")} placeholder="e.g. Arabic, English" aria-invalid={Boolean(errors.languagesSpoken)} className={fieldClassName} />
-          </FormField>
+          <LanguagesCheckboxGroup register={register} error={errors.languagesSpoken} />
           <FormField label="Professional biography" error={errors.bio}>
             <textarea {...register("bio")} rows="4" aria-invalid={Boolean(errors.bio)} className={fieldClassName} />
           </FormField>
