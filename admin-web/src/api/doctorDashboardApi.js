@@ -18,26 +18,6 @@ function normalizeStats(stats) {
   );
 }
 
-function normalizeUpcomingAppointment(appointment) {
-  const patientName = String(appointment?.patient?.fullName ?? "").trim();
-
-  return {
-    id: appointment?.id,
-    requestedDate: appointment?.date ?? null,
-    startTime: appointment?.startTime ?? null,
-    endTime: appointment?.endTime ?? null,
-    type: appointment?.type ?? null,
-    status: appointment?.status ?? null,
-    patient: {
-      id: appointment?.patient?.id ?? null,
-      user: {
-        fullName: patientName,
-        full_name: patientName,
-      },
-    },
-  };
-}
-
 function normalizeDashboard(payload) {
   if (!payload || typeof payload !== "object") {
     throw new Error("The doctor dashboard returned an invalid response.");
@@ -58,9 +38,6 @@ function normalizeDashboard(payload) {
       avatarUrl: doctor.avatarUrl ?? doctor.avatar_url ?? null,
     },
     stats: normalizeStats(payload.stats),
-    upcomingAppointments: Array.isArray(payload.upcomingAppointments)
-      ? payload.upcomingAppointments.map(normalizeUpcomingAppointment)
-      : [],
   };
 }
 

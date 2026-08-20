@@ -4,18 +4,12 @@ import {
   ArrowUpRight,
   CalendarDays,
   CheckCircle2,
-  Clock,
   RefreshCw,
   Star,
   Users,
 } from "lucide-react";
 
 import { doctorDashboardApi } from "@/api/doctorDashboardApi";
-import AppointmentStatusBadge from "@/components/shared/Appointments/AppointmentStatusBadge";
-import {
-  formatAppointmentTimeRange,
-  getPatientDisplayName,
-} from "@/components/shared/Appointments/appointmentUtils";
 import { Button } from "@/components/ui/button";
 
 const STAT_CONFIG = [
@@ -23,6 +17,8 @@ const STAT_CONFIG = [
     key: "appointmentsToday",
     label: "Appointments Today",
     helper: "Today’s booked visits",
+    to: "/doctor/appointments",
+    actionLabel: "View appointments",
     icon: CalendarDays,
     iconClass: "bg-primary-light text-primary",
     helperClass: "bg-blue-50 text-blue-600",
@@ -31,6 +27,8 @@ const STAT_CONFIG = [
     key: "appointmentsThisWeek",
     label: "Appointments This Week",
     helper: "Current week",
+    to: "/doctor/appointments",
+    actionLabel: "View appointments",
     icon: CalendarDays,
     iconClass: "bg-emerald-50 text-emerald-600",
     helperClass: "bg-emerald-50 text-emerald-600",
@@ -39,6 +37,8 @@ const STAT_CONFIG = [
     key: "patientsWaiting",
     label: "Patients Waiting",
     helper: "In the live queue",
+    to: "/doctor/queue",
+    actionLabel: "Open queue",
     icon: Users,
     iconClass: "bg-amber-50 text-amber-600",
     helperClass: "bg-amber-50 text-amber-600",
@@ -47,6 +47,8 @@ const STAT_CONFIG = [
     key: "completedToday",
     label: "Completed Today",
     helper: "Finished consultations",
+    to: "/doctor/appointments",
+    actionLabel: "View appointments",
     icon: CheckCircle2,
     iconClass: "bg-purple-50 text-purple-600",
     helperClass: "bg-purple-50 text-purple-600",
@@ -96,16 +98,15 @@ function DashboardLoading() {
   return (
     <div className="w-full py-2">
       <div className="mx-auto max-w-[1600px] animate-pulse space-y-6">
-        <div className="grid gap-6 lg:grid-cols-12">
-          <div className="h-36 rounded-lg bg-primary-light lg:col-span-8" />
-          <div className="h-36 rounded-lg bg-slate-200 lg:col-span-4" />
+        <div className="grid gap-5 lg:grid-cols-12">
+          <div className="h-44 rounded-3xl bg-primary-light lg:col-span-7" />
+          <div className="h-44 rounded-3xl bg-slate-200 lg:col-span-5" />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {STAT_CONFIG.map((stat) => (
-            <div key={stat.key} className="h-28 rounded-lg bg-slate-200" />
+            <div key={stat.key} className="h-[132px] rounded-2xl bg-slate-200" />
           ))}
         </div>
-        <div className="h-80 rounded-lg bg-slate-200" />
       </div>
     </div>
   );
@@ -183,7 +184,7 @@ export default function DoctorDashboard() {
     return <DashboardError message={loadError} onRetry={retryLoad} />;
   }
 
-  const { doctor, stats, upcomingAppointments } = dashboard;
+  const { doctor, stats } = dashboard;
   const rating = Number.isFinite(doctor.averageRating)
     ? doctor.averageRating.toFixed(1)
     : "N/A";
@@ -204,24 +205,37 @@ export default function DoctorDashboard() {
           </div>
         ) : null}
 
-        <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-12">
-          <div className="relative flex flex-col justify-center overflow-hidden rounded-3xl bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] px-6 py-6 text-primary-foreground shadow-lg shadow-blue-500/20 sm:px-8 sm:py-7 lg:col-span-8">
+        <div className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-12">
+          <div className="relative flex min-h-[172px] flex-col justify-center overflow-hidden rounded-3xl bg-gradient-to-br from-[#1e61dc] to-[#3b9df5] px-6 py-6 text-primary-foreground shadow-lg shadow-blue-500/20 sm:px-8 sm:py-7 lg:col-span-7">
             <div className="pointer-events-none absolute -bottom-10 -right-10 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
-            <div className="relative z-10 space-y-1.5">
-              <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-white/30 bg-white/20 px-3 py-0.5 text-[11px] font-bold text-white shadow-xs backdrop-blur-md">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-300" />
-                Clinical Dashboard
-              </span>
-              <h1 className="type-hero-title">
-                Welcome back, {doctor.fullName || "Doctor"}
-              </h1>
-              <p className="text-xs font-medium text-blue-100">
-                You have {stats.appointmentsToday} appointments today.
-              </p>
+            <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+              <div className="space-y-1.5">
+                <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-white/30 bg-white/20 px-3 py-0.5 text-[11px] font-bold text-white shadow-xs backdrop-blur-md">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-300" />
+                  Clinical Dashboard
+                </span>
+                <h1 className="type-hero-title">
+                  Welcome back, {doctor.fullName || "Doctor"}
+                </h1>
+                <p className="text-xs font-medium text-blue-100">
+                  You have {stats.appointmentsToday} appointments today.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={isLoading}
+                onClick={retryLoad}
+                className="shrink-0 border border-white/30 bg-white/15 text-white shadow-none hover:bg-white/25 hover:text-white"
+              >
+                <RefreshCw className={isLoading ? "animate-spin" : ""} />
+                Refresh
+              </Button>
             </div>
           </div>
 
-          <div className="flex flex-col justify-between rounded-lg border border-slate-200 bg-card px-5 py-4 shadow-surface lg:col-span-4">
+          <div className="flex min-h-[172px] flex-col justify-between rounded-3xl border border-slate-200 bg-card p-5 shadow-surface lg:col-span-5 sm:p-6">
             <div className="flex items-center gap-3.5">
               <DoctorAvatar doctor={doctor} avatarUrl={avatarUrl} />
               <div className="min-w-0 flex-1">
@@ -250,103 +264,45 @@ export default function DoctorDashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {STAT_CONFIG.map((stat) => {
             const Icon = stat.icon;
 
             return (
-              <div
+              <Link
                 key={stat.key}
-                className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 bg-card px-5 py-4 shadow-surface"
+                to={stat.to}
+                aria-label={`${stat.actionLabel}: ${stats[stat.key]}`}
+                className="group flex min-h-[132px] items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-card px-5 py-5 shadow-surface transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
-                <div className="space-y-0.5">
+                <div className="min-w-0 space-y-1">
                   <p className="text-[11px] font-semibold text-slate-400">
                     {stat.label}
                   </p>
                   <p className="text-2xl font-semibold text-slate-900">
                     {stats[stat.key]}
                   </p>
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold ${stat.helperClass}`}
-                  >
-                    {stat.helper}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold ${stat.helperClass}`}
+                    >
+                      {stat.helper}
+                    </span>
+                    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-primary opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
+                      {stat.actionLabel}
+                      <ArrowUpRight size={12} />
+                    </span>
+                  </div>
                 </div>
                 <div
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-xs ${stat.iconClass}`}
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-xs ${stat.iconClass}`}
                 >
                   <Icon size={18} />
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
-
-        <section className="flex flex-col justify-between space-y-6 rounded-lg border border-slate-200 bg-card p-6 shadow-surface sm:p-8">
-          <div>
-            <div className="mb-4 flex items-center justify-between gap-4">
-              <div>
-                <h2 className="text-base font-semibold text-slate-900">
-                  Upcoming Appointments
-                </h2>
-                <p className="mt-0.5 text-xs text-slate-400">
-                  Your next scheduled visits.
-                </p>
-              </div>
-              <div className="flex shrink-0 items-center">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  disabled={isLoading}
-                  onClick={retryLoad}
-                >
-                  <RefreshCw className={isLoading ? "animate-spin" : ""} />
-                  Refresh
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid gap-4 lg:grid-cols-3">
-              {upcomingAppointments.length ? (
-                upcomingAppointments.map((appointment) => (
-                  <div
-                    key={appointment.id}
-                    className="flex items-center justify-between gap-4 rounded-2xl border border-slate-100/80 bg-slate-50/50 p-4"
-                  >
-                    <div className="min-w-0 flex-1 space-y-1.5">
-                      <div className="flex flex-wrap items-center gap-2.5">
-                        <p className="text-xs font-extrabold text-slate-900">
-                          {getPatientDisplayName(appointment)}
-                        </p>
-                        <AppointmentStatusBadge status={appointment.status} />
-                      </div>
-                      <p className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
-                        <Clock size={13} className="text-primary" />
-                        {formatAppointmentTimeRange(appointment)}
-                      </p>
-                    </div>
-                    <span className="shrink-0 rounded-md border border-blue-100 bg-primary-light px-3 py-1.5 text-xs font-semibold text-primary">
-                      {appointment.type || "Appointment"}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <p className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500 lg:col-span-3">
-                  No upcoming appointments.
-                </p>
-              )}
-            </div>
-          </div>
-
-          <Button
-            asChild
-            size="lg"
-            className="w-full"
-          >
-            <Link to="/doctor/appointments">Manage All Appointments</Link>
-          </Button>
-        </section>
       </div>
     </div>
   );

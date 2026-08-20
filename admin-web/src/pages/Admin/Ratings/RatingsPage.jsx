@@ -50,6 +50,36 @@ function getInitialOption(id, label) {
     : null;
 }
 
+function getRatingActionCopy(currentStatus, nextStatus) {
+  if (nextStatus === "hidden") {
+    return {
+      title: "Hide rating?",
+      description: "This rating will no longer be visible to users or included in public averages. The rating and report history will remain available to administrators.",
+      confirmLabel: "Hide rating",
+      progressLabel: "Hiding...",
+      successMessage: "Rating was hidden successfully.",
+    };
+  }
+
+  if (nextStatus === "deleted") {
+    return {
+      title: "Delete rating?",
+      description: "This performs a soft delete. The rating is removed from public use and remains in the administrator audit record.",
+      confirmLabel: "Delete rating",
+      progressLabel: "Deleting...",
+      successMessage: "Rating was deleted successfully.",
+    };
+  }
+
+  return {
+    title: currentStatus === "deleted" ? "Restore deleted rating?" : "Unhide rating?",
+    description: "This rating will be visible to users again and included in public averages.",
+    confirmLabel: currentStatus === "deleted" ? "Restore rating" : "Unhide rating",
+    progressLabel: currentStatus === "deleted" ? "Restoring..." : "Unhiding...",
+    successMessage: currentStatus === "deleted" ? "Rating was restored successfully." : "Rating was unhidden successfully.",
+  };
+}
+
 export default function RatingsPage() {
   const [searchParams] = useSearchParams();
   const [ratings, setRatings] = useState([]);
@@ -62,8 +92,8 @@ export default function RatingsPage() {
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [actionError, setActionError] = useState("");
   const [actionNotice, setActionNotice] = useState("");
-  const [hidingRatingId, setHidingRatingId] = useState(null);
-  const [ratingToHide, setRatingToHide] = useState(null);
+  const [updatingRatingId, setUpdatingRatingId] = useState(null);
+  const [ratingAction, setRatingAction] = useState(null);
   const [selectedDoctor, setSelectedDoctor] = useState(() =>
     getInitialOption(searchParams.get("doctorId"), "Doctor"),
   );
@@ -203,13 +233,24 @@ export default function RatingsPage() {
     statusFilter,
   ]);
 
-  async function hideRating(rating) {
-    setHidingRatingId(rating.id);
+  async function updateRatingStatus(rating, status) {
+    setUpdatingRatingId(rating.id);
     setActionError("");
     setActionNotice("");
 
     try {
-      const updatedRating = await ratingsApi.updateRatingStatus(rating.id, "hidden");
+      if (status === "visible") {
+        const conflictingRating = await ratingsApi.findVisibleRatingForAppointment(rating);
+
+        if (conflictingRating) {
+          setActionError(
+            `This rating cannot be made visible because rating #${conflictingRating.id} is already the visible rating for the same patient and appointment.`,
+          );
+          return;
+        }
+      }
+
+      const updatedRating = await ratingsApi.updateRatingStatus(rating.id, status);
       setRatings((currentRatings) =>
         currentRatings.map((item) =>
           String(item.id) === String(updatedRating.id)
@@ -222,19 +263,19 @@ export default function RatingsPage() {
           ? { ...currentRating, ...updatedRating }
           : currentRating,
       );
-      setRatingToHide(null);
-      setActionNotice("Rating was hidden successfully.");
+      setRatingAction(null);
+      setActionNotice(getRatingActionCopy(rating.status, status).successMessage);
       setLoadAttempt((attempt) => attempt + 1);
     } catch (error) {
-      setActionError(getErrorMessage(error, "We could not hide this rating."));
+      setActionError(getErrorMessage(error, "We could not update this rating."));
     } finally {
-      setHidingRatingId(null);
+      setUpdatingRatingId(null);
     }
   }
 
-  function requestHideRating(rating) {
+  function requestRatingStatus(rating, status) {
     setActionError("");
-    setRatingToHide(rating);
+    setRatingAction({ rating, status });
   }
 
   function setSearch(value) {
@@ -292,8 +333,8 @@ export default function RatingsPage() {
       <DataTable
         columns={getRatingColumns({
           onViewDetails: setSelectedRating,
-          onHide: requestHideRating,
-          hidingRatingId,
+          onUpdateStatus: requestRatingStatus,
+          updatingRatingId,
         })}
         data={ratings}
         globalFilter={search}
@@ -360,41 +401,44 @@ export default function RatingsPage() {
             setSelectedRating(null);
           }
         }}
-        onHide={requestHideRating}
-        isHiding={hidingRatingId === selectedRating?.id}
+        onUpdateStatus={requestRatingStatus}
+        isUpdating={updatingRatingId === selectedRating?.id}
         actionError={actionError}
       />
 
       <AlertDialog
-        open={Boolean(ratingToHide)}
+        open={Boolean(ratingAction)}
         onOpenChange={(open) => {
-          if (!open && !hidingRatingId) {
-            setRatingToHide(null);
+          if (!open && !updatingRatingId) {
+            setRatingAction(null);
             setActionError("");
           }
         }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hide rating?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This rating will no longer be visible to users. The rating and its
-              report history will remain available to administrators.
+          <AlertDialogTitle>{ratingAction ? getRatingActionCopy(ratingAction.rating.status, ratingAction.status).title : "Update rating?"}</AlertDialogTitle>
+          <AlertDialogDescription>
+              {ratingAction ? getRatingActionCopy(ratingAction.rating.status, ratingAction.status).description : ""}
             </AlertDialogDescription>
             {actionError ? (
               <p className="text-sm text-red-700" role="alert">{actionError}</p>
             ) : null}
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={Boolean(hidingRatingId)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={Boolean(updatingRatingId)}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              disabled={Boolean(hidingRatingId)}
+              disabled={Boolean(updatingRatingId)}
               onClick={(event) => {
                 event.preventDefault();
-                hideRating(ratingToHide);
+                if (ratingAction) updateRatingStatus(ratingAction.rating, ratingAction.status);
               }}
             >
-              {hidingRatingId ? "Hiding..." : "Hide rating"}
+              {updatingRatingId && ratingAction
+                ? getRatingActionCopy(ratingAction.rating.status, ratingAction.status).progressLabel
+                : ratingAction
+                  ? getRatingActionCopy(ratingAction.rating.status, ratingAction.status).confirmLabel
+                  : "Update rating"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -10,6 +10,7 @@ import {
   getCommentPreview,
   getRatingDoctorName,
   getRatingPatientName,
+  getPatientProfileName,
   getReportReasonLabel,
 } from "@/components/shared/Ratings/ratingUtils";
 
@@ -29,16 +30,16 @@ export function getRatingReportColumns({ resolveReport, resolvingReportId }) {
     },
     {
       id: "reporter",
-      accessorFn: (report) => report.reporterPatient?.user?.full_name || "",
+      accessorFn: (report) => getPatientProfileName(report.reporterPatient, report.reporterPatientId),
       header: "Reporter",
-      cell: ({ row }) => (
-        <Link
-          to={`/admin/patients/${row.original.reporterPatientId}`}
-          className="font-medium text-[var(--color-primary)] hover:underline"
-        >
-          {row.original.reporterPatient?.user?.full_name || "Unknown Patient"}
-        </Link>
-      ),
+      cell: ({ row }) => {
+        const patientId = Number(row.original.reporterPatientId);
+        const patientName = getPatientProfileName(row.original.reporterPatient, row.original.reporterPatientId);
+
+        return Number.isInteger(patientId) && patientId > 0
+          ? <Link to={`/admin/patients/${patientId}`} className="font-medium text-[var(--color-primary)] hover:underline">{patientName}</Link>
+          : patientName;
+      },
     },
     {
       id: "ratingScore",
@@ -60,27 +61,27 @@ export function getRatingReportColumns({ resolveReport, resolvingReportId }) {
       id: "doctor",
       accessorFn: (report) => getRatingDoctorName(report.rating),
       header: "Doctor",
-      cell: ({ row }) => (
-        <Link
-          to={`/admin/doctors/${row.original.rating?.doctorProfileId}`}
-          className="font-medium text-[var(--color-primary)] hover:underline"
-        >
-          {getRatingDoctorName(row.original.rating)}
-        </Link>
-      ),
+      cell: ({ row }) => {
+        const doctorId = Number(row.original.rating?.doctorProfileId);
+        const doctorName = getRatingDoctorName(row.original.rating);
+
+        return Number.isInteger(doctorId) && doctorId > 0
+          ? <Link to={`/admin/doctors/${doctorId}`} className="font-medium text-[var(--color-primary)] hover:underline">{doctorName}</Link>
+          : doctorName;
+      },
     },
     {
       id: "reviewer",
       accessorFn: (report) => getRatingPatientName(report.rating),
       header: "Reviewer",
-      cell: ({ row }) => (
-        <Link
-          to={`/admin/patients/${row.original.rating?.patientProfileId}`}
-          className="font-medium text-[var(--color-primary)] hover:underline"
-        >
-          {getRatingPatientName(row.original.rating)}
-        </Link>
-      ),
+      cell: ({ row }) => {
+        const patientId = Number(row.original.rating?.patientProfileId);
+        const patientName = getRatingPatientName(row.original.rating);
+
+        return Number.isInteger(patientId) && patientId > 0
+          ? <Link to={`/admin/patients/${patientId}`} className="font-medium text-[var(--color-primary)] hover:underline">{patientName}</Link>
+          : patientName;
+      },
     },
     {
       id: "createdAt",

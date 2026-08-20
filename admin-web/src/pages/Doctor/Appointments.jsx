@@ -17,7 +17,6 @@ import { useDoctorLocale } from "@/context/DoctorLocaleContext";
 const STATUS_OPTIONS = [
   { value: "all", label: "All statuses" },
   { value: "confirmed", label: "Confirmed" },
-  { value: "in_progress", label: "In consultation" },
   { value: "completed", label: "Completed" },
   { value: "cancelled", label: "Cancelled" },
   { value: "no_show", label: "No-show" },

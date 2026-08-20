@@ -15,6 +15,7 @@ import {
   formatRatingDate,
   getRatingDoctorName,
   getRatingPatientName,
+  getPatientProfileName,
   getReportReasonLabel,
 } from "@/components/shared/Ratings/ratingUtils";
 import {
@@ -67,20 +68,11 @@ export default function RatingReportDetails() {
 
     async function loadReport() {
       try {
-        const response = await ratingsApi.getAdminReports({
-          page: 1,
-          limit: 100,
-          search: reportId,
-        });
-        const matchingReport = response.data.find(
-          (item) => String(item.id) === reportId,
-        );
+        const reportDetails = await ratingsApi.getAdminReportDetails(reportId);
 
         if (isCurrent) {
-          setReport(matchingReport ?? null);
-          setLoadError(
-            matchingReport ? "" : "The rating report you requested does not exist.",
-          );
+          setReport(reportDetails);
+          setLoadError("");
         }
       } catch (error) {
         if (isCurrent) {
@@ -205,12 +197,9 @@ export default function RatingReportDetails() {
             <InfoItem
               label="Reporter"
               value={
-                <Link
-                  to={`/admin/patients/${report.reporterPatientId}`}
-                  className="text-[var(--color-primary)] hover:underline"
-                >
-                  {report.reporterPatient?.user?.full_name || "Unknown Patient"}
-                </Link>
+                Number.isInteger(Number(report.reporterPatientId)) && Number(report.reporterPatientId) > 0
+                  ? <Link to={`/admin/patients/${report.reporterPatientId}`} className="text-[var(--color-primary)] hover:underline">{getPatientProfileName(report.reporterPatient, report.reporterPatientId)}</Link>
+                  : getPatientProfileName(report.reporterPatient, report.reporterPatientId)
               }
             />
             <InfoItem label="Created" value={formatRatingDate(report.createdAt)} />

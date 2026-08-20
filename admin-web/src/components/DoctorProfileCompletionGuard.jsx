@@ -6,6 +6,7 @@ import { authApi } from "@/api/authApi";
 import { doctorsApi } from "@/api/doctorsApi";
 import { Button } from "@/components/ui/button";
 import { DoctorProfileCompletionContext } from "@/context/DoctorProfileCompletionContext";
+import { normalizeDoctorProfileCompletionStatus } from "@/lib/doctorProfileCompletion";
 
 function getErrorMessage(error) {
   const message = error?.response?.data?.message || error?.message;
@@ -21,12 +22,13 @@ export default function DoctorProfileCompletionGuard() {
     setState({ status: "loading", isComplete: false, error: "" });
     try {
       const result = await doctorsApi.getOwnProfile();
+      const completionStatus = normalizeDoctorProfileCompletionStatus(result?.completionStatus);
       setState({
         status: "ready",
-        isComplete: Boolean(result?.completionStatus?.isComplete),
+        isComplete: completionStatus.isComplete,
         error: "",
       });
-      return Boolean(result?.completionStatus?.isComplete);
+      return completionStatus.isComplete;
     } catch (error) {
       setState({
         status: "error",
@@ -43,10 +45,11 @@ export default function DoctorProfileCompletionGuard() {
     async function loadInitialCompletion() {
       try {
         const result = await doctorsApi.getOwnProfile();
+        const completionStatus = normalizeDoctorProfileCompletionStatus(result?.completionStatus);
         if (isMounted) {
           setState({
             status: "ready",
-            isComplete: Boolean(result?.completionStatus?.isComplete),
+            isComplete: completionStatus.isComplete,
             error: "",
           });
         }

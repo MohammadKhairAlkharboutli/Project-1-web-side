@@ -15,12 +15,12 @@ import { lookupsApi } from "@/api/lookupsApi";
 import { DoctorProfileCompletionContext } from "@/context/DoctorProfileCompletionContext";
 import { DoctorClinicAssignmentContext } from "@/context/DoctorClinicAssignmentContext";
 import { getLookupDisplayName, useDoctorLocale } from "@/context/DoctorLocaleContext";
+import { normalizeDoctorProfileCompletionStatus } from "@/lib/doctorProfileCompletion";
 
 const requiredProfileFields = [
   { name: "birthDate", label: "birth date" },
   { name: "gender", label: "gender" },
   { name: "specialization", label: "medical specialty" },
-  { name: "subSpecialization", label: "medical sub-specialty" },
   { name: "licenseNumber", label: "license number" },
   { name: "languagesSpoken", label: "at least one language" },
 ];
@@ -526,7 +526,7 @@ function DoctorEditProfile({
         gender: data.gender,
         birthDate: data.birthDate,
         specialization: data.specialization.trim(),
-        subSpecialization: data.subSpecialization.trim(),
+        subSpecialization: data.subSpecialization.trim() || undefined,
         licenseNumber: data.licenseNumber.trim(),
         experienceYears: data.experienceYears === "" ? undefined : Number(data.experienceYears),
         initialVisitFee: data.initialVisitFee === "" ? undefined : String(data.initialVisitFee),
@@ -597,9 +597,9 @@ function DoctorEditProfile({
               {lookupState.specialties.map((lookup) => <option key={lookup.id} value={lookup.value}>{getLookupLabel(lookup, locale)}</option>)}
             </select>
           </FormField>
-          <FormField label="Sub-specialty" error={errors.subSpecialization}>
-            <select {...register("subSpecialization", { required: "Sub-specialty is required" })} disabled={lookupState.status !== "ready" || !selectedSpecialty} aria-invalid={Boolean(errors.subSpecialization)} className={fieldClassName}>
-              <option value="">{lookupState.status === "loading" ? "Loading sub-specialties…" : selectedSpecialty ? "Select sub-specialty" : "Select a specialty first"}</option>
+          <FormField label="Sub-specialty (optional)" error={errors.subSpecialization}>
+            <select {...register("subSpecialization")} disabled={lookupState.status !== "ready" || !selectedSpecialty} aria-invalid={Boolean(errors.subSpecialization)} className={fieldClassName}>
+              <option value="">{lookupState.status === "loading" ? "Loading sub-specialties…" : selectedSpecialty ? "No sub-specialty selected" : "Select a specialty first"}</option>
               {!selectedSubSpecialty && subSpecialization ? <option value={subSpecialization} disabled>{formatEnumLabel(subSpecialization)} (not currently available)</option> : null}
               {availableSubSpecialties.map((lookup) => <option key={lookup.id} value={lookup.value}>{getLookupLabel(lookup, locale)}</option>)}
             </select>
@@ -710,7 +710,7 @@ export default function DoctorProfileContainer() {
 
         if (isMounted) {
           setDoctorData(normalizeDoctorProfile(result.profile, assignedClinic));
-          setDoctorCompletionStatus(result.completionStatus);
+          setDoctorCompletionStatus(normalizeDoctorProfileCompletionStatus(result.completionStatus));
           setLoadState({ status: "ready", error: "" });
         }
       } catch (error) {
@@ -824,10 +824,10 @@ export default function DoctorProfileContainer() {
                 ...updatedProfile,
                 assignedClinic: currentProfile?.assignedClinic || null,
               }));
-              setDoctorCompletionStatus(serverCompletionStatus);
+              setDoctorCompletionStatus(normalizeDoctorProfileCompletionStatus(serverCompletionStatus));
               await refreshDoctorShell?.();
               const isComplete = await completionContext?.refreshProfileCompletion?.();
-              if (completionRequired && isComplete && serverCompletionStatus?.isComplete) {
+              if (completionRequired && isComplete) {
                 navigate("/doctor", { replace: true });
                 return;
               }

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowUpDown, Eye, EyeOff } from "lucide-react";
+import { ArrowUpDown, Eye, EyeOff, RotateCcw, Trash2 } from "lucide-react";
 
 import RatingScoreBadge from "@/components/shared/Ratings/RatingScoreBadge";
 import RatingStatusBadge from "@/components/shared/Ratings/RatingStatusBadge";
@@ -13,7 +13,7 @@ import {
   getRatingPatientName,
 } from "@/components/shared/Ratings/ratingUtils";
 
-export function getRatingColumns({ onViewDetails, onHide, hidingRatingId }) {
+export function getRatingColumns({ onViewDetails, onUpdateStatus, updatingRatingId }) {
   return [
     {
       accessorKey: "score",
@@ -42,27 +42,27 @@ export function getRatingColumns({ onViewDetails, onHide, hidingRatingId }) {
       id: "doctor",
       accessorFn: (rating) => getRatingDoctorName(rating),
       header: "Doctor",
-      cell: ({ row }) => (
-        <Link
-          to={`/admin/doctors/${row.original.doctorProfileId}`}
-          className="font-medium text-[var(--color-primary)] hover:underline"
-        >
-          {getRatingDoctorName(row.original)}
-        </Link>
-      ),
+      cell: ({ row }) => {
+        const doctorId = Number(row.original.doctorProfileId);
+        const doctorName = getRatingDoctorName(row.original);
+
+        return Number.isInteger(doctorId) && doctorId > 0
+          ? <Link to={`/admin/doctors/${doctorId}`} className="font-medium text-[var(--color-primary)] hover:underline">{doctorName}</Link>
+          : doctorName;
+      },
     },
     {
       id: "patient",
       accessorFn: (rating) => getRatingPatientName(rating),
       header: "Patient",
-      cell: ({ row }) => (
-        <Link
-          to={`/admin/patients/${row.original.patientProfileId}`}
-          className="font-medium text-[var(--color-primary)] hover:underline"
-        >
-          {getRatingPatientName(row.original)}
-        </Link>
-      ),
+      cell: ({ row }) => {
+        const patientId = Number(row.original.patientProfileId);
+        const patientName = getRatingPatientName(row.original);
+
+        return Number.isInteger(patientId) && patientId > 0
+          ? <Link to={`/admin/patients/${patientId}`} className="font-medium text-[var(--color-primary)] hover:underline">{patientName}</Link>
+          : patientName;
+      },
     },
     {
       id: "appointment",
@@ -106,27 +106,25 @@ export function getRatingColumns({ onViewDetails, onHide, hidingRatingId }) {
     {
       id: "actions",
       header: "Actions",
-      cell: ({ row }) => (
-        <div className="flex flex-wrap gap-2">
+      cell: ({ row }) => {
+        const rating = row.original;
+        const isUpdating = updatingRatingId === rating.id;
+
+        return <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onViewDetails(row.original)}
+            onClick={() => onViewDetails(rating)}
           >
             <Eye className="h-4 w-4" />
             Details
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={row.original.status !== "visible" || hidingRatingId === row.original.id}
-            onClick={() => onHide(row.original)}
-          >
-            <EyeOff className="h-4 w-4" />
-            {hidingRatingId === row.original.id ? "Hiding..." : "Hide"}
-          </Button>
-        </div>
-      ),
+          {rating.status === "visible" ? <Button variant="outline" size="sm" disabled={isUpdating} onClick={() => onUpdateStatus(rating, "hidden")}><EyeOff className="h-4 w-4" /> Hide</Button> : null}
+          {rating.status === "hidden" ? <Button variant="outline" size="sm" disabled={isUpdating} onClick={() => onUpdateStatus(rating, "visible")}><RotateCcw className="h-4 w-4" /> Unhide</Button> : null}
+          {rating.status === "deleted" ? <Button variant="outline" size="sm" disabled={isUpdating} onClick={() => onUpdateStatus(rating, "visible")}><RotateCcw className="h-4 w-4" /> Restore</Button> : null}
+          {rating.status !== "deleted" ? <Button variant="outline" size="sm" disabled={isUpdating} onClick={() => onUpdateStatus(rating, "deleted")}><Trash2 className="h-4 w-4" /> {isUpdating ? "Updating..." : "Delete"}</Button> : null}
+        </div>;
+      },
     },
   ];
 }

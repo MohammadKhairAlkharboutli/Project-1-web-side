@@ -90,12 +90,26 @@ export function getReportStatusVariant(status) {
   return "outline";
 }
 
+export function getPatientProfileName(patientProfile, patientProfileId) {
+  const user = patientProfile?.user;
+  const name = user?.full_name
+    || user?.fullName
+    || [user?.firstName, user?.fatherName, user?.lastName].filter(Boolean).join(" ");
+
+  return name || (patientProfileId ? `Patient #${patientProfileId}` : "Unknown Patient");
+}
+
 export function getRatingPatientName(rating) {
-  return rating?.patientProfile?.user?.full_name || "Unknown Patient";
+  return getPatientProfileName(rating?.patientProfile, rating?.patientProfileId);
 }
 
 export function getRatingDoctorName(rating) {
-  return rating?.doctorProfile?.user?.full_name || "Unknown Doctor";
+  const user = rating?.doctorProfile?.user;
+  const name = user?.full_name
+    || user?.fullName
+    || [user?.firstName, user?.fatherName, user?.lastName].filter(Boolean).join(" ");
+
+  return name || (rating?.doctorProfileId ? `Doctor #${rating.doctorProfileId}` : "Unknown Doctor");
 }
 
 export function formatRatingDate(value) {

@@ -12,6 +12,17 @@ function normalizeRating(rating) {
   };
 }
 
+function normalizeRatingDetails(data) {
+  const rating = data?.rating ?? data;
+
+  return normalizeRating({
+    ...rating,
+    patientProfile: rating?.patientProfile ?? data?.patientProfile ?? null,
+    doctorProfile: rating?.doctorProfile ?? data?.doctorProfile ?? null,
+    appointment: rating?.appointment ?? data?.appointment ?? null,
+  });
+}
+
 function normalizeReport(report) {
   if (!report) {
     return report;
@@ -26,6 +37,16 @@ function normalizeReport(report) {
       report.resolvedByAdminId ?? report.resolved_by_admin_id,
     rating: normalizeRating(report.rating),
   };
+}
+
+function normalizeReportDetails(data) {
+  const report = data?.report ?? data;
+
+  return normalizeReport({
+    ...report,
+    reporterPatient: report?.reporterPatient ?? data?.reporterPatient ?? null,
+    rating: report?.rating ?? data?.rating ?? null,
+  });
 }
 
 function normalizePaginatedResponse(data, filters, normalizeItem) {
@@ -58,6 +79,46 @@ export const ratingsApi = {
     return normalizeRating(data);
   },
 
+  async findVisibleRatingForAppointment(rating) {
+    const patientId = Number(rating?.patientProfileId);
+    const appointmentId = Number(rating?.appointmentId);
+
+    if (!Number.isInteger(patientId) || patientId <= 0 || !Number.isInteger(appointmentId) || appointmentId <= 0) {
+      return null;
+    }
+
+    const limit = 100;
+    let page = 1;
+
+    while (true) {
+      const response = await this.getAdminRatings({
+        page,
+        limit,
+        patientId,
+        status: "visible",
+      });
+      const conflictingRating = response.data.find((item) => (
+        String(item.id) !== String(rating.id)
+        && String(item.appointmentId) === String(rating.appointmentId)
+      ));
+
+      if (conflictingRating) {
+        return conflictingRating;
+      }
+
+      if (page * limit >= response.total) {
+        return null;
+      }
+
+      page += 1;
+    }
+  },
+
+  async getAdminRatingDetails(ratingId) {
+    const { data } = await axiosClient.get(`/admin/ratings/${Number(ratingId)}`);
+    return normalizeRatingDetails(data);
+  },
+
   async getAdminReports(filters = {}) {
     const { data } = await axiosClient.get("/ratings/admin/reports", {
       params: filters,
@@ -72,5 +133,10 @@ export const ratingsApi = {
       { action },
     );
     return normalizeReport(data);
+  },
+
+  async getAdminReportDetails(reportId) {
+    const { data } = await axiosClient.get(`/admin/reports/${Number(reportId)}`);
+    return normalizeReportDetails(data);
   },
 };
