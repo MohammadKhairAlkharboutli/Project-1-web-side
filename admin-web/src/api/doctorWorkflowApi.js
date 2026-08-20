@@ -34,11 +34,6 @@ export const doctorAppointmentsApi = {
     return data;
   },
 
-  async checkIn(appointmentId) {
-    const { data } = await axiosClient.patch(`/appointments/${numericId(appointmentId)}/check-in`);
-    return data;
-  },
-
   async cancel(appointmentId, cancellationReason) {
     const { data } = await axiosClient.patch(`/appointments/${numericId(appointmentId)}/cancel`, {
       ...(cancellationReason?.trim() ? { cancellationReason: cancellationReason.trim() } : {}),
@@ -80,10 +75,8 @@ export const doctorAppointmentsApi = {
 };
 
 export const doctorQueueApi = {
-  async getMyQueue(clinicId) {
-    const { data } = await axiosClient.get("/queues/doctor/my-queue", {
-      ...(clinicId != null ? { params: { clinicId: numericId(clinicId) } } : {}),
-    });
+  async getMyQueue() {
+    const { data } = await axiosClient.get("/queues/doctor/my-queue");
     return data;
   },
 

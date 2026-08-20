@@ -14,34 +14,22 @@ export const ACTIVE_QUEUE_STATUSES = [
   QUEUE_STATUS.IN_PROGRESS,
 ];
 
-export const HISTORY_QUEUE_STATUSES = [
-  QUEUE_STATUS.COMPLETED,
-  QUEUE_STATUS.SKIPPED,
-];
-
 export function isActiveQueueItem(queueItem) {
   return ACTIVE_QUEUE_STATUSES.includes(queueItem?.status);
 }
 
-export function isHistoryQueueItem(queueItem) {
-  return HISTORY_QUEUE_STATUSES.includes(queueItem?.status);
-}
-
-export function canAdminMove(queueItem) {
-  return queueItem?.status === QUEUE_STATUS.WAITING;
-}
-
 export function canAdminSkip(queueItem) {
-  return (
-    queueItem?.status === QUEUE_STATUS.WAITING ||
-    queueItem?.status === QUEUE_STATUS.CALLING
-  );
+  return queueItem?.status === QUEUE_STATUS.CALLING;
 }
 
 export function sortQueueByPosition(queueItems) {
   return [...queueItems].sort((left, right) => {
-    const leftPosition = Number(left?.position ?? Number.MAX_SAFE_INTEGER);
-    const rightPosition = Number(right?.position ?? Number.MAX_SAFE_INTEGER);
+    const leftPosition = Number(
+      left?.currentPosition ?? Number.MAX_SAFE_INTEGER,
+    );
+    const rightPosition = Number(
+      right?.currentPosition ?? Number.MAX_SAFE_INTEGER,
+    );
 
     return leftPosition - rightPosition;
   });
@@ -113,14 +101,6 @@ export function formatEstimatedWait(minutes) {
   return `${Number(minutes)} min`;
 }
 
-export function getClosedTime(queueItem) {
-  if (queueItem?.status === QUEUE_STATUS.COMPLETED) {
-    return queueItem?.finishedTime;
-  }
-
-  return queueItem?.updated_at;
-}
-
 export function getQueueStatusLabel(status) {
   const labels = {
     [QUEUE_STATUS.WAITING]: "Waiting",
@@ -131,6 +111,15 @@ export function getQueueStatusLabel(status) {
   };
 
   return labels[status] || "Unknown";
+}
+
+export function getQueuePriorityGroupLabel(priorityGroup) {
+  const labels = {
+    normal: "Scheduled",
+    late: "Late check-in",
+  };
+
+  return labels[priorityGroup] || "Unknown";
 }
 
 export function getDoctorDisplayName(doctor) {

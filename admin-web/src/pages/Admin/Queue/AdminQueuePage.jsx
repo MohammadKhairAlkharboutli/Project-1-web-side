@@ -12,17 +12,13 @@ import DataTable from "@/components/shared/DataTable";
 
 import {
   getActiveQueueColumns,
-  getHistoryQueueColumns,
 } from "./AdminQueueColumns";
 import AdminQueueToolbar from "./AdminQueueToolbar";
 import CheckInCandidates from "./CheckInCandidates";
-import MoveQueueDialog from "./MoveQueueDialog";
 import SkipQueueDialog from "./SkipQueueDialog";
 import {
-  QUEUE_STATUS,
   getPatientNameFromAppointment,
   isActiveQueueItem,
-  isHistoryQueueItem,
   sortQueueByPosition,
 } from "./queueUtils";
 
@@ -31,7 +27,7 @@ function getErrorMessage(error, fallback) {
   return Array.isArray(message) ? message.join(" ") : message;
 }
 
-export default function AdminQueuePage({ secretaryMode = false }) {
+export default function AdminQueuePage() {
   const [searchParams] = useSearchParams();
   const [clinics, setClinics] = useState([]);
   const [doctors, setDoctors] = useState([]);
@@ -39,12 +35,11 @@ export default function AdminQueuePage({ secretaryMode = false }) {
   const [appointments, setAppointments] = useState([]);
 
   const [selectedClinicId, setSelectedClinicId] = useState(
-    secretaryMode ? "" : searchParams.get("clinicId") ?? "",
+    searchParams.get("clinicId") ?? "",
   );
   const [selectedDoctorId, setSelectedDoctorId] = useState(
     searchParams.get("doctorId") ?? "",
   );
-  const [selectedView, setSelectedView] = useState("active");
   const [candidateSearch, setCandidateSearch] = useState("");
 
   const [loadingLookups, setLoadingLookups] = useState(false);
@@ -54,7 +49,6 @@ export default function AdminQueuePage({ secretaryMode = false }) {
   const [lookupError, setLookupError] = useState("");
   const [queueError, setQueueError] = useState("");
 
-  const [moveItem, setMoveItem] = useState(null);
   const [skipItem, setSkipItem] = useState(null);
   const [checkingInId, setCheckingInId] = useState(null);
   const [actionError, setActionError] = useState("");
@@ -74,67 +68,35 @@ export default function AdminQueuePage({ secretaryMode = false }) {
     setQueueError("");
 
     try {
-      if (secretaryMode) {
-        const deskData = await queueApi.getSecretaryDesk({
+      const [queueData, appointmentData] = await Promise.all([
+        queueApi.getAdminLiveQueue({
           clinicId: selectedClinicId,
           doctorId: selectedDoctorId,
-        });
-        setQueueItems(Array.isArray(deskData?.queue) ? deskData.queue : []);
-        setAppointments(
-          Array.isArray(deskData?.appointments) ? deskData.appointments : [],
-        );
-      } else {
-        const [queueData, appointmentData] = await Promise.all([
-          queueApi.getAdminLiveQueue({
-            clinicId: selectedClinicId,
-            doctorId: selectedDoctorId,
-          }),
-          appointmentsApi.getAdminAppointments({
-            clinicId: selectedClinicId,
-            doctorId: selectedDoctorId,
-            status: "confirmed",
-            from: today,
-            to: today,
-            limit: 100,
-          }),
-        ]);
+        }),
+        appointmentsApi.getAdminAppointments({
+          clinicId: selectedClinicId,
+          doctorId: selectedDoctorId,
+          status: "confirmed",
+          from: today,
+          to: today,
+          limit: 100,
+        }),
+      ]);
 
-        setQueueItems(Array.isArray(queueData) ? queueData : []);
-        setAppointments(appointmentData.data);
-      }
+      setQueueItems(Array.isArray(queueData) ? queueData : []);
+      setAppointments(appointmentData.data);
     } catch (error) {
       setQueueError(getErrorMessage(error, "Could not load the queue desk."));
     } finally {
       setLoadingQueue(false);
       setLoadingAppointments(false);
     }
-  }, [secretaryMode, selectedClinicId, selectedDoctorId, today]);
+  }, [selectedClinicId, selectedDoctorId, today]);
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadClinics() {
-      if (secretaryMode) {
-        setLoadingLookups(true);
-        setLookupError("");
-
-        try {
-          const data = await queueApi.getSecretaryDeskContext();
-          if (isMounted) {
-            setClinics(Array.isArray(data?.clinics) ? data.clinics : []);
-          }
-        } catch (error) {
-          if (isMounted) {
-            setLookupError(getErrorMessage(error, "Could not load your queue desk."));
-          }
-        } finally {
-          if (isMounted) {
-            setLoadingLookups(false);
-          }
-        }
-        return;
-      }
-
       setLoadingLookups(true);
       setLookupError("");
 
@@ -160,39 +122,12 @@ export default function AdminQueuePage({ secretaryMode = false }) {
     return () => {
       isMounted = false;
     };
-  }, [secretaryMode]);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadDoctors() {
-      if (secretaryMode) {
-        if (!selectedClinicId) {
-          setDoctors([]);
-          return;
-        }
-
-        setLoadingDoctors(true);
-        setLookupError("");
-
-        try {
-          const data = await queueApi.getSecretaryClinicDoctors(selectedClinicId);
-          if (isMounted) {
-            setDoctors(Array.isArray(data) ? data : []);
-          }
-        } catch (error) {
-          if (isMounted) {
-            setLookupError(getErrorMessage(error, "Could not load doctors."));
-            setDoctors([]);
-          }
-        } finally {
-          if (isMounted) {
-            setLoadingDoctors(false);
-          }
-        }
-        return;
-      }
-
       if (!selectedClinicId) {
         setDoctors([]);
         return;
@@ -224,7 +159,7 @@ export default function AdminQueuePage({ secretaryMode = false }) {
     return () => {
       isMounted = false;
     };
-  }, [secretaryMode, selectedClinicId]);
+  }, [selectedClinicId]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(loadDeskData, 0);
@@ -244,7 +179,7 @@ export default function AdminQueuePage({ secretaryMode = false }) {
     const normalizedSearch = candidateSearch.trim().toLowerCase();
 
     return appointments
-      .filter((appointment) => !appointment.checkinTime && !appointment.queue)
+      .filter((appointment) => !appointment.checkinTime)
       .filter((appointment) => {
         if (!normalizedSearch) {
           return true;
@@ -258,30 +193,12 @@ export default function AdminQueuePage({ secretaryMode = false }) {
   }, [appointments, candidateSearch]);
 
   const displayedQueueItems = useMemo(() => {
-    const filteredItems =
-      selectedView === "active"
-        ? queueItems.filter(isActiveQueueItem)
-        : queueItems.filter(isHistoryQueueItem);
-
-    return sortQueueByPosition(filteredItems);
-  }, [queueItems, selectedView]);
-
-  const waitingPositions = useMemo(
-    () =>
-      queueItems
-        .filter((queueItem) => queueItem.status === QUEUE_STATUS.WAITING)
-        .map((queueItem) => Number(queueItem.position))
-        .sort((left, right) => left - right),
-    [queueItems],
-  );
+    return sortQueueByPosition(queueItems.filter(isActiveQueueItem));
+  }, [queueItems]);
 
   const activeColumns = useMemo(
     () =>
       getActiveQueueColumns({
-        onMove: (queueItem) => {
-          setActionError("");
-          setMoveItem(queueItem);
-        },
         onSkip: (queueItem) => {
           setActionError("");
           setSkipItem(queueItem);
@@ -289,9 +206,6 @@ export default function AdminQueuePage({ secretaryMode = false }) {
       }),
     [],
   );
-
-  const historyColumns = useMemo(() => getHistoryQueueColumns(), []);
-  const columns = selectedView === "active" ? activeColumns : historyColumns;
 
   function handleClinicChange(clinicId) {
     setSelectedClinicId(clinicId);
@@ -315,39 +229,12 @@ export default function AdminQueuePage({ secretaryMode = false }) {
     setActionError("");
 
     try {
-      if (secretaryMode) {
-        await queueApi.checkInPatientAsSecretary(appointment.id);
-      } else {
-        await queueApi.checkInPatient(appointment.id);
-      }
+      await queueApi.checkInPatient(appointment.id);
       await loadDeskData();
     } catch (error) {
       setActionError(getErrorMessage(error, "Could not check in this patient."));
     } finally {
       setCheckingInId(null);
-    }
-  }
-
-  async function handleMoveQueue(newPosition) {
-    if (!moveItem) {
-      return;
-    }
-
-    setSubmittingAction(true);
-    setActionError("");
-
-    try {
-      if (secretaryMode) {
-        await queueApi.reorderQueueAsSecretary(moveItem.id, newPosition);
-      } else {
-        await queueApi.reorderQueue(moveItem.id, newPosition);
-      }
-      setMoveItem(null);
-      await loadDeskData();
-    } catch (error) {
-      setActionError(getErrorMessage(error, "Could not move queue item."));
-    } finally {
-      setSubmittingAction(false);
     }
   }
 
@@ -360,11 +247,7 @@ export default function AdminQueuePage({ secretaryMode = false }) {
     setActionError("");
 
     try {
-      if (secretaryMode) {
-        await queueApi.skipQueueAsSecretary(skipItem.id);
-      } else {
-        await queueApi.skipQueue(skipItem.id);
-      }
+      await queueApi.skipQueue(skipItem.id);
       setSkipItem(null);
       await loadDeskData();
     } catch (error) {
@@ -380,9 +263,7 @@ export default function AdminQueuePage({ secretaryMode = false }) {
       ? "Select a doctor to view the queue."
       : loadingQueue
         ? "Loading queue..."
-        : selectedView === "active"
-          ? "No active queue entries for this doctor and clinic."
-          : "No completed or skipped entries for this doctor and clinic today.";
+        : "No active queue entries for this doctor and clinic.";
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6">
@@ -397,12 +278,10 @@ export default function AdminQueuePage({ secretaryMode = false }) {
         doctors={doctors}
         selectedClinicId={selectedClinicId}
         selectedDoctorId={selectedDoctorId}
-        selectedView={selectedView}
         loading={loadingQueue || loadingAppointments}
         loadingLookups={loadingLookups || loadingDoctors}
         onClinicChange={handleClinicChange}
         onDoctorChange={handleDoctorChange}
-        onViewChange={setSelectedView}
         onRefresh={loadDeskData}
       />
 
@@ -432,7 +311,7 @@ export default function AdminQueuePage({ secretaryMode = false }) {
           </p>
         </div>
         <DataTable
-          columns={columns}
+          columns={activeColumns}
           data={displayedQueueItems}
           emptyMessage={queueEmptyMessage}
           pagination={false}
@@ -440,23 +319,6 @@ export default function AdminQueuePage({ secretaryMode = false }) {
           rowClassName="h-16"
         />
       </section>
-
-      {moveItem && (
-        <MoveQueueDialog
-          queueItem={moveItem}
-          availablePositions={waitingPositions}
-          open={Boolean(moveItem)}
-          submitting={submittingAction}
-          error={actionError}
-          onOpenChange={(open) => {
-            if (!open && !submittingAction) {
-              setMoveItem(null);
-              setActionError("");
-            }
-          }}
-          onSubmit={handleMoveQueue}
-        />
-      )}
 
       <SkipQueueDialog
         queueItem={skipItem}

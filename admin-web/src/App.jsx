@@ -51,8 +51,6 @@ import ConsultationPage from "./pages/Doctor/ConsultationPage";
 import PatientMedicalFile from "./pages/Doctor/PatientMedicalFile";
 import ReferralsPage from "./pages/Doctor/ReferralsPage";
 import DoctorInvitePage from "./pages/DoctorInvitePage";
-// Disabled for the older backend, which has no secretary role or queue routes.
-// import SecretaryPageLayout from "./pages/SecretaryPageLayout";
 
 function App() {
   return (
@@ -135,15 +133,6 @@ function App() {
           </Route>
         </Route>
 
-        {/* Secretary workspace is disabled for the older backend.
-        <Route element={<RoleProtectedRoute allowedRole="secretary" />}>
-          <Route path="/secretary" element={<SecretaryPageLayout />}>
-            <Route index element={<AdminQueuePage secretaryMode />} />
-            <Route path="queue" element={<Navigate to="/secretary" replace />} />
-            <Route path="profile" element={<Navigate to="/secretary" replace />} />
-          </Route>
-        </Route>
-        */}
       </Route>
     </Routes>
   );

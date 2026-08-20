@@ -31,7 +31,7 @@ export default function SkipQueueDialog({
           </AlertDialogMedia>
           <AlertDialogTitle>Skip patient?</AlertDialogTitle>
           <AlertDialogDescription>
-            {queueItem ? getPatientNameFromQueueItem(queueItem) : "This patient"} will be removed from the active queue and shown in today&apos;s activity.
+            {queueItem ? getPatientNameFromQueueItem(queueItem) : "This patient"} will be removed from the active queue.
           </AlertDialogDescription>
           {error && <p className="text-sm text-red-600">{error}</p>}
         </AlertDialogHeader>

@@ -1,25 +1,17 @@
-import { MoreHorizontal, MoveUpRight, Ban } from "lucide-react";
+import { Ban } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 import QueueStatusBadge from "./QueueStatusBadge";
 import {
-  canAdminMove,
   canAdminSkip,
   formatAppointmentTimeRange,
   formatEstimatedWait,
   formatQueueDate,
   formatQueueDateTime,
-  getClosedTime,
   getPatientNameFromQueueItem,
+  getQueuePriorityGroupLabel,
 } from "./queueUtils";
 
 function renderAppointmentCell(appointment) {
@@ -38,70 +30,54 @@ function renderAppointmentCell(appointment) {
   );
 }
 
-function renderPriorityCell(isPriority) {
-  if (!isPriority) {
-    return <span className="text-sm text-slate-400">-</span>;
-  }
-
+function renderQueueGroupCell(priorityGroup) {
   return (
-    <Badge variant="destructive" className="bg-red-50 text-red-700">
-      Priority
+    <Badge
+      variant="outline"
+      className={
+        priorityGroup === "late"
+          ? "border-amber-200 bg-amber-50 text-amber-700"
+          : "border-sky-200 bg-sky-50 text-sky-700"
+      }
+    >
+      {getQueuePriorityGroupLabel(priorityGroup)}
     </Badge>
   );
 }
 
-function renderQueueActionsCell(queueItem, onMove, onSkip) {
-  const showMove = canAdminMove(queueItem);
+function renderQueueActionsCell(queueItem, onSkip) {
   const showSkip = canAdminSkip(queueItem);
 
-  if (!showMove && !showSkip) {
+  if (!showSkip) {
     return <span className="text-sm text-slate-400">-</span>;
   }
 
   return (
     <div className="flex justify-end">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            size="icon-sm"
-            className="bg-white"
-            aria-label="Open queue actions"
-          >
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-40">
-          {showMove && (
-            <DropdownMenuItem onSelect={() => onMove(queueItem)}>
-              <MoveUpRight className="h-4 w-4" />
-              Move
-            </DropdownMenuItem>
-          )}
-          {showMove && showSkip && <DropdownMenuSeparator />}
-          {showSkip && (
-            <DropdownMenuItem
-              variant="destructive"
-              onSelect={() => onSkip(queueItem)}
-            >
-              <Ban className="h-4 w-4" />
-              Skip
-            </DropdownMenuItem>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 hover:text-amber-900"
+        onClick={() => onSkip(queueItem)}
+      >
+        <Ban className="h-4 w-4" />
+        Skip
+      </Button>
     </div>
   );
 }
 
-export function getActiveQueueColumns({ onMove, onSkip }) {
+export function getActiveQueueColumns({ onSkip }) {
   return [
     {
-      accessorKey: "position",
+      accessorKey: "currentPosition",
       header: "Position",
       cell: ({ row }) => (
         <span className="font-semibold text-slate-900">
-          #{row.original.position}
+          {row.original.currentPosition == null
+            ? "—"
+            : `#${row.original.currentPosition}`}
         </span>
       ),
     },
@@ -128,77 +104,26 @@ export function getActiveQueueColumns({ onMove, onSkip }) {
       cell: ({ row }) => <QueueStatusBadge status={row.original.status} />,
     },
     {
-      accessorKey: "estimatedWaitMinutes",
+      accessorKey: "expectedWaitingTimeMinutes",
       header: "Est. Wait",
-      cell: ({ row }) => formatEstimatedWait(row.original.estimatedWaitMinutes),
+      cell: ({ row }) =>
+        formatEstimatedWait(row.original.expectedWaitingTimeMinutes),
     },
     {
-      accessorKey: "checkinTime",
+      accessorKey: "checkInAt",
       header: "Checked In",
-      cell: ({ row }) => formatQueueDateTime(row.original.checkinTime),
+      cell: ({ row }) => formatQueueDateTime(row.original.checkInAt),
     },
     {
-      accessorKey: "isPriority",
-      header: "Priority",
-      cell: ({ row }) => renderPriorityCell(row.original.isPriority),
+      accessorKey: "priorityGroup",
+      header: "Queue group",
+      cell: ({ row }) => renderQueueGroupCell(row.original.priorityGroup),
     },
     {
       id: "actions",
       header: () => <span className="block text-right">Actions</span>,
       enableSorting: false,
-      cell: ({ row }) => renderQueueActionsCell(row.original, onMove, onSkip),
-    },
-  ];
-}
-
-export function getHistoryQueueColumns() {
-  return [
-    {
-      accessorKey: "position",
-      header: "Position",
-      cell: ({ row }) => (
-        <span className="font-semibold text-slate-900">
-          #{row.original.position}
-        </span>
-      ),
-    },
-    {
-      id: "patient",
-      accessorFn: (queueItem) => getPatientNameFromQueueItem(queueItem),
-      header: "Patient",
-      cell: ({ row }) => (
-        <span className="font-medium text-slate-900">
-          {getPatientNameFromQueueItem(row.original)}
-        </span>
-      ),
-    },
-    {
-      id: "appointment",
-      accessorFn: (queueItem) =>
-        `${queueItem?.appointment?.requestedDate ?? ""} ${queueItem?.appointment?.startTime ?? ""}`,
-      header: "Appointment",
-      cell: ({ row }) => renderAppointmentCell(row.original.appointment),
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => <QueueStatusBadge status={row.original.status} />,
-    },
-    {
-      accessorKey: "checkinTime",
-      header: "Checked In",
-      cell: ({ row }) => formatQueueDateTime(row.original.checkinTime),
-    },
-    {
-      id: "closed",
-      accessorFn: (queueItem) => getClosedTime(queueItem) ?? "",
-      header: "Closed",
-      cell: ({ row }) => formatQueueDateTime(getClosedTime(row.original)),
-    },
-    {
-      accessorKey: "isPriority",
-      header: "Priority",
-      cell: ({ row }) => renderPriorityCell(row.original.isPriority),
+      cell: ({ row }) => renderQueueActionsCell(row.original, onSkip),
     },
   ];
 }
